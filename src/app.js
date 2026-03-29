@@ -4,77 +4,65 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 
-// Middleware personalizado
+import sprintRoutes from "./routes/sprint.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 import {
   errorHandler,
   notFoundHandler,
 } from "./middleware/error-handler.middleware.js";
 
-// Rutas
-import authRoutes from "./routes/auth.routes.js";
-
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MIDDLEWARES GLOBALES
 
-
-// Seguridad
-app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || "*",
-    credentials: true,
-  }),
-);
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX),
-  message: "Demasiadas solicitudes, intenta más tarde",
-});
-app.use("/api/", limiter);
-
-// Parseo de datos
+// 🔥 1. PARSEO (PRIMERO SIEMPRE)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logger
+
+// 🔥 2. SEGURIDAD
+app.use(helmet());
+app.use(cors());
+
+
+// 🔥 3. LOGGER
 app.use(requestLogger);
 
-// RUTAS
 
+// 🔥 4. RATE LIMIT (SIN .env por ahora)
+app.use(
+  "/api/",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  })
+);
+
+
+// 🔥 5. RUTAS (UNA SOLA VEZ)
+app.use("/api/sprints", sprintRoutes);
+app.use("/api/auth", authRoutes);
+
+
+// 🔥 TEST
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Scrum App API - Backend funcionando ✅",
-    version: "1.0.0",
-    endpoints: {
-      auth: "/api/auth",
-      usuarios: "/api/usuarios",
-      backlog: "/api/backlog",
-      sprints: "/api/sprints",
-      tareas: "/api/tareas",
-    },
+    message: "API funcionando ✅",
   });
 });
 
-app.use("/api/auth", authRoutes);
-// Resto de rutas se agregarán aquí
 
-
-// MANEJO DE ERRORES
-
+// 🔥 ERRORES
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// INICIAR SERVIDOR
 
+// 🔥 SERVIDOR
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📝 Ambiente: ${process.env.NODE_ENV}`);
 });
