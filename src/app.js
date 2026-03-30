@@ -13,6 +13,7 @@ import {
 
 // Rutas
 import authRoutes from "./routes/auth.routes.js";
+import tareaRoutes from "./routes/tarea.routes.js";
 
 dotenv.config();
 
@@ -63,7 +64,9 @@ app.get("/", (req, res) => {
   });
 });
 
+
 app.use("/api/auth", authRoutes);
+app.use("/api/tareas", tareaRoutes);
 // Resto de rutas se agregarán aquí
 
 
