@@ -2,28 +2,20 @@ import express from 'express';
 const router = express.Router();
 
 import * as controller from '../controllers/sprint.controller.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
 
-// Middleware (DESACTIVADO TEMPORALMENTE)
-// import { authMiddleware } from '../middleware/auth.middleware.js';
 
-// TODO: activar cuando login esté listo
+const useAuth = process.env.USE_AUTH === "true";
 
-router.get('/', controller.getSprints);
-// router.get('/', authMiddleware, controller.getSprints);
+// Si USE_AUTH = false → deja pasar todo
+// Si USE_AUTH = true → activa JWT
+const protect = useAuth ? authMiddleware : (req, res, next) => next();
 
-router.post('/', controller.createSprint);
-// router.post('/', authMiddleware, controller.createSprint);
-
-router.get('/:id', controller.getSprintById);
-// router.get('/:id', authMiddleware, controller.getSprintById);
-
-router.put('/:id', controller.updateSprint);
-// router.put('/:id', authMiddleware, controller.updateSprint);
-
-router.delete('/:id', controller.deleteSprint);
-// router.delete('/:id', authMiddleware, controller.deleteSprint);
-
-router.patch('/:id/estado', controller.updateEstado);
-// router.patch('/:id/estado', authMiddleware, controller.updateEstado);
+router.get('/', protect, controller.getSprints);
+router.post('/', protect, controller.createSprint);
+router.get('/:id', protect, controller.getSprintById);
+router.put('/:id', protect, controller.updateSprint);
+router.delete('/:id', protect, controller.deleteSprint);
+router.patch('/:id/estado', protect, controller.updateEstado);
 
 export default router;

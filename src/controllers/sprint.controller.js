@@ -1,21 +1,10 @@
-// Simulación de base de datos (temporal)
-// 🔥 Cuando conectes MySQL, esto se reemplaza por consultas SQL
-let sprints = [];
+import pool from "../utils/database.js";
 
-// Crear Sprint
-export const createSprint = (req, res) => {
+// ✅ CREAR
+export const createSprint = async (req, res) => {
   try {
-    // 🔥 VALIDACIÓN EXTRA (evita req.body undefined)
-    if (!req.body) {
-      return res.status(400).json({
-        success: false,
-        message: "Body requerido",
-      });
-    }
-
     const { nombre, fechaInicio, fechaFin, velocidad } = req.body;
 
-    // Validación básica
     if (!nombre || !fechaInicio || !fechaFin || !velocidad) {
       return res.status(400).json({
         success: false,
@@ -23,179 +12,135 @@ export const createSprint = (req, res) => {
       });
     }
 
-    const newSprint = {
-      id: Date.now(),
-      nombre,
-      fechaInicio,
-      fechaFin,
-      velocidad,
-      estado: "pendiente",
-    };
+    const [result] = await pool.query(
+      `INSERT INTO sprints (nombre, fecha_inicio, fecha_fin, velocidad)
+       VALUES (?, ?, ?, ?)`,
+      [nombre, fechaInicio, fechaFin, velocidad]
+    );
 
-    sprints.push(newSprint);
-
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      data: newSprint,
-      message: "Sprint creado correctamente",
+      message: "Sprint creado en BD",
+      id: result.insertId,
     });
 
   } catch (error) {
     console.error("Error createSprint:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error interno del servidor",
-    });
+    res.status(500).json({ success: false });
   }
 };
 
-// Obtener todos
-export const getSprints = (req, res) => {
+// ✅ OBTENER TODOS
+export const getSprints = async (req, res) => {
   try {
-    return res.json({
+    const [rows] = await pool.query("SELECT * FROM sprints");
+
+    res.json({
       success: true,
-      data: sprints,
-      message: "Sprints obtenidos",
+      data: rows,
     });
+
   } catch (error) {
-    console.error("Error getSprints:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error interno",
-    });
+    console.error(error);
+    res.status(500).json({ success: false });
   }
 };
 
-// Obtener por ID
-export const getSprintById = (req, res) => {
+// ✅ OBTENER POR ID
+export const getSprintById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const sprint = sprints.find(s => s.id == id);
+    const [rows] = await pool.query(
+      "SELECT * FROM sprints WHERE id = ?",
+      [id]
+    );
 
-    if (!sprint) {
+    if (rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Sprint no encontrado",
       });
     }
 
-    return res.json({
+    res.json({
       success: true,
-      data: sprint,
+      data: rows[0],
     });
 
   } catch (error) {
-    console.error("Error getSprintById:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error interno",
-    });
+    console.error(error);
+    res.status(500).json({ success: false });
   }
 };
 
-// 🔥 UPDATE ROBUSTO (NO SE CAE)
-export const updateSprint = (req, res) => {
+// ✅ ACTUALIZAR
+export const updateSprint = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // 🔥 VALIDAR BODY
-    if (!req.body) {
-      return res.status(400).json({
-        success: false,
-        message: "Body requerido",
-      });
-    }
-
     const { nombre, fechaInicio, fechaFin, velocidad } = req.body;
 
-    const index = sprints.findIndex(s => s.id == id);
+    const [result] = await pool.query(
+      `UPDATE sprints
+       SET nombre = ?, fecha_inicio = ?, fecha_fin = ?, velocidad = ?
+       WHERE id = ?`,
+      [nombre, fechaInicio, fechaFin, velocidad, id]
+    );
 
-    if (index === -1) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
         message: "Sprint no encontrado",
       });
     }
 
-    // Actualización segura
-    if (nombre !== undefined) sprints[index].nombre = nombre;
-    if (fechaInicio !== undefined) sprints[index].fechaInicio = fechaInicio;
-    if (fechaFin !== undefined) sprints[index].fechaFin = fechaFin;
-    if (velocidad !== undefined) sprints[index].velocidad = velocidad;
-
-    return res.json({
+    res.json({
       success: true,
-      data: sprints[index],
-      message: "Sprint actualizado correctamente",
+      message: "Sprint actualizado",
     });
 
   } catch (error) {
-    console.error("Error updateSprint:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al actualizar sprint",
-    });
+    console.error(error);
+    res.status(500).json({ success: false });
   }
 };
 
-// Eliminar
-export const deleteSprint = (req, res) => {
+// ✅ ELIMINAR
+export const deleteSprint = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const index = sprints.findIndex(s => s.id == id);
+    const [result] = await pool.query(
+      "DELETE FROM sprints WHERE id = ?",
+      [id]
+    );
 
-    if (index === -1) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
         message: "Sprint no encontrado",
       });
     }
 
-    const deleted = sprints.splice(index, 1);
-
-    return res.json({
+    res.json({
       success: true,
-      data: deleted[0],
-      message: "Sprint eliminado correctamente",
+      message: "Sprint eliminado",
     });
 
   } catch (error) {
-    console.error("Error deleteSprint:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al eliminar",
-    });
+    console.error(error);
+    res.status(500).json({ success: false });
   }
 };
 
-// Cambiar estado
-export const updateEstado = (req, res) => {
+// ✅ CAMBIAR ESTADO
+export const updateEstado = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // 🔥 VALIDAR BODY
-    if (!req.body) {
-      return res.status(400).json({
-        success: false,
-        message: "Body requerido",
-      });
-    }
-
     const { estado } = req.body;
 
-    const sprint = sprints.find(s => s.id == id);
-
-    if (!sprint) {
-      return res.status(404).json({
-        success: false,
-        message: "Sprint no encontrado",
-      });
-    }
-
-    // 🔥 VALIDACIÓN DE ESTADO (PRO)
     const estadosValidos = ["pendiente", "en_curso", "finalizado"];
+
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
@@ -203,19 +148,25 @@ export const updateEstado = (req, res) => {
       });
     }
 
-    sprint.estado = estado;
+    const [result] = await pool.query(
+      "UPDATE sprints SET estado = ? WHERE id = ?",
+      [estado, id]
+    );
 
-    return res.json({
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Sprint no encontrado",
+      });
+    }
+
+    res.json({
       success: true,
-      data: sprint,
       message: "Estado actualizado",
     });
 
   } catch (error) {
-    console.error("Error updateEstado:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error interno",
-    });
+    console.error(error);
+    res.status(500).json({ success: false });
   }
 };

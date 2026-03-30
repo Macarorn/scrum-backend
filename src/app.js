@@ -1,3 +1,4 @@
+import pool from "./utils/database.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -60,6 +61,11 @@ app.get("/", (req, res) => {
 // 🔥 ERRORES
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// 🔥 PROBAR CONEXIÓN A BD (temporal)
+pool.getConnection()
+  .then(() => console.log("🔥 Conectado a MySQL"))
+  .catch(err => console.error("❌ Error DB:", err));
 
 
 // 🔥 SERVIDOR
