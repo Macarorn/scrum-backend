@@ -13,6 +13,10 @@ import {
 
 // Rutas
 import authRoutes from "./routes/auth.routes.js";
+import epicasRoutes from "./routes/epicas.routes.js";
+import historiasRoutes from "./routes/historias.routes.js";
+import criteriosRoutes from "./routes/criterios.routes.js";
+import etiquetasRoutes from "./routes/etiquetas.routes.js";
 
 dotenv.config();
 
@@ -64,7 +68,11 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-// Resto de rutas se agregarán aquí
+
+app.use("/api/epicas", epicasRoutes);
+app.use("/api/historias", historiasRoutes);
+app.use("/api/criterios", criteriosRoutes);
+app.use("/api/etiquetas", etiquetasRoutes);
 
 
 // MANEJO DE ERRORES
