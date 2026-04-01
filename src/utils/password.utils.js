@@ -10,7 +10,7 @@ export const comparePassword = async (password, hashedPassword) => {
 };
 
 export const validatePassword = (password) => {
-  // Mínimo 8 caracteres, 1 mayúscula, 1 número, 1 símbolo
-  const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  // Mínimo 8 caracteres, 1 mayúscula y 1 número
+  const regex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
   return regex.test(password);
 };

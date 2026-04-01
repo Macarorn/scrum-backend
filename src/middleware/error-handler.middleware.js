@@ -9,7 +9,9 @@ export const errorHandler = (err, req, res, next) => {
     success: false,
     error: error,
     message: message,
-    details: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    details:
+      err.details ||
+      (process.env.NODE_ENV === "development" ? { stack: err.stack } : {}),
   });
 };
 
@@ -18,6 +20,8 @@ export const notFoundHandler = (req, res) => {
     success: false,
     error: "NOT_FOUND",
     message: "Ruta no encontrada",
-    path: req.originalUrl,
+    details: {
+      path: req.originalUrl,
+    },
   });
 };

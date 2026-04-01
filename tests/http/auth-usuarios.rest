@@ -1,0 +1,78 @@
+@baseUrl = http://localhost:3000
+@adminEmail = admin@scrum.local
+@adminPassword = Admin1234
+
+### Healthcheck
+GET {{baseUrl}}/
+
+### Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nombre": "Usuario REST",
+  "email": "usuario.rest@scrum.local",
+  "password": "Password123",
+  "confirmPassword": "Password123"
+}
+
+### Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### Refresh Token
+POST {{baseUrl}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{loginAdmin.response.body.data.refreshToken}}"
+}
+
+### Listar usuarios (admin)
+GET {{baseUrl}}/api/usuarios
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+
+### Listar roles
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+
+### Listar permisos
+GET {{baseUrl}}/api/permisos
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+
+### Perfil admin autenticado
+GET {{baseUrl}}/api/perfil
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+
+### Actualizar perfil admin
+PUT {{baseUrl}}/api/perfil
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "nombre": "Admin Actualizado"
+}
+
+### Asignar rol a usuario
+POST {{baseUrl}}/api/usuarios/2/asignar-rol
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "id_rol": 2
+}
+
+### Logout
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{loginAdmin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{loginAdmin.response.body.data.refreshToken}}"
+}

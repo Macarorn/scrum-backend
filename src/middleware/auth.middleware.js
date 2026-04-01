@@ -9,6 +9,7 @@ export const authMiddleware = (req, res, next) => {
         success: false,
         error: "TOKEN_MISSING",
         message: "Token no proporcionado",
+        details: {},
       });
     }
 
@@ -19,6 +20,7 @@ export const authMiddleware = (req, res, next) => {
         success: false,
         error: "INVALID_TOKEN",
         message: "Token inválido o expirado",
+        details: {},
       });
     }
 
@@ -29,7 +31,7 @@ export const authMiddleware = (req, res, next) => {
       success: false,
       error: "AUTH_ERROR",
       message: "Error en autenticación",
-      details: error.message,
+      details: { reason: error.message },
     });
   }
 };
