@@ -37,8 +37,8 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX),
+  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW, 10) || 15) * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
   message: "Demasiadas solicitudes, intenta más tarde",
 });
 app.use("/api/", limiter);
@@ -82,7 +82,12 @@ app.use(errorHandler);
 
 // INICIAR SERVIDOR
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📝 Ambiente: ${process.env.NODE_ENV}`);
-});
+// En tests se exporta solo la app, sin levantar el servidor.
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Ambiente: ${process.env.NODE_ENV}`);
+  });
+}
+
+export default app;
