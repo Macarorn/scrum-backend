@@ -1,0 +1,63 @@
+@baseUrl = http://localhost:3000
+@token = JWT_AQUI
+
+### Listar tareas por sprint
+GET {{baseUrl}}/api/tareas?sprintId=1
+Authorization: Bearer {{token}}
+
+### Crear tarea
+POST {{baseUrl}}/api/tareas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Crear pantalla de backlog",
+  "descripcion": "Construir vista principal",
+  "sprintId": 1,
+  "responsableId": 10,
+  "prioridad": 3,
+  "tipo": "feature",
+  "storyPoints": 5,
+  "orden": 1
+}
+
+### Obtener tarea por id
+GET {{baseUrl}}/api/tareas/1
+Authorization: Bearer {{token}}
+
+### Actualizar tarea
+PUT {{baseUrl}}/api/tareas/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Actualizar pantalla de backlog",
+  "prioridad": 2,
+  "storyPoints": 8
+}
+
+### Eliminar tarea (soft delete)
+DELETE {{baseUrl}}/api/tareas/1
+Authorization: Bearer {{token}}
+
+### Cambiar estado (solo asignados)
+PATCH {{baseUrl}}/api/tareas/1/estado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estado": "en_progreso"
+}
+
+### Actualizar orden
+PUT {{baseUrl}}/api/tareas/1/orden
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "orden": 3
+}
+
+### Eliminar comentario por endpoint global
+DELETE {{baseUrl}}/api/comentarios/1
+Authorization: Bearer {{token}}
