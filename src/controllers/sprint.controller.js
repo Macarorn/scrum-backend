@@ -20,13 +20,24 @@ export const createSprint = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Sprint creado en BD",
-      id: result.insertId,
+      data : {
+        id :result.insertId,
+        nombre,
+        fechaInicio,
+        fechaFin,
+        velocidad
+      },
+      message: "sprint creado correctamente"
     });
 
   } catch (error) {
     console.error("Error createSprint:", error);
-    res.status(500).json({ success: false });
+    res.status(500).json({ 
+      success: false,
+      error: "INTERNAL_ERROR",
+      message :"Error interno del servidor"
+    
+    });
   }
 };
 
