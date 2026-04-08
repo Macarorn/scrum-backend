@@ -1,0 +1,29 @@
+### Pruebas de integración para /api/criterios
+
+@token = JWT_AQUI
+
+### Listar criterios de aceptación de una historia
+GET http://localhost:3000/api/historias/1/criterios
+Authorization: Bearer {{token}}
+
+### Crear criterio
+POST http://localhost:3000/api/historias/1/criterios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Criterio de aceptación test"
+}
+
+### Actualizar criterio
+PUT http://localhost:3000/api/criterios/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "descripcion": "Criterio actualizado"
+}
+
+### Eliminar criterio
+DELETE http://localhost:3000/api/criterios/1
+Authorization: Bearer {{token}}

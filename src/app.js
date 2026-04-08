@@ -4,16 +4,18 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
-// Middleware personalizado
 import {
   errorHandler,
   notFoundHandler,
 } from "./middleware/error-handler.middleware.js";
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 
-// Rutas
 import authRoutes from "./routes/auth.routes.js";
 import usersRoutes from "./routes/users.routes.js";
+import epicasRoutes from "./routes/epicas.routes.js";
+import historiasRoutes from "./routes/historias.routes.js";
+import criteriosRoutes from "./routes/criterios.routes.js";
+import etiquetasRoutes from "./routes/etiquetas.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 
 dotenv.config();
@@ -23,9 +25,6 @@ const PORT = process.env.PORT || 3000;
 
 await bootstrapStore();
 
-// MIDDLEWARES GLOBALES
-
-// Seguridad
 app.use(helmet());
 app.use(
   cors({
@@ -34,27 +33,21 @@ app.use(
   }),
 );
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW, 10) || 15) * 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
-  message: "Demasiadas solicitudes, intenta más tarde",
+  message: "Demasiadas solicitudes, intenta mas tarde",
 });
 app.use("/api/", limiter);
 
-// Parseo de datos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Logger
 app.use(requestLogger);
-
-// RUTAS
 
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Scrum App API - Backend funcionando ✅",
+    message: "Scrum App API - Backend funcionando",
     version: "1.0.0",
     endpoints: {
       auth: "/api/auth",
@@ -62,19 +55,23 @@ app.get("/", (req, res) => {
       perfil: "/api/perfil",
       roles: "/api/roles",
       permisos: "/api/permisos",
+      epicas: "/api/epicas",
+      historias: "/api/historias",
+      criterios: "/api/criterios",
+      etiquetas: "/api/etiquetas",
     },
   });
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
-
-// MANEJO DE ERRORES
+app.use("/api/epicas", epicasRoutes);
+app.use("/api/historias", historiasRoutes);
+app.use("/api/criterios", criteriosRoutes);
+app.use("/api/etiquetas", etiquetasRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-// INICIAR SERVIDOR
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {

@@ -1,0 +1,29 @@
+### Pruebas de integración para /api/etiquetas
+
+@token = JWT_AQUI
+
+### Listar etiquetas
+GET http://localhost:3000/api/etiquetas
+Authorization: Bearer {{token}}
+
+### Crear etiqueta
+POST http://localhost:3000/api/etiquetas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Etiqueta Test"
+}
+
+### Actualizar etiqueta
+PUT http://localhost:3000/api/etiquetas/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Etiqueta Actualizada"
+}
+
+### Eliminar etiqueta
+DELETE http://localhost:3000/api/etiquetas/1
+Authorization: Bearer {{token}}
