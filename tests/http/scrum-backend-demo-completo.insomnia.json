@@ -60,9 +60,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"{{ _.adminEmail }}\",\n  \"password\": \"{{ _.adminPassword }}\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/auth/login",
       "_type": "request"
     },
@@ -77,9 +75,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"{{ _.poEmail }}\",\n  \"password\": \"{{ _.poPassword }}\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/auth/login",
       "_type": "request"
     },
@@ -94,9 +90,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"{{ _.smEmail }}\",\n  \"password\": \"{{ _.smPassword }}\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/auth/login",
       "_type": "request"
     },
@@ -111,9 +105,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/auth/refresh-token",
       "_type": "request"
     },
@@ -128,9 +120,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/auth/logout",
       "authentication": {
         "type": "bearer",
@@ -193,9 +183,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"nombre\": \"Epica Demo\",\n  \"proyectoId\": 1,\n  \"descripcion\": \"Flujo demo\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/epicas",
       "authentication": {
         "type": "bearer",
@@ -214,9 +202,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"nombre\": \"Historia Demo\",\n  \"epicaId\": {{ _.epicaId }},\n  \"prioridad\": 3,\n  \"storyPoints\": 5\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/historias",
       "authentication": {
         "type": "bearer",
@@ -243,9 +229,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"id_proyecto\": 1,\n  \"nombre\": \"Sprint Demo\",\n  \"meta\": \"Demo final\",\n  \"fecha_inicio\": \"2026-04-07\",\n  \"fecha_fin\": \"2026-04-21\",\n  \"estado\": \"planeado\",\n  \"velocidad_estimada\": 20\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/sprints",
       "authentication": {
         "type": "bearer",
@@ -264,9 +248,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"estado\": \"completado\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/sprints/{{ _.sprintId }}/estado",
       "authentication": {
         "type": "bearer",
@@ -293,9 +275,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"nombre\": \"Tarea Demo\",\n  \"descripcion\": \"Implementar demo\",\n  \"id_historia\": {{ _.historiaId }},\n  \"id_usuario_responsable\": {{ _.userId }},\n  \"prioridad\": \"alta\",\n  \"tipo\": \"RF\",\n  \"story_points\": 5,\n  \"estado\": \"por_hacer\",\n  \"estimacion_dias\": 2,\n  \"orden_columna\": 1\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/tareas",
       "authentication": {
         "type": "bearer",
@@ -314,9 +294,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"estado\": \"en_progreso\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/tareas/{{ _.tareaId }}/estado",
       "authentication": {
         "type": "bearer",
@@ -335,9 +313,7 @@
         "mimeType": "application/json",
         "text": "{\n  \"comentario\": \"Comentario demo\"\n}"
       },
-      "headers": [
-        { "name": "Content-Type", "value": "application/json" }
-      ],
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "url": "{{ _.baseUrl }}/api/tareas/{{ _.tareaId }}/comentarios",
       "authentication": {
         "type": "bearer",
