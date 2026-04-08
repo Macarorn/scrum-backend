@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "Scrum API - Sprints (Pro)",
+    "_postman_id": "abc123",
+    "description": "Colección completa y profesional para pruebas del módulo de Sprints con variables y JWT",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "id",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "GET Sprints",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/sprints"
+      }
+    },
+    {
+      "name": "POST Crear Sprint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sprint 1\",\n  \"fechaInicio\": \"2026-03-01\",\n  \"fechaFin\": \"2026-03-10\",\n  \"velocidad\": 10\n}"
+        },
+        "url": "{{base_url}}/api/sprints"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let json = pm.response.json();",
+              "if (json.data && json.data.id) {",
+              "    pm.environment.set('id', json.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET Sprint por ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/sprints/{{id}}"
+      }
+    },
+    {
+      "name": "PUT Actualizar Sprint",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sprint actualizado\",\n  \"fechaInicio\": \"2026-03-01\",\n  \"fechaFin\": \"2026-03-15\",\n  \"velocidad\": 20\n}"
+        },
+        "url": "{{base_url}}/api/sprints/{{id}}"
+      }
+    },
+    {
+      "name": "PATCH Estado Sprint",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"en_curso\"\n}"
+        },
+        "url": "{{base_url}}/api/sprints/{{id}}/estado"
+      }
+    },
+    {
+      "name": "DELETE Sprint",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/api/sprints/{{id}}"
+      }
+    }
+  ]
+}

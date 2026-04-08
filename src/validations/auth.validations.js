@@ -1,5 +1,5 @@
-import { validateEmail, validateString } from "../utils/validators.js";
 import { validatePassword } from "../utils/password.utils.js";
+import { validateEmail, validateString } from "../utils/validators.js";
 
 export const validateRegister = (email, nombre, password, confirmPassword) => {
   const errors = {};
@@ -14,7 +14,7 @@ export const validateRegister = (email, nombre, password, confirmPassword) => {
 
   if (!validatePassword(password)) {
     errors.password =
-      "Contraseña debe tener mín 8 caracteres, 1 mayúscula, 1 número y 1 símbolo";
+      "Contraseña debe tener mínimo 8 caracteres, 1 mayúscula y 1 número";
   }
 
   if (password !== confirmPassword) {
@@ -36,6 +36,28 @@ export const validateLogin = (email, password) => {
 
   if (!validateString(password, 1)) {
     errors.password = "Contraseña requerida";
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
+};
+
+export const validateProfileUpdate = ({ email, nombre, password }) => {
+  const errors = {};
+
+  if (email && !validateEmail(email)) {
+    errors.email = "Email inválido";
+  }
+
+  if (nombre && !validateString(nombre, 3, 100)) {
+    errors.nombre = "Nombre debe tener entre 3 y 100 caracteres";
+  }
+
+  if (password && !validatePassword(password)) {
+    errors.password =
+      "Contraseña debe tener mínimo 8 caracteres, 1 mayúscula y 1 número";
   }
 
   return {
