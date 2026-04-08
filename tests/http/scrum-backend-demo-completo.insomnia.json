@@ -24,6 +24,10 @@
         "baseUrl": "http://localhost:3000",
         "adminEmail": "admin@scrum.local",
         "adminPassword": "Admin1234",
+        "poEmail": "sofia@scrum.local",
+        "poPassword": "Sofia1234",
+        "smEmail": "mariana@scrum.local",
+        "smPassword": "Mariana1234",
         "accessToken": "",
         "refreshToken": "",
         "userId": "2",
@@ -63,6 +67,40 @@
       "_type": "request"
     },
     {
+      "_id": "req_login_po_demo",
+      "parentId": "fld_auth_demo",
+      "modified": 0,
+      "created": 0,
+      "name": "Login Product Owner",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.poEmail }}\",\n  \"password\": \"{{ _.poPassword }}\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "_type": "request"
+    },
+    {
+      "_id": "req_login_sm_demo",
+      "parentId": "fld_auth_demo",
+      "modified": 0,
+      "created": 0,
+      "name": "Login Scrum Master",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.smEmail }}\",\n  \"password\": \"{{ _.smPassword }}\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "_type": "request"
+    },
+    {
       "_id": "req_refresh_demo",
       "parentId": "fld_auth_demo",
       "modified": 0,
@@ -77,6 +115,27 @@
         { "name": "Content-Type", "value": "application/json" }
       ],
       "url": "{{ _.baseUrl }}/api/auth/refresh-token",
+      "_type": "request"
+    },
+    {
+      "_id": "req_logout_demo",
+      "parentId": "fld_auth_demo",
+      "modified": 0,
+      "created": 0,
+      "name": "Logout",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/logout",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
       "_type": "request"
     },
     {

@@ -116,7 +116,13 @@ Archivos de apoyo para pruebas manuales:
 
 - Postman: `tests/http/scrum-backend-demo-completo.postman_collection.json`
 - Insomnia: `tests/http/scrum-backend-demo-completo.insomnia.json`
-- Recomendación de flujo: `Login Admin` -> `Usuarios` -> `Backlog` -> `Sprints` -> `Tareas` -> `Logout`.
+- Recomendación de flujo: `Login Admin` (solo para usuarios/roles) -> `Login Product Owner` o `Login Scrum Master` (para backlog) -> `Sprints` -> `Tareas` -> `Logout`.
+
+Credenciales semilla para demo:
+
+- Admin: `admin@scrum.local` / `Admin1234`
+- Product Owner: `sofia@scrum.local` / `Sofia1234`
+- Scrum Master: `mariana@scrum.local` / `Mariana1234`
 
 ### Alineación con el esquema
 

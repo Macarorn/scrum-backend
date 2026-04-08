@@ -3,6 +3,21 @@ import { hashPassword } from "./password.utils.js";
 const roles = [
   { id_rol: 1, nombre_rol: "admin", descripcion: "Acceso total al sistema" },
   { id_rol: 2, nombre_rol: "usuario", descripcion: "Acceso estandar" },
+  {
+    id_rol: 3,
+    nombre_rol: "Product Owner",
+    descripcion: "Gestiona backlog y prioridades del producto",
+  },
+  {
+    id_rol: 4,
+    nombre_rol: "Scrum Master",
+    descripcion: "Facilita el proceso Scrum del equipo",
+  },
+  {
+    id_rol: 5,
+    nombre_rol: "Developer",
+    descripcion: "Implementa tareas tecnicas del sprint",
+  },
 ];
 
 const permisos = [
@@ -30,6 +45,9 @@ const permisos = [
 const rolePermissions = {
   admin: permisos.map((p) => p.nombre),
   usuario: ["perfil:update"],
+  "Product Owner": ["perfil:update"],
+  "Scrum Master": ["perfil:update"],
+  Developer: ["perfil:update"],
 };
 
 const users = [];
@@ -93,7 +111,24 @@ export const bootstrapStore = async () => {
     password: "Admin1234",
     id_rol: 1,
   });
+
+  const productOwner = await buildUser({
+    nombre: "Sofia Product Owner",
+    email: "sofia@scrum.local",
+    password: "Sofia1234",
+    id_rol: 3,
+  });
+
+  const scrumMaster = await buildUser({
+    nombre: "Mariana Scrum Master",
+    email: "mariana@scrum.local",
+    password: "Mariana1234",
+    id_rol: 4,
+  });
+
   users.push(admin);
+  users.push(productOwner);
+  users.push(scrumMaster);
 };
 
 export const createUser = async ({

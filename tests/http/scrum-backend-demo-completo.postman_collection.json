@@ -9,6 +9,10 @@
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "adminEmail", "value": "admin@scrum.local" },
     { "key": "adminPassword", "value": "Admin1234" },
+    { "key": "poEmail", "value": "sofia@scrum.local" },
+    { "key": "poPassword", "value": "Sofia1234" },
+    { "key": "smEmail", "value": "mariana@scrum.local" },
+    { "key": "smPassword", "value": "Mariana1234" },
     { "key": "accessToken", "value": "" },
     { "key": "refreshToken", "value": "" },
     { "key": "userId", "value": "2" },
@@ -59,6 +63,58 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Product Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "if (json?.data?.user?.id_usuario) pm.collectionVariables.set('userId', String(json.data.user.id_usuario));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{poEmail}}\",\n  \"password\": \"{{poPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Scrum Master",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "if (json?.data?.user?.id_usuario) pm.collectionVariables.set('userId', String(json.data.user.id_usuario));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{smEmail}}\",\n  \"password\": \"{{smPassword}}\"\n}"
             }
           }
         },
