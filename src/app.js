@@ -11,11 +11,11 @@ import {
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 
 import authRoutes from "./routes/auth.routes.js";
-import usersRoutes from "./routes/users.routes.js";
-import epicasRoutes from "./routes/epicas.routes.js";
-import historiasRoutes from "./routes/historias.routes.js";
 import criteriosRoutes from "./routes/criterios.routes.js";
+import epicasRoutes from "./routes/epicas.routes.js";
 import etiquetasRoutes from "./routes/etiquetas.routes.js";
+import historiasRoutes from "./routes/historias.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 
 dotenv.config();

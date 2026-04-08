@@ -21,6 +21,24 @@ describe("Integracion Auth + Usuarios", () => {
   let refreshToken = "";
   let userId = 0;
 
+  it("GET /api/perfil sin token responde 401", async () => {
+    const response = await request(app).get("/api/perfil");
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe("TOKEN_MISSING");
+  });
+
+  it("GET /api/perfil con token invalido responde 401", async () => {
+    const response = await request(app)
+      .get("/api/perfil")
+      .set("Authorization", "Bearer token_invalido");
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe("INVALID_TOKEN");
+  });
+
   it("POST /api/auth/register registra usuario", async () => {
     const response = await request(app).post("/api/auth/register").send({
       nombre: "Usuario Prueba",
