@@ -8,17 +8,71 @@ function crearError(message, statusCode, error, details = undefined) {
 }
 
 function obtenerIndiceTarea(id) {
-  return tareas.findIndex((tarea) => tarea.id === Number(id));
+  return tareas.findIndex((tarea) => tarea.id_tarea === Number(id));
 }
 
-// Devuelve tareas activas y permite filtrar por sprint y estado.
-export function listarTareasPorSprint(sprintId, estado) {
-  return tareas.filter((tarea) => {
-    if (!tarea.activo) {
-      return false;
+function normalizarIdHistoria(data) {
+  return Number(data.id_historia ?? data.historiaId ?? data.sprintId);
+}
+
+function normalizarIdResponsable(data) {
+  return Number(
+    data.id_usuario_responsable ??
+      data.responsableId ??
+      data.id_usuario ??
+      null,
+  );
+}
+
+function normalizarAsignados(data, responsableId) {
+  const asignados = [];
+  if (Number.isInteger(responsableId) && responsableId > 0) {
+    asignados.push({ id_usuario: responsableId, es_responsable: true });
+  }
+
+  const extras = Array.isArray(data.usuarios_asignados)
+    ? data.usuarios_asignados
+    : Array.isArray(data.asignados)
+      ? data.asignados
+      : [];
+
+  for (const usuario of extras) {
+    const id_usuario = Number(usuario.id_usuario ?? usuario);
+    if (!Number.isInteger(id_usuario) || id_usuario <= 0) {
+      continue;
     }
 
-    if (sprintId !== undefined && tarea.sprintId !== Number(sprintId)) {
+    if (!asignados.some((item) => item.id_usuario === id_usuario)) {
+      asignados.push({
+        id_usuario,
+        es_responsable: Boolean(
+          usuario.es_responsable && id_usuario === responsableId,
+        ),
+      });
+    }
+  }
+
+  return asignados;
+}
+
+function encontrarTareaActiva(id) {
+  return tareas.find((tarea) => tarea.id_tarea === Number(id)) || null;
+}
+
+function limpiarTarea(tarea) {
+  return {
+    ...tarea,
+    asignados: tarea.asignados.map((usuario) => ({ ...usuario })),
+    etiquetas: [...tarea.etiquetas],
+    comentarios: tarea.comentarios.map((comentario) => ({ ...comentario })),
+    historial: tarea.historial.map((item) => ({ ...item })),
+  };
+}
+
+// Devuelve tareas activas y permite filtrar por historia y estado.
+export function listarTareasPorHistoria(idHistoria, estado) {
+  return tareas.filter((tarea) => {
+    if (idHistoria !== undefined && tarea.id_historia !== Number(idHistoria)) {
       return false;
     }
 
@@ -32,185 +86,249 @@ export function listarTareasPorSprint(sprintId, estado) {
 
 // Crea una tarea y registra automaticamente el evento en historial.
 export function crearTarea(data, userId) {
+  const responsableId = normalizarIdResponsable(data);
   const nuevaTarea = {
-    id: nextTareaId++,
-    titulo: data.titulo,
+    id_tarea: nextTareaId++,
+    id_historia: normalizarIdHistoria(data),
+    nombre: data.nombre,
     descripcion: data.descripcion || "",
-    sprintId: Number(data.sprintId),
-    prioridad: Number(data.prioridad),
     tipo: data.tipo,
-    storyPoints: data.storyPoints,
-    estado: "por_hacer",
-    orden: Number(data.orden) || 0,
-    responsableId: Number(data.responsableId),
-    tiempoReal: Number(data.tiempoReal) || 0,
-    asignados: Array.from(new Set([Number(data.responsableId)])),
+    estado: data.estado || "por_hacer",
+    prioridad: data.prioridad || "media",
+    story_points: data.story_points ?? data.storyPoints ?? null,
+    estimacion_dias: data.estimacion_dias ?? data.estimacionDias ?? null,
+    tiempo_real: data.tiempo_real ?? data.tiempoReal ?? 0,
+    orden_columna:
+      Number(data.orden_columna ?? data.ordenColumna ?? data.orden) || 0,
+    fecha_inicio: data.fecha_inicio ?? data.fechaInicio ?? null,
+    fecha_fin_est: data.fecha_fin_est ?? data.fechaFinEst ?? null,
+    fecha_fin_real: data.fecha_fin_real ?? data.fechaFinReal ?? null,
+    asignados: normalizarAsignados(data, responsableId),
     etiquetas: [],
     comentarios: [],
     historial: [],
-    activo: true,
-    createdBy: Number(userId) || null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    creado_por: Number(userId) || null,
+    fecha_creacion: new Date().toISOString(),
+    fecha_modificacion: new Date().toISOString(),
   };
 
   tareas.push(nuevaTarea);
-  registrarAuditoriaHistorial(nuevaTarea.id, userId, "Tarea creada");
-  return nuevaTarea;
+  registrarAuditoriaHistorial(nuevaTarea.id_tarea, userId, "Tarea creada");
+  return limpiarTarea(nuevaTarea);
 }
 
 export function obtenerTareaPorId(id) {
-  return tareas.find((tarea) => tarea.id === Number(id) && tarea.activo) || null;
+  const tarea = encontrarTareaActiva(id);
+  return tarea ? limpiarTarea(tarea) : null;
 }
 
 export function actualizarTareaPorId(id, data, userId) {
   const indice = obtenerIndiceTarea(id);
-  if (indice < 0 || !tareas[indice].activo) {
+  if (indice < 0) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
+  const tareaAnterior = tareas[indice];
   tareas[indice] = {
     ...tareas[indice],
-    ...data,
-    sprintId:
-      data.sprintId !== undefined ? Number(data.sprintId) : tareas[indice].sprintId,
+    nombre: data.nombre !== undefined ? data.nombre : tareas[indice].nombre,
+    descripcion:
+      data.descripcion !== undefined
+        ? data.descripcion
+        : tareas[indice].descripcion,
+    tipo: data.tipo !== undefined ? data.tipo : tareas[indice].tipo,
+    estado: data.estado !== undefined ? data.estado : tareas[indice].estado,
+    id_historia:
+      data.id_historia !== undefined
+        ? Number(data.id_historia)
+        : data.historiaId !== undefined
+          ? Number(data.historiaId)
+          : data.sprintId !== undefined
+            ? Number(data.sprintId)
+            : tareas[indice].id_historia,
     prioridad:
-      data.prioridad !== undefined ? Number(data.prioridad) : tareas[indice].prioridad,
-    responsableId:
-      data.responsableId !== undefined
-        ? Number(data.responsableId)
-        : tareas[indice].responsableId,
-    updatedAt: new Date().toISOString(),
+      data.prioridad !== undefined ? data.prioridad : tareas[indice].prioridad,
+    story_points:
+      data.story_points !== undefined
+        ? data.story_points
+        : data.storyPoints !== undefined
+          ? data.storyPoints
+          : tareas[indice].story_points,
+    estimacion_dias:
+      data.estimacion_dias !== undefined
+        ? data.estimacion_dias
+        : data.estimacionDias !== undefined
+          ? data.estimacionDias
+          : tareas[indice].estimacion_dias,
+    tiempo_real:
+      data.tiempo_real !== undefined
+        ? data.tiempo_real
+        : data.tiempoReal !== undefined
+          ? data.tiempoReal
+          : tareas[indice].tiempo_real,
+    orden_columna:
+      data.orden_columna !== undefined
+        ? Number(data.orden_columna)
+        : data.ordenColumna !== undefined
+          ? Number(data.ordenColumna)
+          : data.orden !== undefined
+            ? Number(data.orden)
+            : tareas[indice].orden_columna,
+    fecha_modificacion: new Date().toISOString(),
   };
 
-  registrarAuditoriaHistorial(id, userId, "Tarea actualizada");
-  return tareas[indice];
+  registrarAuditoriaHistorial(
+    id,
+    userId,
+    "Tarea actualizada",
+    tareaAnterior.estado,
+    tareas[indice].estado,
+  );
+  return limpiarTarea(tareas[indice]);
 }
 
 export function eliminarTareaPorId(id, userId) {
   const indice = obtenerIndiceTarea(id);
-  if (indice < 0 || !tareas[indice].activo) {
+  if (indice < 0) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  // Soft delete: se marca inactiva en vez de borrar fisicamente.
-  tareas[indice].activo = false;
-  tareas[indice].updatedAt = new Date().toISOString();
-  registrarAuditoriaHistorial(id, userId, "Tarea eliminada (soft delete)");
-  return { id: Number(id), eliminado: true, softDelete: true };
+  registrarAuditoriaHistorial(id, userId, "Tarea eliminada");
+  tareas.splice(indice, 1);
+  return { id_tarea: Number(id), eliminado: true };
 }
 
 export function cambiarEstadoTarea(id, nuevoEstado, userId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
   const estadoAnterior = tarea.estado;
   tarea.estado = nuevoEstado;
-  tarea.updatedAt = new Date().toISOString();
+  tarea.fecha_modificacion = new Date().toISOString();
   registrarAuditoriaHistorial(
     id,
     userId,
     `Estado actualizado: ${estadoAnterior} -> ${nuevoEstado}`,
+    estadoAnterior,
+    nuevoEstado,
   );
 
-  return tarea;
+  return limpiarTarea(tarea);
 }
 
 export function actualizarOrdenTarea(id, nuevoOrden, userId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  tarea.orden = Number(nuevoOrden);
-  tarea.updatedAt = new Date().toISOString();
-  registrarAuditoriaHistorial(id, userId, `Orden actualizado a ${tarea.orden}`);
-  return tarea;
+  tarea.orden_columna = Number(nuevoOrden);
+  tarea.fecha_modificacion = new Date().toISOString();
+  registrarAuditoriaHistorial(
+    id,
+    userId,
+    `Orden actualizado a ${tarea.orden_columna}`,
+  );
+  return limpiarTarea(tarea);
 }
 
 export function registrarTiempoReal(id, tiempo, userId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  tarea.tiempoReal = Number(tiempo);
-  tarea.updatedAt = new Date().toISOString();
-  registrarAuditoriaHistorial(id, userId, `Tiempo real actualizado a ${tarea.tiempoReal}`);
-  return tarea;
+  tarea.tiempo_real = Number(tiempo);
+  tarea.fecha_modificacion = new Date().toISOString();
+  registrarAuditoriaHistorial(
+    id,
+    userId,
+    `Tiempo real actualizado a ${tarea.tiempo_real}`,
+  );
+  return limpiarTarea(tarea);
 }
 
 export function asignarUsuarioTarea(id, userId, actorId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
   const usuario = Number(userId);
-  if (!tarea.asignados.includes(usuario)) {
-    tarea.asignados.push(usuario);
+  if (!tarea.asignados.some((item) => item.id_usuario === usuario)) {
+    tarea.asignados.push({ id_usuario: usuario, es_responsable: false });
     registrarAuditoriaHistorial(id, actorId, `Usuario ${usuario} asignado`);
   }
 
-  return tarea;
+  return limpiarTarea(tarea);
 }
 
 export function desasignarUsuarioTarea(id, userId, actorId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  tarea.asignados = tarea.asignados.filter((usuario) => usuario !== Number(userId));
-  registrarAuditoriaHistorial(id, actorId, `Usuario ${Number(userId)} desasignado`);
-  return tarea;
+  tarea.asignados = tarea.asignados.filter(
+    (usuario) => usuario.id_usuario !== Number(userId),
+  );
+  registrarAuditoriaHistorial(
+    id,
+    actorId,
+    `Usuario ${Number(userId)} desasignado`,
+  );
+  return limpiarTarea(tarea);
 }
 
 export function listarUsuariosAsignados(id) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  return tarea.asignados;
+  return tarea.asignados.map((usuario) => ({ ...usuario }));
 }
 
 export function obtenerHistorialTarea(id) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  return tarea.historial;
+  return tarea.historial.map((item) => ({ ...item }));
 }
 
 export function listarComentariosTarea(id) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
-  return tarea.comentarios;
+  return tarea.comentarios.map((comentario) => ({ ...comentario }));
 }
 
 export function agregarComentarioTarea(id, comentario, userId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
 
   const nuevoComentario = {
-    id: nextComentarioId++,
-    contenido: comentario,
-    userId: Number(userId),
-    createdAt: new Date().toISOString(),
+    id_comentario: nextComentarioId++,
+    comentario,
+    id_usuario: Number(userId),
+    fecha: new Date().toISOString(),
   };
 
   tarea.comentarios.push(nuevoComentario);
-  registrarAuditoriaHistorial(id, userId, `Comentario ${nuevoComentario.id} agregado`);
-  return nuevoComentario;
+  registrarAuditoriaHistorial(
+    id,
+    userId,
+    `Comentario ${nuevoComentario.id_comentario} agregado`,
+  );
+  return { ...nuevoComentario };
 }
 
 export function eliminarComentario(idComentario, actorId) {
@@ -218,12 +336,16 @@ export function eliminarComentario(idComentario, actorId) {
   for (const tarea of tareas) {
     const cantidadAntes = tarea.comentarios.length;
     tarea.comentarios = tarea.comentarios.filter(
-      (comentario) => comentario.id !== comentarioId,
+      (comentario) => comentario.id_comentario !== comentarioId,
     );
 
     if (tarea.comentarios.length !== cantidadAntes) {
-      registrarAuditoriaHistorial(tarea.id, actorId, `Comentario ${comentarioId} eliminado`);
-      return { id: comentarioId, eliminado: true };
+      registrarAuditoriaHistorial(
+        tarea.id_tarea,
+        actorId,
+        `Comentario ${comentarioId} eliminado`,
+      );
+      return { id_comentario: comentarioId, eliminado: true };
     }
   }
 
@@ -231,7 +353,7 @@ export function eliminarComentario(idComentario, actorId) {
 }
 
 export function asignarEtiquetaTarea(id, etiquetaId, actorId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
@@ -242,11 +364,11 @@ export function asignarEtiquetaTarea(id, etiquetaId, actorId) {
     registrarAuditoriaHistorial(id, actorId, `Etiqueta ${etiqueta} asignada`);
   }
 
-  return tarea;
+  return limpiarTarea(tarea);
 }
 
 export function removerEtiquetaTarea(id, etiquetaId, actorId) {
-  const tarea = obtenerTareaPorId(id);
+  const tarea = encontrarTareaActiva(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
   }
@@ -254,19 +376,31 @@ export function removerEtiquetaTarea(id, etiquetaId, actorId) {
   tarea.etiquetas = tarea.etiquetas.filter(
     (etiqueta) => etiqueta !== Number(etiquetaId),
   );
-  registrarAuditoriaHistorial(id, actorId, `Etiqueta ${Number(etiquetaId)} removida`);
-  return tarea;
+  registrarAuditoriaHistorial(
+    id,
+    actorId,
+    `Etiqueta ${Number(etiquetaId)} removida`,
+  );
+  return limpiarTarea(tarea);
 }
 
-export function registrarAuditoriaHistorial(tareaId, userId, cambio) {
-  const tarea = obtenerTareaPorId(tareaId);
+export function registrarAuditoriaHistorial(
+  tareaId,
+  userId,
+  observacion,
+  estadoAnterior = null,
+  estadoNuevo = null,
+) {
+  const tarea = encontrarTareaActiva(tareaId);
   if (!tarea) {
     return;
   }
 
   tarea.historial.push({
+    id_usuario: Number(userId) || null,
+    estado_anterior: estadoAnterior,
+    estado_nuevo: estadoNuevo,
+    observacion,
     fecha: new Date().toISOString(),
-    userId: Number(userId) || null,
-    cambio,
   });
 }

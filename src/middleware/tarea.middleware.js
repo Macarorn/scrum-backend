@@ -1,9 +1,22 @@
 import { obtenerTareaPorId } from "../services/tarea.service.js";
-import { ESTADOS, esTransicionValida } from "../utils/estado-transicion.utils.js";
+import {
+  ESTADOS,
+  esTransicionValida,
+} from "../utils/estado-transicion.utils.js";
 
 // Normaliza el id del usuario autenticado.
 function userIdFromReq(req) {
   return Number(req.user?.id || req.user?.id_usuario);
+}
+
+function tareaTieneUsuarioAsignado(tarea, userId) {
+  return tarea.asignados.some((usuario) => {
+    if (typeof usuario === "number") {
+      return usuario === userId;
+    }
+
+    return Number(usuario.id_usuario) === userId;
+  });
 }
 
 // Regla: solo usuarios asignados pueden mover el estado de la tarea.
@@ -19,12 +32,12 @@ export async function soloAsignadosPuedenCambiarEstado(req, res, next) {
   }
 
   const userId = userIdFromReq(req);
-  if (!tarea.asignados.includes(userId)) {
+  if (!tareaTieneUsuarioAsignado(tarea, userId)) {
     return res.status(403).json({
       success: false,
       error: "FORBIDDEN",
       message: "Solo usuarios asignados pueden cambiar el estado",
-      details: { tareaId: tarea.id, userId },
+      details: { id_tarea: tarea.id_tarea, userId },
     });
   }
 
@@ -44,12 +57,20 @@ export async function soloResponsablePuedeActualizarTiempo(req, res, next) {
   }
 
   const userId = userIdFromReq(req);
-  if (tarea.responsableId !== userId) {
+  const responsable = tarea.asignados.find((usuario) => {
+    if (typeof usuario === "number") {
+      return usuario === userId;
+    }
+
+    return Number(usuario.id_usuario) === userId && usuario.es_responsable;
+  });
+
+  if (!responsable) {
     return res.status(403).json({
       success: false,
       error: "FORBIDDEN",
       message: "Solo el responsable puede actualizar el tiempo real",
-      details: { tareaId: tarea.id, userId, responsableId: tarea.responsableId },
+      details: { id_tarea: tarea.id_tarea, userId },
     });
   }
 

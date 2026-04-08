@@ -11,13 +11,13 @@ import {
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 
 import authRoutes from "./routes/auth.routes.js";
-import usersRoutes from "./routes/users.routes.js";
-import epicasRoutes from "./routes/epicas.routes.js";
-import historiasRoutes from "./routes/historias.routes.js";
 import criteriosRoutes from "./routes/criterios.routes.js";
+import epicasRoutes from "./routes/epicas.routes.js";
 import etiquetasRoutes from "./routes/etiquetas.routes.js";
+import historiasRoutes from "./routes/historias.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 
 dotenv.config();
@@ -45,9 +45,6 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use(requestLogger);
 
 app.get("/", (req, res) => {
@@ -70,7 +67,6 @@ app.get("/", (req, res) => {
     },
   });
 });
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
