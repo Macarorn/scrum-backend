@@ -9,6 +9,10 @@
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "adminEmail", "value": "admin@scrum.local" },
     { "key": "adminPassword", "value": "Admin1234" },
+    { "key": "poEmail", "value": "sofia@scrum.local" },
+    { "key": "poPassword", "value": "Sofia1234" },
+    { "key": "smEmail", "value": "mariana@scrum.local" },
+    { "key": "smPassword", "value": "Mariana1234" },
     { "key": "accessToken", "value": "" },
     { "key": "refreshToken", "value": "" },
     { "key": "userId", "value": "2" },
@@ -63,6 +67,58 @@
           }
         },
         {
+          "name": "Login Product Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "if (json?.data?.user?.id_usuario) pm.collectionVariables.set('userId', String(json.data.user.id_usuario));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{poEmail}}\",\n  \"password\": \"{{poPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Scrum Master",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "if (json?.data?.user?.id_usuario) pm.collectionVariables.set('userId', String(json.data.user.id_usuario));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{smEmail}}\",\n  \"password\": \"{{smPassword}}\"\n}"
+            }
+          }
+        },
+        {
           "name": "Refresh Token",
           "request": {
             "method": "POST",
@@ -98,7 +154,9 @@
           "name": "Listar Usuarios",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/usuarios"
           }
         },
@@ -106,7 +164,9 @@
           "name": "Obtener Usuario",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/usuarios/{{userId}}"
           }
         },
@@ -144,7 +204,9 @@
           "name": "Listar Roles",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/roles"
           }
         },
@@ -152,7 +214,9 @@
           "name": "Listar Permisos",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/permisos"
           }
         },
@@ -160,7 +224,9 @@
           "name": "Mi Perfil",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/perfil"
           }
         },
@@ -215,7 +281,9 @@
           "name": "Epicas - Listar",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/epicas?proyectoId=1"
           }
         },
@@ -223,7 +291,9 @@
           "name": "Epicas - Obtener",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/epicas/{{epicaId}}"
           }
         },
@@ -258,7 +328,9 @@
           "name": "Historias - Listar",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/historias?epicaId={{epicaId}}"
           }
         },
@@ -352,7 +424,9 @@
           "name": "Listar Sprints",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/sprints"
           }
         },
@@ -360,7 +434,9 @@
           "name": "Obtener Sprint",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/sprints/{{sprintId}}"
           }
         },
@@ -430,7 +506,9 @@
           "name": "Listar Tareas",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/tareas?id_historia={{historiaId}}"
           }
         },
@@ -438,7 +516,9 @@
           "name": "Obtener Tarea",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/tareas/{{tareaId}}"
           }
         },
@@ -548,7 +628,9 @@
           "name": "Eliminar Comentario Tarea",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/tareas/comentarios/{{comentarioId}}"
           }
         },
@@ -556,7 +638,9 @@
           "name": "Eliminar Tarea",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
             "url": "{{baseUrl}}/api/tareas/{{tareaId}}"
           }
         }
