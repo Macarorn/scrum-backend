@@ -1,0 +1,38 @@
+### Pruebas de integración para /api/historias
+
+@token = JWT_AQUI
+
+### Listar historias por épica
+GET http://localhost:3000/api/historias?epicaId=1
+Authorization: Bearer {{token}}
+
+### Crear historia
+POST http://localhost:3000/api/historias
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Historia Test",
+  "epicaId": 1,
+  "descripcion": "Descripción de la historia",
+  "prioridad": 3,
+  "storyPoints": 5
+}
+
+### Obtener historia
+GET http://localhost:3000/api/historias/1
+Authorization: Bearer {{token}}
+
+### Actualizar historia
+PUT http://localhost:3000/api/historias/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Historia Actualizada",
+  "prioridad": 2
+}
+
+### Eliminar historia
+DELETE http://localhost:3000/api/historias/1
+Authorization: Bearer {{token}}

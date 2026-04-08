@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "Scrum Backend - Auth y Usuarios",
+    "_postman_id": "f2f4ad37-2ca6-4cae-b682-41d6d6d6d999",
+    "description": "Coleccion para probar endpoints principales de auth y usuarios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminEmail", "value": "admin@scrum.local" },
+    { "key": "adminPassword", "value": "Admin1234" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth/Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Usuario Postman\",\n  \"email\": \"usuario.postman@scrum.local\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth/Login admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', json.data.accessToken);",
+              "pm.collectionVariables.set('refreshToken', json.data.refreshToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth/Refresh token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/refresh-token",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Usuarios/Listar",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/usuarios"
+      }
+    },
+    {
+      "name": "Usuarios/Asignar rol",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/usuarios/2/asignar-rol",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_rol\": 2\n}"
+        }
+      }
+    },
+    {
+      "name": "Roles/Listar",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/roles"
+      }
+    },
+    {
+      "name": "Permisos/Listar",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/permisos"
+      }
+    },
+    {
+      "name": "Perfil/Obtener",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/perfil"
+      }
+    },
+    {
+      "name": "Perfil/Actualizar",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/perfil",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Admin desde Postman\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth/Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/auth/logout",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        }
+      }
+    }
+  ]
+}

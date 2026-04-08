@@ -1,0 +1,281 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-01T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_scrum_backend",
+      "parentId": null,
+      "modified": 0,
+      "created": 0,
+      "name": "Scrum Backend - Auth y Usuarios",
+      "description": "Coleccion para probar auth, usuarios, roles, permisos y perfil",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_scrum_backend",
+      "parentId": "wrk_scrum_backend",
+      "modified": 0,
+      "created": 0,
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:3000",
+        "adminEmail": "admin@scrum.local",
+        "adminPassword": "Admin1234",
+        "accessToken": "",
+        "refreshToken": ""
+      },
+      "_type": "environment"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_scrum_backend",
+      "modified": 0,
+      "created": 0,
+      "name": "Auth",
+      "description": "Endpoints de autenticacion",
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_register",
+      "parentId": "fld_auth",
+      "modified": 0,
+      "created": 0,
+      "name": "Register",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nombre\": \"Usuario Insomnia\",\n  \"email\": \"usuario.insomnia@scrum.local\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/register",
+      "_type": "request"
+    },
+    {
+      "_id": "req_login",
+      "parentId": "fld_auth",
+      "modified": 0,
+      "created": 0,
+      "name": "Login Admin",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.adminEmail }}\",\n  \"password\": \"{{ _.adminPassword }}\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_refresh",
+      "parentId": "fld_auth",
+      "modified": 0,
+      "created": 0,
+      "name": "Refresh Token",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/refresh-token",
+      "_type": "request"
+    },
+    {
+      "_id": "req_logout",
+      "parentId": "fld_auth",
+      "modified": 0,
+      "created": 0,
+      "name": "Logout",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/auth/logout",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "fld_users",
+      "parentId": "wrk_scrum_backend",
+      "modified": 0,
+      "created": 0,
+      "name": "Usuarios",
+      "description": "Endpoints de usuarios, roles y perfil",
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_list_users",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Listar usuarios",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/usuarios",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_get_user",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Obtener usuario",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/usuarios/1",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_update_user",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Actualizar usuario",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nombre\": \"Usuario Editado\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/usuarios/1",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_assign_role",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Asignar rol",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"id_rol\": 2\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/usuarios/1/asignar-rol",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_roles",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Listar roles",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/roles",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_permissions",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Listar permisos",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/permisos",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_profile",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Mi perfil",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/perfil",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    },
+    {
+      "_id": "req_profile_update",
+      "parentId": "fld_users",
+      "modified": 0,
+      "created": 0,
+      "name": "Actualizar mi perfil",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nombre\": \"Perfil Editado\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "url": "{{ _.baseUrl }}/api/perfil",
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.accessToken }}"
+      },
+      "_type": "request"
+    }
+  ]
+}
