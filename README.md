@@ -81,9 +81,6 @@ npm test
 
 Archivos de apoyo para pruebas manuales:
 
-- `tests/http/auth-usuarios.rest`
-- `tests/http/tareas.rest`
-- `tests/http/sprints.rest`
 - `tests/http/scrum-auth-usuarios.postman_collection.json`
 - `tests/http/scrum-auth-usuarios.insomnia.json`
 - `tests/http/scrum-backend-demo-completo.postman_collection.json`
@@ -108,9 +105,9 @@ Archivos de apoyo para pruebas manuales:
 
 1. Arranca el backend con `npm run dev`.
 2. Importa `tests/http/scrum-auth-usuarios.postman_collection.json` o `tests/http/scrum-auth-usuarios.insomnia.json` para auth y usuarios.
-3. Usa `tests/http/tareas.rest` y `tests/http/sprints.rest` en VS Code con REST Client para tareas y sprints.
-4. Obtén un token con `Auth/Login admin` y reutilízalo en `Authorization: Bearer ...`.
-5. Para la demo, ejecuta en este orden: login, perfil, usuarios, épicas, historias, criterios, etiquetas, tareas y sprints.
+3. Para demo completa, usa `tests/http/scrum-backend-demo-completo.postman_collection.json` o `tests/http/scrum-backend-demo-completo.insomnia.json`.
+4. Obtén un token con `Auth/Login admin`, `Auth/Login Product Owner` o `Auth/Login Scrum Master` y reutilízalo en `Authorization: Bearer ...`.
+5. Para la demo, ejecuta en este orden: login, perfil, usuarios, épicas, historias, criterios, etiquetas, tareas, sprints y logout.
 
 ### Colección Unificada De Demo
 
