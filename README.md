@@ -86,6 +86,8 @@ Archivos de apoyo para pruebas manuales:
 - `tests/http/sprints.rest`
 - `tests/http/scrum-auth-usuarios.postman_collection.json`
 - `tests/http/scrum-auth-usuarios.insomnia.json`
+- `tests/http/scrum-backend-demo-completo.postman_collection.json`
+- `tests/http/scrum-backend-demo-completo.insomnia.json`
 
 ### Flujo de prueba en Insomnia
 
@@ -109,6 +111,12 @@ Archivos de apoyo para pruebas manuales:
 3. Usa `tests/http/tareas.rest` y `tests/http/sprints.rest` en VS Code con REST Client para tareas y sprints.
 4. Obtén un token con `Auth/Login admin` y reutilízalo en `Authorization: Bearer ...`.
 5. Para la demo, ejecuta en este orden: login, perfil, usuarios, épicas, historias, criterios, etiquetas, tareas y sprints.
+
+### Colección Unificada De Demo
+
+- Postman: `tests/http/scrum-backend-demo-completo.postman_collection.json`
+- Insomnia: `tests/http/scrum-backend-demo-completo.insomnia.json`
+- Recomendación de flujo: `Login Admin` -> `Usuarios` -> `Backlog` -> `Sprints` -> `Tareas` -> `Logout`.
 
 ### Alineación con el esquema
 

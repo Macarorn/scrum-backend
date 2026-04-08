@@ -1,0 +1,566 @@
+{
+  "info": {
+    "name": "Scrum Backend - Demo Completa",
+    "_postman_id": "5d8a6f7a-ec54-4f0d-9d8a-0128f39e8f11",
+    "description": "Coleccion unificada para demo: auth, usuarios, backlog, sprints y tareas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "adminEmail", "value": "admin@scrum.local" },
+    { "key": "adminPassword", "value": "Admin1234" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "2" },
+    { "key": "epicaId", "value": "1" },
+    { "key": "historiaId", "value": "1" },
+    { "key": "criterioId", "value": "1" },
+    { "key": "etiquetaId", "value": "1" },
+    { "key": "sprintId", "value": "1" },
+    { "key": "tareaId", "value": "1" },
+    { "key": "comentarioId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario Demo\",\n  \"email\": \"usuario.demo@scrum.local\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "if (json?.data?.user?.id_usuario) pm.collectionVariables.set('userId', String(json.data.user.id_usuario));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/refresh-token",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Usuarios",
+      "item": [
+        {
+          "name": "Listar Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/usuarios"
+          }
+        },
+        {
+          "name": "Obtener Usuario",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/usuarios/{{userId}}"
+          }
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/usuarios/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario Demo Editado\",\n  \"ciudad\": \"Bogota\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Asignar Rol",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/usuarios/{{userId}}/asignar-rol",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_rol\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Roles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/roles"
+          }
+        },
+        {
+          "name": "Listar Permisos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/permisos"
+          }
+        },
+        {
+          "name": "Mi Perfil",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/perfil"
+          }
+        },
+        {
+          "name": "Actualizar Mi Perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/perfil",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Admin Demo\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Backlog",
+      "item": [
+        {
+          "name": "Epicas - Crear",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id) pm.collectionVariables.set('epicaId', String(json.data.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/epicas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Epica Demo\",\n  \"proyectoId\": 1,\n  \"descripcion\": \"Flujo de demo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Epicas - Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/epicas?proyectoId=1"
+          }
+        },
+        {
+          "name": "Epicas - Obtener",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/epicas/{{epicaId}}"
+          }
+        },
+        {
+          "name": "Historias - Crear",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id) pm.collectionVariables.set('historiaId', String(json.data.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/historias",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Historia Demo\",\n  \"epicaId\": {{epicaId}},\n  \"descripcion\": \"Historia para la demo\",\n  \"prioridad\": 3,\n  \"storyPoints\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Historias - Listar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/historias?epicaId={{epicaId}}"
+          }
+        },
+        {
+          "name": "Criterios - Crear",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id) pm.collectionVariables.set('criterioId', String(json.data.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/historias/{{historiaId}}/criterios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Criterio demo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Etiquetas - Crear",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id) pm.collectionVariables.set('etiquetaId', String(json.data.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/etiquetas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Etiqueta Demo\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Sprints",
+      "item": [
+        {
+          "name": "Crear Sprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id_sprint) pm.collectionVariables.set('sprintId', String(json.data.id_sprint));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/sprints",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_proyecto\": 1,\n  \"nombre\": \"Sprint Demo\",\n  \"meta\": \"Demo final\",\n  \"fecha_inicio\": \"2026-04-07\",\n  \"fecha_fin\": \"2026-04-21\",\n  \"estado\": \"planeado\",\n  \"velocidad_estimada\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Sprints",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/sprints"
+          }
+        },
+        {
+          "name": "Obtener Sprint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/sprints/{{sprintId}}"
+          }
+        },
+        {
+          "name": "Actualizar Sprint",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/sprints/{{sprintId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_proyecto\": 1,\n  \"nombre\": \"Sprint Demo v2\",\n  \"meta\": \"Demo final actualizada\",\n  \"fecha_inicio\": \"2026-04-07\",\n  \"fecha_fin\": \"2026-04-28\",\n  \"estado\": \"en_curso\",\n  \"velocidad_estimada\": 24\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar Estado Sprint",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/sprints/{{sprintId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"completado\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Tareas",
+      "item": [
+        {
+          "name": "Crear Tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id_tarea) pm.collectionVariables.set('tareaId', String(json.data.id_tarea));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tarea Demo\",\n  \"descripcion\": \"Implementar flujo demo\",\n  \"id_historia\": {{historiaId}},\n  \"id_usuario_responsable\": {{userId}},\n  \"prioridad\": \"alta\",\n  \"tipo\": \"RF\",\n  \"story_points\": 5,\n  \"estado\": \"por_hacer\",\n  \"estimacion_dias\": 2,\n  \"orden_columna\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar Tareas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/tareas?id_historia={{historiaId}}"
+          }
+        },
+        {
+          "name": "Obtener Tarea",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}"
+          }
+        },
+        {
+          "name": "Cambiar Estado Tarea",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"en_progreso\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar Orden Tarea",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}/orden",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orden_columna\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "Registrar Tiempo Real",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}/tiempo-real",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiempo_real\": 6\n}"
+            }
+          }
+        },
+        {
+          "name": "Asignar Usuario Tarea",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}/asignar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_usuario\": 11\n}"
+            }
+          }
+        },
+        {
+          "name": "Agregar Comentario Tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.data?.id_comentario) pm.collectionVariables.set('comentarioId', String(json.data.id_comentario));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}/comentarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comentario\": \"Comentario demo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Asignar Etiqueta Tarea",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}/etiquetas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_etiqueta\": {{etiquetaId}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar Comentario Tarea",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/tareas/comentarios/{{comentarioId}}"
+          }
+        },
+        {
+          "name": "Eliminar Tarea",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/tareas/{{tareaId}}"
+          }
+        }
+      ]
+    }
+  ]
+}
