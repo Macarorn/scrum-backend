@@ -15,6 +15,8 @@ import criteriosRoutes from "./routes/criterios.routes.js";
 import epicasRoutes from "./routes/epicas.routes.js";
 import etiquetasRoutes from "./routes/etiquetas.routes.js";
 import historiasRoutes from "./routes/historias.routes.js";
+import sprintRoutes from "./routes/sprint.routes.js";
+import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 
@@ -24,6 +26,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 await bootstrapStore();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(helmet());
 app.use(
@@ -36,12 +41,10 @@ app.use(
 const limiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW, 10) || 15) * 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
-  message: "Demasiadas solicitudes, intenta mas tarde",
+  message: "Demasiadas solicitudes, intenta más tarde",
 });
 app.use("/api/", limiter);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 app.get("/", (req, res) => {
@@ -59,6 +62,8 @@ app.get("/", (req, res) => {
       historias: "/api/historias",
       criterios: "/api/criterios",
       etiquetas: "/api/etiquetas",
+      sprints: "/api/sprints",
+      tareas: "/api/tareas",
     },
   });
 });
@@ -69,6 +74,8 @@ app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);
 app.use("/api/criterios", criteriosRoutes);
 app.use("/api/etiquetas", etiquetasRoutes);
+app.use("/api/sprints", sprintRoutes);
+app.use("/api/tareas", tareaRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -79,5 +86,4 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Ambiente: ${process.env.NODE_ENV}`);
   });
 }
-
 export default app;

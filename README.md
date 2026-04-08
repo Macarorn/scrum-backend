@@ -82,6 +82,8 @@ npm test
 Archivos de apoyo para pruebas manuales:
 
 - `tests/http/auth-usuarios.rest`
+- `tests/http/tareas.rest`
+- `tests/http/sprints.rest`
 - `tests/http/scrum-auth-usuarios.postman_collection.json`
 - `tests/http/scrum-auth-usuarios.insomnia.json`
 
@@ -92,6 +94,27 @@ Archivos de apoyo para pruebas manuales:
 3. Copia `data.accessToken` y `data.refreshToken` en el environment si no deseas usar variables manuales.
 4. Usa el header `Authorization: Bearer <token>` en las peticiones protegidas.
 5. Prueba primero `GET /api/perfil`, luego `GET /api/usuarios` y por último `POST /api/usuarios/:id/asignar-rol`.
+
+### Cobertura actual
+
+- `auth-users.test.js`: auth, usuarios, perfil, roles, permisos y flujo de tokens.
+- `backlog.test.js`: épicas, historias, criterios y etiquetas.
+- `tareas.test.js`: CRUD de tareas más estado, orden, tiempo real, comentarios, etiquetas, historial y asignación, usando nombres alineados con `tarea`.
+- `sprints.test.js`: CRUD de sprints y cambio de estado con DB simulada, usando nombres alineados con `sprint`.
+
+### Cómo validar manualmente
+
+1. Arranca el backend con `npm run dev`.
+2. Importa `tests/http/scrum-auth-usuarios.postman_collection.json` o `tests/http/scrum-auth-usuarios.insomnia.json` para auth y usuarios.
+3. Usa `tests/http/tareas.rest` y `tests/http/sprints.rest` en VS Code con REST Client para tareas y sprints.
+4. Obtén un token con `Auth/Login admin` y reutilízalo en `Authorization: Bearer ...`.
+5. Para la demo, ejecuta en este orden: login, perfil, usuarios, épicas, historias, criterios, etiquetas, tareas y sprints.
+
+### Alineación con el esquema
+
+- `tarea` usa `id_tarea`, `id_historia`, `nombre`, `tipo`, `estado`, `prioridad`, `story_points`, `estimacion_dias`, `tiempo_real` y `orden_columna`.
+- `sprint` usa `id_sprint`, `id_proyecto`, `nombre`, `meta`, `fecha_inicio`, `fecha_fin`, `estado`, `velocidad_estimada`, `velocidad_real` y `fecha_liberacion`.
+- Los archivos manuales y las pruebas ya usan esos nombres para que coincidan con el SQL.
 
 ## Seguridad
 
