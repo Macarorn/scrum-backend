@@ -9,15 +9,30 @@ const router = express.Router();
 router.get("/", authMiddleware, proyectosController.listarProyectos);
 
 // POST /api/proyectos - Crear proyecto
-router.post("/", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.crearProyecto);
+router.post(
+  "/",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master", "usuario"]),
+  proyectosController.crearProyecto,
+);
 
 // GET /api/proyectos/:id - Obtener proyecto
 router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
 
 // PUT /api/proyectos/:id - Actualizar proyecto
-router.put("/:id", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.actualizarProyecto);
+router.put(
+  "/:id",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master", "usuario"]),
+  proyectosController.actualizarProyecto,
+);
 
 // DELETE /api/proyectos/:id - Eliminar proyecto
-router.delete("/:id", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.eliminarProyecto);
+router.delete(
+  "/:id",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master", "usuario"]),
+  proyectosController.eliminarProyecto,
+);
 
 export default router;
