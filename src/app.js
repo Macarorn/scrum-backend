@@ -15,6 +15,7 @@ import criteriosRoutes from "./routes/criterios.routes.js";
 import epicasRoutes from "./routes/epicas.routes.js";
 import etiquetasRoutes from "./routes/etiquetas.routes.js";
 import historiasRoutes from "./routes/historias.routes.js";
+import proyectosRoutes from "./routes/proyectos.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
@@ -25,6 +26,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const configuredOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const devOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const allowedOrigins =
+  process.env.NODE_ENV === "development"
+    ? Array.from(new Set([...configuredOrigins, ...devOrigins]))
+    : configuredOrigins;
+
+const corsOrigin =
+  allowedOrigins.length === 0
+    ? true
+    : (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origen no permitido por CORS: ${origin}`));
+      };
+
 await bootstrapStore();
 
 app.use(express.json());
@@ -33,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || "*",
+    origin: corsOrigin,
     credentials: true,
   }),
 );
@@ -58,6 +82,7 @@ app.get("/", (req, res) => {
       perfil: "/api/perfil",
       roles: "/api/roles",
       permisos: "/api/permisos",
+      proyectos: "/api/proyectos",
       epicas: "/api/epicas",
       historias: "/api/historias",
       criterios: "/api/criterios",
@@ -70,6 +95,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
+app.use("/api/proyectos", proyectosRoutes);
 app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);
 app.use("/api/criterios", criteriosRoutes);
