@@ -132,6 +132,7 @@ CREATE TABLE proyecto (
     estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'inicio',
     fecha_inicio    DATE,
     fecha_fin_est   DATE,
+    codigo_proyecto VARCHAR(10) NOT NULL UNIQUE,
     creado_por      INT NOT NULL,
     fecha_creacion  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
@@ -141,6 +142,7 @@ CREATE TABLE proyecto (
 -- Índices en proyecto
 CREATE INDEX idx_proyecto_estado ON proyecto(estado);
 CREATE INDEX idx_proyecto_creado_por ON proyecto(creado_por);
+CREATE INDEX idx_proyecto_codigo ON proyecto(codigo_proyecto);
 
 -- Equipo de trabajo ligado a un proyecto
 CREATE TABLE equipo_proyecto (
@@ -407,10 +409,10 @@ INSERT INTO rol_permiso VALUES
 
 -- Usuarios (Equipo del proyecto)
 INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES
-('mariana@gmail.com',     '$2b$10$hash_mariana',     'Mariana García',      '3256321587', 'Bogotá'),
-('sofia@gmail.com',       '$2b$10$hash_sofia',       'Sofía Bonilla',       '3101234567', 'Bogotá'),
-('jefferson@gmail.com',   '$2b$10$hash_jefferson',   'Jefferson López',      '3026984120', 'Medellín'),
-('johan@gmail.com',       '$2b$10$hash_johan',       'Johan Rodríguez',      '3147856942', 'Cali');
+('mariana@gmail.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa',     'Mariana García',      '3256321587', 'Bogotá'),
+('sofia@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeyOaFZUc4hpcfYpeFDetloS4Ul5K2yRC',       'Sofía Bonilla',       '3101234567', 'Bogotá'),
+('jefferson@gmail.com',   '$2a$10$SrJgihtLEYaZVXZUGfSeLeoDu3Ao2J6PLIVLWIkYecmXMmkUOArwm',   'Jefferson López',      '3026984120', 'Medellín'),
+('johan@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeDweOSRbhc.BuRtdVaYQRzbUq3wgk04K',       'Johan Rodríguez',      '3147856942', 'Cali');
 
 -- Roles a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
@@ -459,8 +461,8 @@ INSERT INTO etiqueta (nombre, color) VALUES
 ('Documentación',   '#9B59B6');
 
 -- Proyecto
-INSERT INTO proyecto (nombre, descripcion, tipo, estado, creado_por) VALUES
-('App Scrum', 'Sistema de gestión de proyectos con metodología Scrum para equipos ágiles', 'Desarrollo de software', 'activo', 2);
+INSERT INTO proyecto (nombre, descripcion, tipo, estado, codigo_proyecto, creado_por) VALUES
+('App Scrum', 'Sistema de gestión de proyectos con metodología Scrum para equipos ágiles', 'Desarrollo de software', 'activo', 'SCRUM001', 2);
 
 -- Equipo del proyecto
 INSERT INTO equipo_proyecto (id_proyecto, nombre, descripcion) VALUES

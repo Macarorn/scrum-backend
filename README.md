@@ -40,6 +40,15 @@ npm run dev
 npm start
 ```
 
+## Usuarios de Prueba
+
+Después de crear la base de datos con el esquema, puedes usar estos usuarios para probar el sistema:
+
+- **sofia@gmail.com** / **Sofia1234** (Product Owner)
+- **mariana@gmail.com** / **Mariana1234** (Scrum Master)
+- **jefferson@gmail.com** / **Jefferson1234** (Developer)
+- **johan@gmail.com** / **Johan1234** (Developer)
+
 ## Estructura del Proyecto
 
 ```
