@@ -1,4 +1,5 @@
 import { hashPassword } from "./password.utils.js";
+import pool from "./database.js";
 
 const roles = [
   { id_rol: 1, nombre_rol: "admin", descripcion: "Acceso total al sistema" },
@@ -139,8 +140,9 @@ export const createUser = async ({
   ciudad = null,
   id_rol = 2,
 }) => {
-  const exists = users.some((u) => u.email === email.toLowerCase());
-  if (exists) {
+  // Verificar si el email ya existe
+  const [existing] = await pool.query("SELECT id_usuario FROM usuario WHERE email = ?", [email.toLowerCase()]);
+  if (existing.length > 0) {
     const error = new Error("El email ya se encuentra registrado");
     error.statusCode = 409;
     error.error = "EMAIL_ALREADY_EXISTS";
@@ -148,39 +150,90 @@ export const createUser = async ({
     throw error;
   }
 
-  const user = await buildUser({
-    nombre,
-    email,
-    password,
-    telefono,
-    ciudad,
-    id_rol,
-  });
-  users.push(user);
+  // Hashear la contraseña
+  const passwordHash = await hashPassword(password);
 
+  // Insertar usuario
+  const [result] = await pool.query(
+    "INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES (?, ?, ?, ?, ?)",
+    [email.toLowerCase(), passwordHash, nombre, telefono, ciudad]
+  );
+
+  const userId = result.insertId;
+
+  // Asignar rol por defecto
+  await pool.query("INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)", [userId, id_rol]);
+
+  // Obtener el usuario completo
+  const user = await findUserWithSecretById(userId);
   return sanitizeUser(user);
 };
 
 export const findUserByEmail = async (email) => {
-  const user = users.find((u) => u.email === email.toLowerCase());
+  const user = await findUserWithSecretByEmail(email);
   return user ? sanitizeUser(user) : null;
 };
 
 export const findUserWithSecretByEmail = async (email) => {
-  return users.find((u) => u.email === email.toLowerCase()) || null;
+  const [rows] = await pool.query(`
+    SELECT u.*, r.nombre_rol as rol_principal
+    FROM usuario u
+    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+    LEFT JOIN rol r ON ur.id_rol = r.id_rol
+    WHERE u.email = ? AND u.activo = 1
+  `, [email.toLowerCase()]);
+
+  if (rows.length === 0) return null;
+
+  const user = rows[0];
+  // Obtener permisos
+  const [permisosRows] = await pool.query(`
+    SELECT p.nombre
+    FROM permiso p
+    JOIN rol_permiso rp ON p.id_permiso = rp.id_permiso
+    JOIN usuario_rol ur ON rp.id_rol = ur.id_rol
+    WHERE ur.id_usuario = ?
+  `, [user.id_usuario]);
+
+  user.permisos = permisosRows;
+  user.passwordHash = user.password; // Renombrar para consistencia
+  return user;
 };
 
 export const findUserById = async (id) => {
-  const user = users.find((u) => u.id_usuario === Number(id));
+  const user = await findUserWithSecretById(id);
   return user ? sanitizeUser(user) : null;
 };
 
 export const findUserWithSecretById = async (id) => {
-  return users.find((u) => u.id_usuario === Number(id)) || null;
+  const [rows] = await pool.query(`
+    SELECT u.*, r.nombre_rol as rol_principal
+    FROM usuario u
+    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+    LEFT JOIN rol r ON ur.id_rol = r.id_rol
+    WHERE u.id_usuario = ? AND u.activo = 1
+  `, [id]);
+
+  if (rows.length === 0) return null;
+
+  const user = rows[0];
+  // Obtener permisos
+  const [permisosRows] = await pool.query(`
+    SELECT p.nombre
+    FROM permiso p
+    JOIN rol_permiso rp ON p.id_permiso = rp.id_permiso
+    JOIN usuario_rol ur ON rp.id_rol = ur.id_rol
+    WHERE ur.id_usuario = ?
+  `, [user.id_usuario]);
+
+  user.permisos = permisosRows;
+  user.passwordHash = user.password;
+  return user;
 };
 
 export const listUsers = async () => {
-  return users.map(sanitizeUser);
+  const [rows] = await pool.query("SELECT * FROM usuario WHERE activo = 1");
+  return rows.map(sanitizeUser);
 };
 
 export const updateUser = async (id, payload) => {

@@ -5,11 +5,20 @@ import { authorizationMiddleware } from "../middleware/authorization.middleware.
 
 const router = express.Router();
 
-// GET /api/proyectos - Listar proyectos
+// GET /api/proyectos - Listar proyectos del usuario
 router.get("/", authMiddleware, proyectosController.listarProyectos);
+
+// GET /api/proyectos/todos - Listar todos los proyectos
+router.get("/todos", authMiddleware, proyectosController.listarTodosProyectos);
 
 // POST /api/proyectos - Crear proyecto
 router.post("/", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.crearProyecto);
+
+// GET /api/proyectos/codigo/:codigo - Buscar proyecto por código (DEBE ir antes de /:id)
+router.get("/codigo/:codigo", authMiddleware, proyectosController.buscarProyectoPorCodigo);
+
+// POST /api/proyectos/:id/unirse - Unirse a un proyecto
+router.post("/:id/unirse", authMiddleware, proyectosController.unirseAProyecto);
 
 // GET /api/proyectos/:id - Obtener proyecto
 router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
