@@ -409,10 +409,10 @@ INSERT INTO rol_permiso VALUES
 
 -- Usuarios (Equipo del proyecto)
 INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES
-('mariana@gmail.com',     '$2b$10$hash_mariana',     'Mariana García',      '3256321587', 'Bogotá'),
-('sofia@gmail.com',       '$2b$10$hash_sofia',       'Sofía Bonilla',       '3101234567', 'Bogotá'),
-('jefferson@gmail.com',   '$2b$10$hash_jefferson',   'Jefferson López',      '3026984120', 'Medellín'),
-('johan@gmail.com',       '$2b$10$hash_johan',       'Johan Rodríguez',      '3147856942', 'Cali');
+('mariana@gmail.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa',     'Mariana García',      '3256321587', 'Bogotá'),
+('sofia@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeyOaFZUc4hpcfYpeFDetloS4Ul5K2yRC',       'Sofía Bonilla',       '3101234567', 'Bogotá'),
+('jefferson@gmail.com',   '$2a$10$SrJgihtLEYaZVXZUGfSeLeoDu3Ao2J6PLIVLWIkYecmXMmkUOArwm',   'Jefferson López',      '3026984120', 'Medellín'),
+('johan@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeDweOSRbhc.BuRtdVaYQRzbUq3wgk04K',       'Johan Rodríguez',      '3147856942', 'Cali');
 
 -- Roles a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
