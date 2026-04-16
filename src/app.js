@@ -26,6 +26,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const configuredOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const devOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const allowedOrigins =
+  process.env.NODE_ENV === "development"
+    ? Array.from(new Set([...configuredOrigins, ...devOrigins]))
+    : configuredOrigins;
+
+const corsOrigin =
+  allowedOrigins.length === 0
+    ? true
+    : (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origen no permitido por CORS: ${origin}`));
+      };
+
 await bootstrapStore();
 
 app.use(express.json());
@@ -34,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || "*",
+    origin: corsOrigin,
     credentials: true,
   }),
 );

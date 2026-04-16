@@ -1,3 +1,5 @@
+import { promises as fs } from "fs";
+import path from "path";
 import { hashPassword } from "./password.utils.js";
 import pool from "./database.js";
 
@@ -55,6 +57,44 @@ const users = [];
 const refreshTokens = new Set();
 let userIdSequence = 1;
 
+const DATA_DIR = path.resolve(process.cwd(), "data");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+
+const isTestEnv = () => process.env.NODE_ENV === "test";
+
+const ensureDataDir = async () => {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+};
+
+const persistUsers = async () => {
+  if (isTestEnv()) return;
+  await ensureDataDir();
+  const payload = {
+    userIdSequence,
+    users,
+  };
+  await fs.writeFile(USERS_FILE, JSON.stringify(payload, null, 2), "utf-8");
+};
+
+const loadUsers = async () => {
+  if (isTestEnv()) return false;
+
+  try {
+    const raw = await fs.readFile(USERS_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+
+    if (Array.isArray(parsed.users)) {
+      users.splice(0, users.length, ...parsed.users);
+      userIdSequence = parsed.userIdSequence || users.length + 1;
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+
+  return false;
+};
+
 const sanitizeUser = (user) => {
   if (!user) return null;
   const { passwordHash, ...safeUser } = user;
@@ -106,6 +146,9 @@ const buildUser = async ({
 export const bootstrapStore = async () => {
   if (users.length > 0) return;
 
+  const loaded = await loadUsers();
+  if (loaded) return;
+
   const admin = await buildUser({
     nombre: "Admin",
     email: "admin@scrum.local",
@@ -130,6 +173,8 @@ export const bootstrapStore = async () => {
   users.push(admin);
   users.push(productOwner);
   users.push(scrumMaster);
+
+  await persistUsers();
 };
 
 export const createUser = async ({
@@ -278,6 +323,7 @@ export const updateUser = async (id, payload) => {
   }
 
   user.fecha_actualizacion = new Date().toISOString();
+  await persistUsers();
   return sanitizeUser(user);
 };
 
@@ -286,6 +332,7 @@ export const deleteUser = async (id) => {
   if (index === -1) return false;
 
   users.splice(index, 1);
+  await persistUsers();
   return true;
 };
 

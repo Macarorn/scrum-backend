@@ -12,7 +12,12 @@ router.get("/", authMiddleware, proyectosController.listarProyectos);
 router.get("/todos", authMiddleware, proyectosController.listarTodosProyectos);
 
 // POST /api/proyectos - Crear proyecto
-router.post("/", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.crearProyecto);
+router.post(
+  "/",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master", "usuario"]),
+  proyectosController.crearProyecto,
+);
 
 // GET /api/proyectos/codigo/:codigo - Buscar proyecto por código (DEBE ir antes de /:id)
 router.get("/codigo/:codigo", authMiddleware, proyectosController.buscarProyectoPorCodigo);
@@ -24,9 +29,19 @@ router.post("/:id/unirse", authMiddleware, proyectosController.unirseAProyecto);
 router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
 
 // PUT /api/proyectos/:id - Actualizar proyecto
-router.put("/:id", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.actualizarProyecto);
+router.put(
+  "/:id",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master", "usuario"]),
+  proyectosController.actualizarProyecto,
+);
 
 // DELETE /api/proyectos/:id - Eliminar proyecto
-router.delete("/:id", authMiddleware, authorizationMiddleware(["Product Owner", "Scrum Master"]), proyectosController.eliminarProyecto);
+router.delete(
+  "/:id",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master", "usuario"]),
+  proyectosController.eliminarProyecto,
+);
 
 export default router;
