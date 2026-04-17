@@ -2,6 +2,21 @@
 
 Sistema de gestión de proyectos Scrum con API REST en Node.js + Express
 
+
+## Tabla de Contenido
+
+- Scrum App Backend
+- Requisitos Previos
+- Instalación
+- Variables de Entorno
+- Flujo de Autenticación
+- Estructura del Proyecto
+- Endpoints Principales
+- Pruebas
+- Seguridad
+- Equipo
+
+
 ## Requisitos Previos
 
 - Node.js v16+
@@ -141,3 +156,5 @@ Credenciales semilla para demo:
 - **Johan Dejesus**
 - **Sofía Bonilla**
 - **Jefferson Pineda**
+- **Felipe Giraldo**
+ 
