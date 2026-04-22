@@ -1,6 +1,4 @@
-// Store temporal en memoria para pruebas del módulo backlog.
-const epicas = [];
-let nextEpicaId = 1;
+import pool from "../utils/database.js";
 
 function notFoundError(entity = "Épica") {
   return {
@@ -11,74 +9,103 @@ function notFoundError(entity = "Épica") {
 }
 
 export const listarEpicas = async (proyectoId) => {
-  // Permite filtrar por proyecto y retorna solo registros activos.
-  return epicas.filter((epica) => {
-    if (!epica.activo) {
-      return false;
-    }
+  const query =
+    proyectoId !== undefined
+      ? "SELECT * FROM epica WHERE id_proyecto = ? ORDER BY id_epica DESC"
+      : "SELECT * FROM epica ORDER BY id_epica DESC";
+  const params = proyectoId !== undefined ? [Number(proyectoId)] : [];
+  const [rows] = await pool.query(query, params);
 
-    if (proyectoId !== undefined) {
-      return epica.proyectoId === Number(proyectoId);
-    }
-
-    return true;
-  });
+  return rows.map((row) => ({
+    id: row.id_epica,
+    id_epica: row.id_epica,
+    proyectoId: row.id_proyecto,
+    id_proyecto: row.id_proyecto,
+    nombre: row.nombre,
+    descripcion: row.descripcion || "",
+    categoria: row.categoria || "",
+    prioridad: row.prioridad,
+    estado: row.estado,
+    createdAt: row.fecha_creacion,
+    updatedAt: row.fecha_actualizacion,
+  }));
 };
 
 export const crearEpica = async (data) => {
-  const nuevaEpica = {
-    id: nextEpicaId++,
-    nombre: data.nombre,
-    proyectoId: Number(data.proyectoId),
-    descripcion: data.descripcion || "",
-    activo: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  const [result] = await pool.query(
+    `INSERT INTO epica (id_proyecto, nombre, descripcion, categoria, prioridad, estado)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      Number(data.proyectoId),
+      data.nombre,
+      data.descripcion || null,
+      data.categoria || null,
+      Number(data.prioridad ?? 3),
+      data.estado || "por_hacer",
+    ],
+  );
 
-  epicas.push(nuevaEpica);
-  return nuevaEpica;
+  return await obtenerEpica(result.insertId);
 };
 
 export const obtenerEpica = async (id) => {
-  const epica = epicas.find((item) => item.id === Number(id) && item.activo);
-  if (!epica) {
+  const [rows] = await pool.query("SELECT * FROM epica WHERE id_epica = ?", [
+    Number(id),
+  ]);
+  if (rows.length === 0) {
     throw notFoundError();
   }
 
-  return epica;
+  const row = rows[0];
+  return {
+    id: row.id_epica,
+    id_epica: row.id_epica,
+    proyectoId: row.id_proyecto,
+    id_proyecto: row.id_proyecto,
+    nombre: row.nombre,
+    descripcion: row.descripcion || "",
+    categoria: row.categoria || "",
+    prioridad: row.prioridad,
+    estado: row.estado,
+    createdAt: row.fecha_creacion,
+    updatedAt: row.fecha_actualizacion,
+  };
 };
 
 export const actualizarEpica = async (id, data) => {
-  const index = epicas.findIndex((item) => item.id === Number(id) && item.activo);
-  if (index < 0) {
+  const actual = await obtenerEpica(id).catch(() => null);
+  if (!actual) {
     throw notFoundError();
   }
 
-  epicas[index] = {
-    ...epicas[index],
-    ...data,
-    proyectoId:
-      data.proyectoId !== undefined ? Number(data.proyectoId) : epicas[index].proyectoId,
-    updatedAt: new Date().toISOString(),
-  };
+  await pool.query(
+    `UPDATE epica
+     SET id_proyecto = ?, nombre = ?, descripcion = ?, categoria = ?, prioridad = ?, estado = ?, fecha_actualizacion = NOW()
+     WHERE id_epica = ?`,
+    [
+      data.proyectoId !== undefined ? Number(data.proyectoId) : actual.proyectoId,
+      data.nombre !== undefined ? data.nombre : actual.nombre,
+      data.descripcion !== undefined ? data.descripcion : actual.descripcion,
+      data.categoria !== undefined ? data.categoria : actual.categoria,
+      data.prioridad !== undefined ? Number(data.prioridad) : actual.prioridad,
+      data.estado !== undefined ? data.estado : actual.estado,
+      Number(id),
+    ],
+  );
 
-  return epicas[index];
+  return await obtenerEpica(id);
 };
 
 export const eliminarEpica = async (id) => {
-  const index = epicas.findIndex((item) => item.id === Number(id) && item.activo);
-  if (index < 0) {
+  const [result] = await pool.query("DELETE FROM epica WHERE id_epica = ?", [
+    Number(id),
+  ]);
+  if (result.affectedRows === 0) {
     throw notFoundError();
   }
-
-  // Soft delete: no elimina físicamente, solo marca inactivo.
-  epicas[index].activo = false;
-  epicas[index].updatedAt = new Date().toISOString();
 
   return {
     id: Number(id),
     eliminado: true,
-    softDelete: true,
   };
 };
