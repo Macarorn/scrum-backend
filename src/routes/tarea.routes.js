@@ -2,7 +2,6 @@ import express from "express";
 import * as tareaController from "../controllers/tarea.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import {
-  soloAsignadosPuedenCambiarEstado,
   soloResponsablePuedeActualizarTiempo,
   validarTransicionEstado,
 } from "../middleware/tarea.middleware.js";
@@ -20,7 +19,6 @@ router.delete("/:id", authMiddleware, tareaController.eliminarTarea);
 router.patch(
   "/:id/estado",
   authMiddleware,
-  soloAsignadosPuedenCambiarEstado,
   validarTransicionEstado,
   tareaController.cambiarEstadoTarea,
 );
