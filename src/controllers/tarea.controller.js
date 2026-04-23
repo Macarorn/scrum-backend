@@ -11,6 +11,7 @@ import {
   eliminarTareaPorId,
   listarComentariosTarea as listarComentariosTareaService,
   listarTareasPorHistoria,
+  listarTareasPorSprint,
   listarUsuariosAsignados as listarUsuariosAsignadosService,
   obtenerHistorialTarea as obtenerHistorialTareaService,
   obtenerTareaPorId,
@@ -30,10 +31,12 @@ function userIdFromReq(req) {
 // Lista tareas filtrando por historia o estado si vienen en query params.
 export const listarTareas = async (req, res, next) => {
   try {
-    const idHistoria =
-      req.query.id_historia ?? req.query.historiaId ?? req.query.sprintId;
+    const idHistoria = req.query.id_historia ?? req.query.historiaId;
+    const idSprint = req.query.id_sprint ?? req.query.sprintId;
     const { estado } = req.query;
-    const data = listarTareasPorHistoria(idHistoria, estado);
+    const data = idSprint
+      ? await listarTareasPorSprint(idSprint, estado)
+      : await listarTareasPorHistoria(idHistoria, estado);
 
     res.status(200).json({
       success: true,
@@ -58,7 +61,7 @@ export const crearTarea = async (req, res, next) => {
       });
     }
 
-    const data = crearTareaService(req.body, userIdFromReq(req));
+    const data = await crearTareaService(req.body, userIdFromReq(req));
     res.status(201).json({
       success: true,
       data,
@@ -72,7 +75,7 @@ export const crearTarea = async (req, res, next) => {
 // Obtiene una tarea por id y responde 404 si no existe.
 export const obtenerTarea = async (req, res, next) => {
   try {
-    const data = obtenerTareaPorId(req.params.id);
+    const data = await obtenerTareaPorId(req.params.id);
     if (!data) {
       return res.status(404).json({
         success: false,
@@ -105,7 +108,7 @@ export const actualizarTarea = async (req, res, next) => {
       });
     }
 
-    const data = actualizarTareaPorId(
+    const data = await actualizarTareaPorId(
       req.params.id,
       req.body,
       userIdFromReq(req),
@@ -123,7 +126,7 @@ export const actualizarTarea = async (req, res, next) => {
 // Elimina por soft delete para mantener historial.
 export const eliminarTarea = async (req, res, next) => {
   try {
-    const data = eliminarTareaPorId(req.params.id, userIdFromReq(req));
+    const data = await eliminarTareaPorId(req.params.id, userIdFromReq(req));
     res.status(200).json({
       success: true,
       data,
@@ -137,7 +140,7 @@ export const eliminarTarea = async (req, res, next) => {
 // Cambia el estado de la tarea (flujo kanban).
 export const cambiarEstadoTarea = async (req, res, next) => {
   try {
-    const data = cambiarEstadoTareaService(
+    const data = await cambiarEstadoTareaService(
       req.params.id,
       req.body.estado,
       userIdFromReq(req),
@@ -154,7 +157,7 @@ export const cambiarEstadoTarea = async (req, res, next) => {
 
 export const actualizarOrdenTarea = async (req, res, next) => {
   try {
-    const data = actualizarOrdenTareaService(
+    const data = await actualizarOrdenTareaService(
       req.params.id,
       req.body.orden_columna ?? req.body.orden,
       userIdFromReq(req),
@@ -171,7 +174,7 @@ export const actualizarOrdenTarea = async (req, res, next) => {
 
 export const registrarTiempoReal = async (req, res, next) => {
   try {
-    const data = registrarTiempoRealService(
+    const data = await registrarTiempoRealService(
       req.params.id,
       req.body.tiempo_real ?? req.body.tiempoReal,
       userIdFromReq(req),
@@ -188,7 +191,7 @@ export const registrarTiempoReal = async (req, res, next) => {
 
 export const asignarUsuarioTarea = async (req, res, next) => {
   try {
-    const data = asignarUsuarioTareaService(
+    const data = await asignarUsuarioTareaService(
       req.params.id,
       req.body.id_usuario ?? req.body.userId,
       userIdFromReq(req),
@@ -205,7 +208,7 @@ export const asignarUsuarioTarea = async (req, res, next) => {
 
 export const desasignarUsuarioTarea = async (req, res, next) => {
   try {
-    const data = desasignarUsuarioTareaService(
+    const data = await desasignarUsuarioTareaService(
       req.params.id,
       req.params.userId,
       userIdFromReq(req),
@@ -222,7 +225,7 @@ export const desasignarUsuarioTarea = async (req, res, next) => {
 
 export const listarUsuariosAsignados = async (req, res, next) => {
   try {
-    const data = listarUsuariosAsignadosService(req.params.id);
+    const data = await listarUsuariosAsignadosService(req.params.id);
     res.status(200).json({
       success: true,
       data,
@@ -235,7 +238,7 @@ export const listarUsuariosAsignados = async (req, res, next) => {
 
 export const obtenerHistorialTarea = async (req, res, next) => {
   try {
-    const data = obtenerHistorialTareaService(req.params.id);
+    const data = await obtenerHistorialTareaService(req.params.id);
     res.status(200).json({
       success: true,
       data,
@@ -248,7 +251,7 @@ export const obtenerHistorialTarea = async (req, res, next) => {
 
 export const listarComentariosTarea = async (req, res, next) => {
   try {
-    const data = listarComentariosTareaService(req.params.id);
+    const data = await listarComentariosTareaService(req.params.id);
     res.status(200).json({
       success: true,
       data,
@@ -261,7 +264,7 @@ export const listarComentariosTarea = async (req, res, next) => {
 
 export const agregarComentarioTarea = async (req, res, next) => {
   try {
-    const data = agregarComentarioTareaService(
+    const data = await agregarComentarioTareaService(
       req.params.id,
       req.body.comentario,
       userIdFromReq(req),
@@ -278,7 +281,7 @@ export const agregarComentarioTarea = async (req, res, next) => {
 
 export const eliminarComentario = async (req, res, next) => {
   try {
-    const data = eliminarComentarioService(req.params.id, userIdFromReq(req));
+    const data = await eliminarComentarioService(req.params.id, userIdFromReq(req));
     res.status(200).json({
       success: true,
       data,
@@ -291,7 +294,7 @@ export const eliminarComentario = async (req, res, next) => {
 
 export const asignarEtiquetaTarea = async (req, res, next) => {
   try {
-    const data = asignarEtiquetaTareaService(
+    const data = await asignarEtiquetaTareaService(
       req.params.id,
       req.body.id_etiqueta ?? req.body.idEtiqueta,
       userIdFromReq(req),
@@ -308,7 +311,7 @@ export const asignarEtiquetaTarea = async (req, res, next) => {
 
 export const removerEtiquetaTarea = async (req, res, next) => {
   try {
-    const data = removerEtiquetaTareaService(
+    const data = await removerEtiquetaTareaService(
       req.params.id,
       req.params.idEtiqueta,
       userIdFromReq(req),
