@@ -7,7 +7,7 @@ import { validarEpica } from '../models/validations/epicas.validations.js';
  */
 export const listarEpicas = async (req, res, next) => {
   try {
-    const proyectoId = req.query.proyectoId;
+    const proyectoId = req.query.proyectoId ?? req.query.id_proyecto;
     const data = await epicasService.listarEpicas(proyectoId);
     res.status(200).json({ success: true, data, message: "Épicas listadas" });
   } catch (error) {

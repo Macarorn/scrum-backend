@@ -1,8 +1,4 @@
-// Stores temporales para historias y criterios en pruebas.
-const historias = [];
-const criterios = [];
-let nextHistoriaId = 1;
-let nextCriterioId = 1;
+import pool from "../utils/database.js";
 
 function notFoundError(entity = "Historia") {
   return {
@@ -13,153 +9,220 @@ function notFoundError(entity = "Historia") {
 }
 
 export const listarHistorias = async (epicaId) => {
-  // Filtra por épica cuando viene en query y excluye inactivos.
-  return historias.filter((historia) => {
-    if (!historia.activo) {
-      return false;
-    }
+  const hasEpica = epicaId !== undefined && epicaId !== null && epicaId !== "";
+  const [rows] = await pool.query(
+    hasEpica
+      ? `SELECT * FROM historia_usuario
+         WHERE id_epica = ? AND estado <> 'eliminado'
+         ORDER BY id_historia DESC`
+      : `SELECT * FROM historia_usuario
+         WHERE estado <> 'eliminado'
+         ORDER BY id_historia DESC`,
+    hasEpica ? [Number(epicaId)] : [],
+  );
 
-    if (epicaId !== undefined) {
-      return historia.epicaId === Number(epicaId);
-    }
-
-    return true;
-  });
+  return rows.map((row) => ({
+    id: row.id_historia,
+    id_historia: row.id_historia,
+    epicaId: row.id_epica,
+    id_epica: row.id_epica,
+    sprintId: row.id_sprint,
+    id_sprint: row.id_sprint,
+    nombre: row.nombre,
+    descripcion: row.descripcion || "",
+    prioridad: row.prioridad,
+    storyPoints: row.story_points,
+    story_points: row.story_points,
+    estado: row.estado,
+    createdAt: row.fecha_creacion,
+    updatedAt: row.fecha_modificacion,
+  }));
 };
 
 export const crearHistoria = async (data) => {
-  const nuevaHistoria = {
-    id: nextHistoriaId++,
-    nombre: data.nombre,
-    epicaId: Number(data.epicaId),
-    descripcion: data.descripcion || "",
-    prioridad: Number(data.prioridad),
-    storyPoints: Number(data.storyPoints),
-    activo: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  const [result] = await pool.query(
+    `INSERT INTO historia_usuario
+      (id_epica, nombre, descripcion, prioridad, story_points, estado)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      Number(data.epicaId),
+      data.nombre,
+      data.descripcion || null,
+      Number(data.prioridad),
+      Number(data.storyPoints),
+      data.estado || "por_hacer",
+    ],
+  );
 
-  historias.push(nuevaHistoria);
-  return nuevaHistoria;
+  return await obtenerHistoria(result.insertId);
 };
 
 export const obtenerHistoria = async (id) => {
-  const historia = historias.find((item) => item.id === Number(id) && item.activo);
-  if (!historia) {
+  const [rows] = await pool.query(
+    `SELECT * FROM historia_usuario
+     WHERE id_historia = ? AND estado <> 'eliminado'`,
+    [Number(id)],
+  );
+
+  if (rows.length === 0) {
     throw notFoundError();
   }
 
-  return historia;
+  const row = rows[0];
+  return {
+    id: row.id_historia,
+    id_historia: row.id_historia,
+    epicaId: row.id_epica,
+    id_epica: row.id_epica,
+    sprintId: row.id_sprint,
+    id_sprint: row.id_sprint,
+    nombre: row.nombre,
+    descripcion: row.descripcion || "",
+    prioridad: row.prioridad,
+    storyPoints: row.story_points,
+    story_points: row.story_points,
+    estado: row.estado,
+    createdAt: row.fecha_creacion,
+    updatedAt: row.fecha_modificacion,
+  };
 };
 
 export const actualizarHistoria = async (id, data) => {
-  const index = historias.findIndex((item) => item.id === Number(id) && item.activo);
-  if (index < 0) {
+  const actual = await obtenerHistoria(id).catch(() => null);
+  if (!actual) {
     throw notFoundError();
   }
 
-  historias[index] = {
-    ...historias[index],
-    ...data,
-    epicaId: data.epicaId !== undefined ? Number(data.epicaId) : historias[index].epicaId,
-    prioridad:
-      data.prioridad !== undefined ? Number(data.prioridad) : historias[index].prioridad,
-    storyPoints:
+  await pool.query(
+    `UPDATE historia_usuario
+     SET id_epica = ?,
+         nombre = ?,
+         descripcion = ?,
+         prioridad = ?,
+         story_points = ?,
+         estado = ?,
+         fecha_modificacion = NOW()
+     WHERE id_historia = ?`,
+    [
+      data.epicaId !== undefined ? Number(data.epicaId) : actual.epicaId,
+      data.nombre !== undefined ? data.nombre : actual.nombre,
+      data.descripcion !== undefined ? data.descripcion : actual.descripcion,
+      data.prioridad !== undefined ? Number(data.prioridad) : actual.prioridad,
       data.storyPoints !== undefined
         ? Number(data.storyPoints)
-        : historias[index].storyPoints,
-    updatedAt: new Date().toISOString(),
-  };
+        : actual.storyPoints,
+      data.estado !== undefined ? data.estado : actual.estado,
+      Number(id),
+    ],
+  );
 
-  return historias[index];
+  return await obtenerHistoria(id);
 };
 
 export const eliminarHistoria = async (id) => {
-  const index = historias.findIndex((item) => item.id === Number(id) && item.activo);
-  if (index < 0) {
+  const [result] = await pool.query(
+    `UPDATE historia_usuario
+     SET estado = 'eliminado', fecha_modificacion = NOW()
+     WHERE id_historia = ? AND estado <> 'eliminado'`,
+    [Number(id)],
+  );
+
+  if (result.affectedRows === 0) {
     throw notFoundError();
   }
-
-  // Soft delete para conservar consistencia del backlog.
-  historias[index].activo = false;
-  historias[index].updatedAt = new Date().toISOString();
 
   return {
     id: Number(id),
     eliminado: true,
-    softDelete: true,
   };
 };
 
 export const listarCriterios = async (historiaId) => {
-  // Solo lista criterios activos asociados a una historia activa.
-  const historia = historias.find((item) => item.id === Number(historiaId) && item.activo);
-  if (!historia) {
-    throw notFoundError();
-  }
-
-  return criterios.filter(
-    (criterio) => criterio.historiaId === Number(historiaId) && criterio.activo,
+  await obtenerHistoria(historiaId);
+  const [rows] = await pool.query(
+    `SELECT * FROM criterio_aceptacion
+     WHERE id_historia = ?
+     ORDER BY id_criterio DESC`,
+    [Number(historiaId)],
   );
+
+  return rows.map((row) => ({
+    id: row.id_criterio,
+    historiaId: row.id_historia,
+    descripcion: row.descripcion,
+    cumplido: Boolean(row.cumplido),
+    createdAt: row.fecha_creacion,
+  }));
 };
 
 export const crearCriterio = async (historiaId, data) => {
-  const historia = historias.find((item) => item.id === Number(historiaId) && item.activo);
-  if (!historia) {
-    throw notFoundError();
-  }
+  await obtenerHistoria(historiaId);
+  const [result] = await pool.query(
+    `INSERT INTO criterio_aceptacion (id_historia, descripcion, cumplido)
+     VALUES (?, ?, 0)`,
+    [Number(historiaId), data.descripcion],
+  );
 
-  const nuevoCriterio = {
-    id: nextCriterioId++,
+  return {
+    id: result.insertId,
     historiaId: Number(historiaId),
     descripcion: data.descripcion,
-    activo: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    cumplido: false,
   };
-
-  criterios.push(nuevoCriterio);
-  return nuevoCriterio;
 };
 
-export const obtenerCriterioPorId = (id) => {
-  return criterios.find((criterio) => criterio.id === Number(id) && criterio.activo) || null;
-};
-
-export const actualizarCriterioPorId = (id, data) => {
-  const index = criterios.findIndex(
-    (criterio) => criterio.id === Number(id) && criterio.activo,
+export const obtenerCriterioPorId = async (id) => {
+  const [rows] = await pool.query(
+    `SELECT * FROM criterio_aceptacion WHERE id_criterio = ?`,
+    [Number(id)],
   );
 
-  if (index < 0) {
+  if (rows.length === 0) {
     return null;
   }
 
-  criterios[index] = {
-    ...criterios[index],
-    ...data,
-    updatedAt: new Date().toISOString(),
+  const row = rows[0];
+  return {
+    id: row.id_criterio,
+    historiaId: row.id_historia,
+    descripcion: row.descripcion,
+    cumplido: Boolean(row.cumplido),
+    createdAt: row.fecha_creacion,
   };
-
-  return criterios[index];
 };
 
-export const eliminarCriterioPorId = (id) => {
-  const index = criterios.findIndex(
-    (criterio) => criterio.id === Number(id) && criterio.activo,
-  );
-
-  if (index < 0) {
+export const actualizarCriterioPorId = async (id, data) => {
+  const actual = await obtenerCriterioPorId(id);
+  if (!actual) {
     return null;
   }
 
-  criterios[index].activo = false;
-  criterios[index].updatedAt = new Date().toISOString();
+  await pool.query(
+    `UPDATE criterio_aceptacion
+     SET descripcion = ?, cumplido = ?
+     WHERE id_criterio = ?`,
+    [
+      data.descripcion !== undefined ? data.descripcion : actual.descripcion,
+      data.cumplido !== undefined ? Number(Boolean(data.cumplido)) : Number(actual.cumplido),
+      Number(id),
+    ],
+  );
+
+  return await obtenerCriterioPorId(id);
+};
+
+export const eliminarCriterioPorId = async (id) => {
+  const [result] = await pool.query(
+    `DELETE FROM criterio_aceptacion WHERE id_criterio = ?`,
+    [Number(id)],
+  );
+
+  if (result.affectedRows === 0) {
+    return null;
+  }
 
   return {
     id: Number(id),
     eliminado: true,
-    softDelete: true,
   };
 };

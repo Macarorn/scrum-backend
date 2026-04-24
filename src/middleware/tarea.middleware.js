@@ -21,93 +21,105 @@ function tareaTieneUsuarioAsignado(tarea, userId) {
 
 // Regla: solo usuarios asignados pueden mover el estado de la tarea.
 export async function soloAsignadosPuedenCambiarEstado(req, res, next) {
-  const tarea = obtenerTareaPorId(req.params.id);
-  if (!tarea) {
-    return res.status(404).json({
-      success: false,
-      error: "NOT_FOUND",
-      message: "Tarea no encontrada",
-      details: {},
-    });
-  }
+  try {
+    const tarea = await obtenerTareaPorId(req.params.id);
+    if (!tarea) {
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Tarea no encontrada",
+        details: {},
+      });
+    }
 
-  const userId = userIdFromReq(req);
-  if (!tareaTieneUsuarioAsignado(tarea, userId)) {
-    return res.status(403).json({
-      success: false,
-      error: "FORBIDDEN",
-      message: "Solo usuarios asignados pueden cambiar el estado",
-      details: { id_tarea: tarea.id_tarea, userId },
-    });
-  }
+    const userId = userIdFromReq(req);
+    if (!tareaTieneUsuarioAsignado(tarea, userId)) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Solo usuarios asignados pueden cambiar el estado",
+        details: { id_tarea: tarea.id_tarea, userId },
+      });
+    }
 
-  next();
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 // Regla: solo el responsable de la tarea puede registrar tiempo real.
 export async function soloResponsablePuedeActualizarTiempo(req, res, next) {
-  const tarea = obtenerTareaPorId(req.params.id);
-  if (!tarea) {
-    return res.status(404).json({
-      success: false,
-      error: "NOT_FOUND",
-      message: "Tarea no encontrada",
-      details: {},
-    });
-  }
-
-  const userId = userIdFromReq(req);
-  const responsable = tarea.asignados.find((usuario) => {
-    if (typeof usuario === "number") {
-      return usuario === userId;
+  try {
+    const tarea = await obtenerTareaPorId(req.params.id);
+    if (!tarea) {
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Tarea no encontrada",
+        details: {},
+      });
     }
 
-    return Number(usuario.id_usuario) === userId && usuario.es_responsable;
-  });
+    const userId = userIdFromReq(req);
+    const responsable = tarea.asignados.find((usuario) => {
+      if (typeof usuario === "number") {
+        return usuario === userId;
+      }
 
-  if (!responsable) {
-    return res.status(403).json({
-      success: false,
-      error: "FORBIDDEN",
-      message: "Solo el responsable puede actualizar el tiempo real",
-      details: { id_tarea: tarea.id_tarea, userId },
+      return Number(usuario.id_usuario) === userId && usuario.es_responsable;
     });
-  }
 
-  next();
+    if (!responsable) {
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Solo el responsable puede actualizar el tiempo real",
+        details: { id_tarea: tarea.id_tarea, userId },
+      });
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 // Valida estados permitidos y transiciones validas del flujo kanban.
 export async function validarTransicionEstado(req, res, next) {
-  const { estado } = req.body;
-  const tarea = obtenerTareaPorId(req.params.id);
+  try {
+    const { estado } = req.body;
+    const tarea = await obtenerTareaPorId(req.params.id);
 
-  if (!tarea) {
-    return res.status(404).json({
-      success: false,
-      error: "NOT_FOUND",
-      message: "Tarea no encontrada",
-      details: {},
-    });
+    if (!tarea) {
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Tarea no encontrada",
+        details: {},
+      });
+    }
+
+    if (!ESTADOS.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_STATE",
+        message: "Estado invalido",
+        details: { permitidos: ESTADOS },
+      });
+    }
+
+    if (!esTransicionValida(tarea.estado, estado)) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_TRANSITION",
+        message: "Transicion de estado no permitida",
+        details: { estadoActual: tarea.estado, nuevoEstado: estado },
+      });
+    }
+
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  if (!ESTADOS.includes(estado)) {
-    return res.status(400).json({
-      success: false,
-      error: "INVALID_STATE",
-      message: "Estado invalido",
-      details: { permitidos: ESTADOS },
-    });
-  }
-
-  if (!esTransicionValida(tarea.estado, estado)) {
-    return res.status(400).json({
-      success: false,
-      error: "INVALID_TRANSITION",
-      message: "Transicion de estado no permitida",
-      details: { estadoActual: tarea.estado, nuevoEstado: estado },
-    });
-  }
-
-  next();
 }

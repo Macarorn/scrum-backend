@@ -6,7 +6,7 @@ export function esTransicionValida(estadoActual, nuevoEstado) {
   const transiciones = {
     por_hacer: ["en_progreso", "bloqueado"],
     en_progreso: ["terminado", "bloqueado"],
-    bloqueado: ["en_progreso"],
+    bloqueado: ["por_hacer", "en_progreso", "terminado"],
     terminado: [],
   };
   return transiciones[estadoActual]?.includes(nuevoEstado);
