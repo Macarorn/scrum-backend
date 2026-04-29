@@ -84,17 +84,22 @@ const solicitudService = {
       [id_usuario, id_proyecto, mensaje_opcional || null]
     );
 
+    // Obtener info del proyecto para la notificación
     const [proy] = await pool.query(
-      'SELECT creado_por FROM proyecto WHERE id_proyecto = ?',
+      'SELECT nombre, creado_por FROM proyecto WHERE id_proyecto = ?',
       [id_proyecto]
     );
 
     if (proy.length) {
+      // Notificar al Product Owner (creador del proyecto)
       await pool.query(
-        `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje)
-         VALUES (?, 'informativa', 'Nueva solicitud',
-         'Un usuario ha solicitado unirse a tu proyecto')`,
-        [proy[0].creado_por]
+        `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
+         VALUES (?, 'prioritaria', 'Nueva solicitud de ingreso', ?, ?)`,
+        [
+          proy[0].creado_por,
+          `Un usuario ha solicitado unirse al proyecto "${proy[0].nombre}"`,
+          result.insertId
+        ]
       );
     }
 
@@ -219,6 +224,23 @@ const solicitudService = {
       [id_solicitud]
     );
 
+    // Obtener info del proyecto para la notificación
+    const [proyInfo] = await pool.query(
+      'SELECT nombre FROM proyecto WHERE id_proyecto = ?',
+      [solicitud.id_proyecto]
+    );
+    const nombreProyecto = proyInfo.length ? proyInfo[0].nombre : 'un proyecto';
+
+    // Notificar al usuario que solicitó
+    await pool.query(
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje)
+       VALUES (?, 'informativa', 'Solicitud aprobada', ?)`,
+      [
+        solicitud.id_usuario,
+        `Tu solicitud para unirte a "${nombreProyecto}" ha sido aprobada`
+      ]
+    );
+
     return { status: 200, data: null, message: 'Solicitud aprobada' };
   },
 
@@ -338,6 +360,23 @@ const solicitudService = {
       `INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol)
        VALUES (?, ?, ?)`,
       [id_usuario, eqRows[0].id_equipo_proyecto, id_rol]
+    );
+
+    // Obtener info del proyecto para la notificación
+    const [proyInfo] = await pool.query(
+      'SELECT nombre FROM proyecto WHERE id_proyecto = ?',
+      [id_proyecto]
+    );
+    const nombreProyecto = proyInfo.length ? proyInfo[0].nombre : 'un proyecto';
+
+    // Notificar al usuario invitado
+    await pool.query(
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje)
+       VALUES (?, 'prioritaria', 'Invitación a proyecto', ?)`,
+      [
+        id_usuario,
+        `Has sido invitado a unirte al proyecto "${nombreProyecto}"`
+      ]
     );
 
     return { status: 201, data: null, message: 'Usuario invitado' };

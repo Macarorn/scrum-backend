@@ -20,6 +20,7 @@ import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import solicitudRoutes from "./routes/solicitud.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 
 dotenv.config();
@@ -104,6 +105,7 @@ app.use("/api/etiquetas", etiquetasRoutes);
 app.use("/api/sprints", sprintRoutes);
 app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
+app.use("/api/notificaciones", notificacionesRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
