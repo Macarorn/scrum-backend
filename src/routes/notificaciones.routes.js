@@ -4,6 +4,12 @@ import { authMiddleware } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
+// Endpoints de notificaciones (los nuevos que hiciste)
+router.post('/sprint-start', notificacionesController.sprintStart);
+router.post('/sprint-reminder', notificacionesController.sprintReminder);
+router.post('/sprint-completed', notificacionesController.sprintCompleted);
+router.post('/team', notificacionesController.notifyTeam);
+
 // Obtener notificaciones del usuario autenticado
 router.get('/', authMiddleware, notificacionesController.listarNotificaciones);
 
