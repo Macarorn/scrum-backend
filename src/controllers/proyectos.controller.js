@@ -1,6 +1,7 @@
 // Controlador de proyectos: gestiona CRUD de proyectos
 import { validarProyecto } from "../models/validations/proyectos.validations.js";
 import * as proyectosService from "../services/proyectos.service.js";
+import notificacionesService from "../services/notificaciones.service.js";
 
 /**
  * Listar proyectos
@@ -29,6 +30,16 @@ export const unirseAProyecto = async (req, res, next) => {
   try {
     const userId = req.user.id_usuario;
     const data = await proyectosService.unirseAProyecto(userId, req.params.id);
+
+    // Notificar a los demás miembros del proyecto sobre el nuevo miembro
+    const usuarioActual = req.user;
+    await notificacionesService.notificarNuevoMiembro(
+      req.params.id,
+      data.nombre,
+      usuarioActual.nombre || usuarioActual.email || 'Un usuario',
+      userId
+    );
+
     res.status(200).json({ success: true, data, message: "Te has unido al proyecto" });
   } catch (error) {
     next(error);
@@ -103,10 +114,27 @@ export const actualizarProyecto = async (req, res, next) => {
           message: "Datos inválidos",
           details: errores,
         });
+
+    // Obtener el proyecto actual para comparar el estado
+    const proyectoActual = await proyectosService.obtenerProyecto(req.params.id);
+    const estadoAnterior = proyectoActual.estado;
+
     const data = await proyectosService.actualizarProyecto(
       req.params.id,
       req.body,
     );
+
+    // Notificar cambio de estado si el estado cambió
+    if (req.body.estado && req.body.estado !== estadoAnterior) {
+      const userId = req.user?.id_usuario;
+      await notificacionesService.notificarCambioEstadoProyecto(
+        req.params.id,
+        data.nombre,
+        req.body.estado,
+        userId
+      );
+    }
+
     res
       .status(200)
       .json({ success: true, data, message: "Proyecto actualizado" });

@@ -22,6 +22,7 @@ import usersRoutes from "./routes/users.routes.js";
 import solicitudRoutes from "./routes/solicitud.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
+import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
 
 dotenv.config();
 
@@ -106,6 +107,9 @@ app.use("/api/sprints", sprintRoutes);
 app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
+
+// Iniciar scheduler de notificaciones de sprint
+iniciarSchedulerSprint();
 
 app.use(notFoundHandler);
 app.use(errorHandler);
