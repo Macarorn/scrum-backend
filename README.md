@@ -198,6 +198,16 @@ Gestión del Product Backlog y definición de requerimientos detallados.
 - `GET /api/perfil` - Obtener mi perfil
 - `PUT /api/perfil` - Actualizar mi perfil
 
+### Solicitudes y Notificaciones
+
+- `POST /api/solicitudes` - Crear solicitud de ingreso a un proyecto
+- `GET /api/solicitudes` - Listar mis solicitudes
+- `GET /api/solicitudes/pendientes?proyecto=:id` - Listar solicitudes pendientes de un proyecto
+- `POST /api/solicitudes/:id_solicitud/aprobar` - Aprobar una solicitud
+- `POST /api/solicitudes/:id_solicitud/rechazar` - Rechazar una solicitud
+- `GET /api/notificaciones` - Listar notificaciones del usuario autenticado
+- `POST /api/notificaciones/:id_notificacion/leida` - Marcar notificación como leída
+
 ## Pruebas
 
 ```bash
@@ -225,6 +235,19 @@ Archivos de apoyo para pruebas manuales:
 - `backlog.test.js`: épicas, historias, criterios y etiquetas.
 - `tareas.test.js`: CRUD de tareas más estado, orden, tiempo real, comentarios, etiquetas, historial y asignación, usando nombres alineados con `tarea`.
 - `sprints.test.js`: CRUD de sprints y cambio de estado con DB simulada, usando nombres alineados con `sprint`.
+
+### Escenarios E2E de integración
+
+- Usuario solicita ingreso a un proyecto desde el frontend.
+- El aprobador ve la solicitud en el centro de notificaciones y la aprueba o rechaza.
+- El usuario consulta el estado actualizado de su solicitud y recibe la notificación correspondiente.
+- El frontend refresca el centro de notificaciones de forma periódica para simular tiempo real.
+
+### Defectos observados en validación
+
+- `npm test` actualmente falla en `tests/integration/tareas.test.js` por errores heredados de ids `undefined`/`NaN` en la capa de tareas.
+- La misma corrida muestra fallos de autenticación en `tests/integration/auth-users.test.js` por credenciales o semilla no alineadas en ese entorno.
+- Estos fallos no pertenecen al flujo de notificaciones integrado en esta entrega.
 
 ### Cómo validar manualmente
 
