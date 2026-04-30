@@ -113,7 +113,7 @@ CREATE TABLE proyecto (
     nombre          VARCHAR(150) NOT NULL,
     descripcion     TEXT,
     tipo            VARCHAR(100),
-    estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'inicio',
+    estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'activo',
     fecha_inicio    DATE,
     fecha_fin_est   DATE,
     codigo_proyecto VARCHAR(10) NOT NULL UNIQUE,

@@ -1,6 +1,6 @@
 // Store temporal en memoria para pruebas del módulo proyectos.
-import pool from "../utils/database.js";
 import { generarCodigoUnicoProyecto } from "../utils/codigoProyecto.utils.js";
+import pool from "../utils/database.js";
 
 function notFoundError(entity = "Proyecto") {
   return {
@@ -11,7 +11,8 @@ function notFoundError(entity = "Proyecto") {
 }
 
 export const listarProyectos = async (userId) => {
-  const [rows] = await pool.query(`
+  const [rows] = await pool.query(
+    `
     SELECT DISTINCT p.* FROM proyecto p
     WHERE p.creado_por = ?
     OR EXISTS (
@@ -19,7 +20,9 @@ export const listarProyectos = async (userId) => {
       JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
       WHERE ep.id_proyecto = p.id_proyecto AND uep.id_usuario = ?
     )
-  `, [userId, userId]);
+  `,
+    [userId, userId],
+  );
   return rows;
 };
 
@@ -34,7 +37,7 @@ export const listarTodosProyectos = async (userId) => {
           AND uep.activo = 1
       ) AS es_miembro
     FROM proyecto p`,
-    [userId]
+    [userId],
   );
   return rows;
 };
@@ -42,7 +45,7 @@ export const listarTodosProyectos = async (userId) => {
 export const unirseAProyecto = async (userId, proyectoId) => {
   const [proyectoRows] = await pool.query(
     "SELECT * FROM proyecto WHERE id_proyecto = ?",
-    [proyectoId]
+    [proyectoId],
   );
 
   if (proyectoRows.length === 0) {
@@ -51,7 +54,7 @@ export const unirseAProyecto = async (userId, proyectoId) => {
 
   const [teamRows] = await pool.query(
     "SELECT id_equipo_proyecto FROM equipo_proyecto WHERE id_proyecto = ? LIMIT 1",
-    [proyectoId]
+    [proyectoId],
   );
 
   let idEquipoProyecto;
@@ -61,14 +64,14 @@ export const unirseAProyecto = async (userId, proyectoId) => {
   } else {
     const [insertResult] = await pool.query(
       "INSERT INTO equipo_proyecto (id_proyecto, nombre, descripcion) VALUES (?, ?, ?)",
-      [proyectoId, "Equipo del proyecto", "Equipo principal del proyecto"]
+      [proyectoId, "Equipo del proyecto", "Equipo principal del proyecto"],
     );
     idEquipoProyecto = insertResult.insertId;
   }
 
   const [existingRows] = await pool.query(
     "SELECT 1 FROM usuario_equipo_proyecto WHERE id_usuario = ? AND id_equipo_proyecto = ?",
-    [userId, idEquipoProyecto]
+    [userId, idEquipoProyecto],
   );
 
   if (existingRows.length > 0) {
@@ -79,7 +82,7 @@ export const unirseAProyecto = async (userId, proyectoId) => {
 
   await pool.query(
     "INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol) VALUES (?, ?, ?)",
-    [userId, idEquipoProyecto, 3]
+    [userId, idEquipoProyecto, 3],
   );
 
   return proyectoRows[0];
@@ -96,19 +99,25 @@ export const crearProyecto = async (data) => {
       data.nombre,
       data.descripcion || null,
       data.tipo || null,
-      data.estado || "inicio",
+      data.estado || "activo",
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
       codigoProyecto,
       data.creado_por || 1, // Asumir usuario 1 si no se pasa
-    ]
+    ],
   );
-  const [rows] = await pool.query("SELECT * FROM proyecto WHERE id_proyecto = ?", [result.insertId]);
+  const [rows] = await pool.query(
+    "SELECT * FROM proyecto WHERE id_proyecto = ?",
+    [result.insertId],
+  );
   return rows[0];
 };
 
 export const obtenerProyecto = async (id) => {
-  const [rows] = await pool.query("SELECT * FROM proyecto WHERE id_proyecto = ?", [id]);
+  const [rows] = await pool.query(
+    "SELECT * FROM proyecto WHERE id_proyecto = ?",
+    [id],
+  );
   if (rows.length === 0) {
     throw notFoundError();
   }
@@ -127,17 +136,23 @@ export const actualizarProyecto = async (id, data) => {
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
       id,
-    ]
+    ],
   );
   if (result.affectedRows === 0) {
     throw notFoundError();
   }
-  const [rows] = await pool.query("SELECT * FROM proyecto WHERE id_proyecto = ?", [id]);
+  const [rows] = await pool.query(
+    "SELECT * FROM proyecto WHERE id_proyecto = ?",
+    [id],
+  );
   return rows[0];
 };
 
 export const buscarProyectoPorCodigo = async (codigo) => {
-  const [rows] = await pool.query("SELECT * FROM proyecto WHERE codigo_proyecto = ?", [codigo.toUpperCase()]);
+  const [rows] = await pool.query(
+    "SELECT * FROM proyecto WHERE codigo_proyecto = ?",
+    [codigo.toUpperCase()],
+  );
   if (rows.length === 0) {
     throw notFoundError();
   }
