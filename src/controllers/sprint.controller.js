@@ -14,7 +14,7 @@ function normalizeSprintPayload(body) {
   };
 }
 
-// ✅ CREAR
+// CREAR
 export const createSprint = async (req, res) => {
   try {
     const sprint = normalizeSprintPayload(req.body);
@@ -66,10 +66,28 @@ export const createSprint = async (req, res) => {
   }
 };
 
-// ✅ OBTENER TODOS
+// OBTENER TODOS
 export const getSprints = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM sprint");
+    const projectIdRaw = req.query.id_proyecto ?? req.query.proyectoId;
+
+    let rows;
+    if (projectIdRaw !== undefined && projectIdRaw !== null && String(projectIdRaw).trim() !== "") {
+      const projectId = Number(projectIdRaw);
+      if (!Number.isInteger(projectId) || projectId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "id_proyecto invalido",
+        });
+      }
+
+      [rows] = await pool.query(
+        "SELECT * FROM sprint WHERE id_proyecto = ? ORDER BY id_sprint DESC",
+        [projectId],
+      );
+    } else {
+      [rows] = await pool.query("SELECT * FROM sprint ORDER BY id_sprint DESC");
+    }
 
     res.json({
       success: true,
@@ -81,7 +99,7 @@ export const getSprints = async (req, res) => {
   }
 };
 
-// ✅ OBTENER POR ID
+//  OBTENER POR ID
 export const getSprintById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,7 +126,7 @@ export const getSprintById = async (req, res) => {
   }
 };
 
-// ✅ ACTUALIZAR
+//  ACTUALIZAR
 export const updateSprint = async (req, res) => {
   try {
     const { id } = req.params;
@@ -149,7 +167,7 @@ export const updateSprint = async (req, res) => {
   }
 };
 
-// ✅ ELIMINAR
+//  ELIMINAR
 export const deleteSprint = async (req, res) => {
   try {
     const { id } = req.params;
@@ -176,7 +194,7 @@ export const deleteSprint = async (req, res) => {
   }
 };
 
-// ✅ CAMBIAR ESTADO
+//  CAMBIAR ESTADO
 export const updateEstado = async (req, res) => {
   try {
     const { id } = req.params;

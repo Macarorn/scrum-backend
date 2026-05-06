@@ -103,22 +103,6 @@ CREATE TABLE perfil_usuario (
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 );
 
--- Notificaciones del sistema
-CREATE TABLE notificacion (
-    id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario          INT NOT NULL,
-    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio') NOT NULL DEFAULT 'informativa',
-    titulo              VARCHAR(200) NOT NULL,
-    mensaje             TEXT,
-    leida               TINYINT(1) NOT NULL DEFAULT 0,
-    fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
-);
-
--- Índices en notificación
-CREATE INDEX idx_notificacion_usuario ON notificacion(id_usuario);
-CREATE INDEX idx_notificacion_leida ON notificacion(leida);
-
 -- ============================================================
 -- MÓDULO 2 — BACKLOG DE PRODUCTO
 -- ============================================================
@@ -129,7 +113,7 @@ CREATE TABLE proyecto (
     nombre          VARCHAR(150) NOT NULL,
     descripcion     TEXT,
     tipo            VARCHAR(100),
-    estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'inicio',
+    estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'activo',
     fecha_inicio    DATE,
     fecha_fin_est   DATE,
     codigo_proyecto VARCHAR(10) NOT NULL UNIQUE,
@@ -138,6 +122,41 @@ CREATE TABLE proyecto (
     fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (creado_por) REFERENCES usuario(id_usuario) ON DELETE RESTRICT
 );
+
+-- Tabla para manejar solicitudes de ingreso a proyectos
+CREATE TABLE solicitud (
+    id_solicitud      INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto       INT NOT NULL,
+    id_usuario        INT NOT NULL,
+    mensaje_opcional  TEXT,
+    estado            ENUM('Pendiente', 'Aprobada', 'Rechazada', 'Cancelada') DEFAULT 'Pendiente',
+    motivo            TEXT,
+    id_rol            INT DEFAULT NULL,
+    fecha_creacion    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_rol) REFERENCES rol(id_rol) ON DELETE SET NULL
+);
+
+-- Notificaciones del sistema
+CREATE TABLE notificacion (
+    id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario          INT NOT NULL,
+    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio') NOT NULL DEFAULT 'informativa',
+    titulo              VARCHAR(200) NOT NULL,
+    mensaje             TEXT,
+    leida               TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_solicitud        INT DEFAULT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud) ON DELETE CASCADE
+);
+
+-- Índices en notificación
+CREATE INDEX idx_notificacion_usuario ON notificacion(id_usuario);
+CREATE INDEX idx_notificacion_leida ON notificacion(leida);
 
 -- Índices en proyecto
 CREATE INDEX idx_proyecto_estado ON proyecto(estado);
@@ -556,6 +575,12 @@ INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje) VALUES
 (4, 'informativa', 'Sprint 1 iniciado', 'El Sprint 1 ha sido creado. Revisa tus tareas asignadas en el tablero.'),
 (1, 'prioritaria', 'Nuevo sprint creado', 'Se ha creado el Sprint 1 - Autenticación. Comienza en 2 días.');
 
+-- Solicitudes de ingreso a proyecto de prueba
+INSERT INTO solicitud (id_usuario, id_proyecto, mensaje_opcional)
+VALUES
+(3, 1, 'Quiero unirme al proyecto'),
+(4, 1, 'Me interesa participar');
+
 -- ============================================================
 -- CONSULTAS DE VERIFICACIÓN
 -- ============================================================
@@ -583,3 +608,4 @@ UNION ALL
 SELECT 'notificaciones',     COUNT(*) FROM notificacion
 UNION ALL
 SELECT 'equipo_proyecto',    COUNT(*) FROM equipo_proyecto;
+

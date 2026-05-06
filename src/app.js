@@ -21,6 +21,8 @@ import proyectosRoutes from "./routes/proyectos.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
+import solicitudRoutes from "./routes/solicitud.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 
@@ -100,6 +102,8 @@ app.use("/api/criterios", criteriosRoutes);
 app.use("/api/etiquetas", etiquetasRoutes);
 app.use("/api/sprints", sprintRoutes);
 app.use("/api/tareas", tareaRoutes);
+app.use("/api/solicitudes", solicitudRoutes);
+app.use("/api/notificaciones", notificacionesRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
