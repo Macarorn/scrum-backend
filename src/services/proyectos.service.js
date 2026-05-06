@@ -10,6 +10,12 @@ function notFoundError(entity = "Proyecto") {
   };
 }
 
+const withCalendarDateAliases = (project) => ({
+  ...project,
+  startDate: project.fecha_inicio,
+  endDate: project.fecha_fin_est,
+});
+
 export const listarProyectos = async (userId) => {
   const [rows] = await pool.query(
     `
@@ -23,7 +29,7 @@ export const listarProyectos = async (userId) => {
   `,
     [userId, userId],
   );
-  return rows;
+  return rows.map(withCalendarDateAliases);
 };
 
 export const listarTodosProyectos = async (userId) => {
@@ -39,7 +45,7 @@ export const listarTodosProyectos = async (userId) => {
     FROM proyecto p`,
     [userId],
   );
-  return rows;
+  return rows.map(withCalendarDateAliases);
 };
 
 export const unirseAProyecto = async (userId, proyectoId) => {
@@ -85,7 +91,7 @@ export const unirseAProyecto = async (userId, proyectoId) => {
     [userId, idEquipoProyecto, 3],
   );
 
-  return proyectoRows[0];
+  return withCalendarDateAliases(proyectoRows[0]);
 };
 
 export const crearProyecto = async (data) => {
@@ -110,7 +116,7 @@ export const crearProyecto = async (data) => {
     "SELECT * FROM proyecto WHERE id_proyecto = ?",
     [result.insertId],
   );
-  return rows[0];
+  return withCalendarDateAliases(rows[0]);
 };
 
 export const obtenerProyecto = async (id) => {
@@ -121,7 +127,7 @@ export const obtenerProyecto = async (id) => {
   if (rows.length === 0) {
     throw notFoundError();
   }
-  return rows[0];
+  return withCalendarDateAliases(rows[0]);
 };
 
 export const actualizarProyecto = async (id, data) => {
@@ -145,7 +151,7 @@ export const actualizarProyecto = async (id, data) => {
     "SELECT * FROM proyecto WHERE id_proyecto = ?",
     [id],
   );
-  return rows[0];
+  return withCalendarDateAliases(rows[0]);
 };
 
 export const buscarProyectoPorCodigo = async (codigo) => {
@@ -156,5 +162,5 @@ export const buscarProyectoPorCodigo = async (codigo) => {
   if (rows.length === 0) {
     throw notFoundError();
   }
-  return rows[0];
+  return withCalendarDateAliases(rows[0]);
 };
