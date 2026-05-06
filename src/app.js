@@ -19,9 +19,19 @@ import proyectosRoutes from "./routes/proyectos.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
+import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
+import { connectMongo } from "./utils/mongo.js";
 
 dotenv.config();
+
+if (process.env.MONGO_URI) {
+  await connectMongo();
+} else {
+  console.warn(
+    "MONGO_URI no definido. Las rutas de reuniones requerirán una conexión MongoDB activa.",
+  );
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -89,12 +99,14 @@ app.get("/", (req, res) => {
       etiquetas: "/api/etiquetas",
       sprints: "/api/sprints",
       tareas: "/api/tareas",
+      meetings: "/api/meetings",
     },
   });
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
+app.use("/api/meetings", meetingsRoutes);
 app.use("/api/proyectos", proyectosRoutes);
 app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);
