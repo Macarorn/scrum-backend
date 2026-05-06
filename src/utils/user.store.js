@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { hashPassword } from "./password.utils.js";
 import pool from "./database.js";
+import config from "../config/config.js";
 
 const roles = [
   { id_rol: 1, nombre_rol: "admin", descripcion: "Acceso total al sistema" },
@@ -60,7 +61,7 @@ let userIdSequence = 1;
 const DATA_DIR = path.resolve(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
-const isTestEnv = () => process.env.NODE_ENV === "test";
+const isTestEnv = () => config.server.nodeEnv === "test";
 
 const ensureDataDir = async () => {
   await fs.mkdir(DATA_DIR, { recursive: true });

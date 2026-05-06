@@ -1,8 +1,10 @@
 import cors from "cors";
-import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+
+// Cargar configuración primero
+import config from "./config/config.js";
 
 import {
   errorHandler,
@@ -21,31 +23,15 @@ import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
-import { connectMongo } from "./utils/mongo.js";
-
-dotenv.config();
-
-if (process.env.MONGO_URI) {
-  await connectMongo();
-} else {
-  console.warn(
-    "MONGO_URI no definido. Las rutas de reuniones requerirán una conexión MongoDB activa.",
-  );
-}
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-const configuredOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const PORT = config.server.port;
 
 const devOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
 const allowedOrigins =
-  process.env.NODE_ENV === "development"
-    ? Array.from(new Set([...configuredOrigins, ...devOrigins]))
-    : configuredOrigins;
+  config.server.nodeEnv === "development"
+    ? Array.from(new Set([...config.cors.origin, ...devOrigins]))
+    : config.cors.origin;
 
 const corsOrigin =
   allowedOrigins.length === 0
@@ -73,8 +59,8 @@ app.use(
 );
 
 const limiter = rateLimit({
-  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW, 10) || 15) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+  windowMs: config.rateLimit.window * 60 * 1000,
+  max: config.rateLimit.max,
   message: "Demasiadas solicitudes, intenta más tarde",
 });
 app.use("/api/", limiter);
@@ -118,10 +104,10 @@ app.use("/api/tareas", tareaRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== "test") {
+if (config.server.nodeEnv !== "test") {
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`Ambiente: ${process.env.NODE_ENV}`);
+    console.log(`Ambiente: ${config.server.nodeEnv}`);
   });
 }
 export default app;
