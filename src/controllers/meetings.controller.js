@@ -49,6 +49,41 @@ export const createMeeting = async (req, res) => {
   }
 };
 
+export const deleteMeeting = async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: "MongoDB no está conectado. Verifica MONGO_URI en el entorno.",
+      });
+    }
+
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "El ID de la reunión es obligatorio.",
+      });
+    }
+
+    const deletedMeeting = await Meeting.findByIdAndDelete(id);
+    if (!deletedMeeting) {
+      return res.status(404).json({
+        success: false,
+        message: "Reunión no encontrada.",
+      });
+    }
+
+    return res.json({ success: true, data: deletedMeeting });
+  } catch (error) {
+    console.error("Error deleteMeeting:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al eliminar la reunión.",
+    });
+  }
+};
+
 export const getMeetings = async (req, res) => {
   try {
     if (!isDbConnected()) {
@@ -58,7 +93,7 @@ export const getMeetings = async (req, res) => {
       });
     }
 
-    const { sprint, from, to } = req.query;
+    const { sprint, from, to, q } = req.query;
     const filter = {};
 
     if (sprint) {
@@ -82,6 +117,19 @@ export const getMeetings = async (req, res) => {
       if (Object.keys(filter.date).length === 0) {
         delete filter.date;
       }
+    }
+
+    if (q) {
+      const regex = new RegExp(String(q).trim(), "i");
+      filter.$or = [
+        { title: regex },
+        { description: regex },
+        { sprint: regex },
+        { status: regex },
+        { type: regex },
+        { room: regex },
+        { link: regex },
+      ];
     }
 
     const meetings = await Meeting.find(filter).sort({ date: 1 });

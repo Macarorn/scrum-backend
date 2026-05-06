@@ -8,5 +8,6 @@ const protect = useAuth ? authMiddleware : (req, res, next) => next();
 
 router.get("/", protect, controller.getMeetings);
 router.post("/", protect, controller.createMeeting);
+router.delete("/:id", protect, controller.deleteMeeting);
 
 export default router;
