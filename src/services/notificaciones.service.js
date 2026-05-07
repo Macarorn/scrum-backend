@@ -1,9 +1,5 @@
 import pool from '../utils/database.js';
 
-// ----------------------------------------
-// SERVICE PRINCIPAL
-// ----------------------------------------
-
 const notificacionesService = {
   async listarNotificaciones({ id_usuario }) {
     const [rows] = await pool.query(
@@ -35,9 +31,6 @@ const notificacionesService = {
   }
 };
 
-// ----------------------------------------
-// NOTIFICACIÓN MASIVA (CORREGIDO)
-// ----------------------------------------
 
 export const sendNotificationToTeam = async ({ teamId, message, type }) => {
   if (!teamId || !message || !type) {
