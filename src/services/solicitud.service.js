@@ -1,5 +1,16 @@
 import pool from "../utils/database.js";
 
+const logSolicitud = (event, details = {}) => {
+  console.log(
+    JSON.stringify({
+      service: "solicitud",
+      event,
+      ...details,
+      timestamp: new Date().toISOString(),
+    }),
+  );
+};
+
 // =============================
 // VALIDAR APROBADOR
 // =============================
@@ -74,6 +85,11 @@ const solicitudService = {
     );
 
     if (equipo.length > 0) {
+      logSolicitud("solicitud_rechazada", {
+        reason: "usuario_ya_miembro",
+        id_usuario,
+        id_proyecto,
+      });
       return { status: 409, data: null, message: "Ya eres miembro" };
     }
 
@@ -84,6 +100,11 @@ const solicitudService = {
     );
 
     if (pend.length > 0) {
+      logSolicitud("solicitud_rechazada", {
+        reason: "solicitud_duplicada",
+        id_usuario,
+        id_proyecto,
+      });
       return { status: 409, data: null, message: "Solicitud duplicada" };
     }
 
@@ -110,6 +131,12 @@ const solicitudService = {
           result.insertId,
         ],
       );
+      logSolicitud("notificacion_creada", {
+        tipo: "Nueva solicitud de ingreso",
+        id_usuario: proy[0].creado_por,
+        id_proyecto,
+        id_solicitud: result.insertId,
+      });
     }
 
     return {
@@ -255,6 +282,21 @@ const solicitudService = {
          VALUES (?, ?, ?)`,
         [solicitud.id_usuario, id_equipo_proyecto, id_rol],
       );
+      logSolicitud("miembro_agregado", {
+        id_usuario: solicitud.id_usuario,
+        id_proyecto: solicitud.id_proyecto,
+        id_equipo_proyecto,
+        id_rol,
+        id_solicitud,
+        aprobado_por: id_usuario_aprobador,
+      });
+    } else {
+      logSolicitud("miembro_existente", {
+        id_usuario: solicitud.id_usuario,
+        id_proyecto: solicitud.id_proyecto,
+        id_equipo_proyecto,
+        id_solicitud,
+      });
     }
 
     await pool.query(
@@ -278,6 +320,12 @@ const solicitudService = {
         `Tu solicitud para unirte a "${nombreProyecto}" ha sido aprobada`,
       ],
     );
+    logSolicitud("notificacion_creada", {
+      tipo: "Solicitud aprobada",
+      id_usuario: solicitud.id_usuario,
+      id_proyecto: solicitud.id_proyecto,
+      id_solicitud,
+    });
 
     return { status: 200, data: null, message: "Solicitud aprobada" };
   },
