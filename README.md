@@ -177,6 +177,18 @@ Gestión del Product Backlog y definición de requerimientos detallados.
 `POST /api/historias/:id/criterios` - Crea un criterio vinculado a una historia - Product Owner, Scrum Master, Usuario 
 
 
+### Módulo: Notificaciones
+
+Gestión de notificaciones del usuario y envío de notificaciones masivas al equipo de proyecto.
+
+`GET /api/notificaciones` - Lista las notificaciones del usuario autenticado - Usuario Autenticado 
+`POST /api/notificaciones/:id_notificacion/leida` - Marca una notificación como leída - Usuario Autenticado 
+`POST /api/notificaciones/sprint-start` - Notifica al equipo que un sprint ha iniciado - Público 
+`POST /api/notificaciones/sprint-reminder` - Envía recordatorio de fin de sprint al equipo - Público 
+`POST /api/notificaciones/sprint-completed` - Notifica al equipo que un sprint fue completado - Público 
+`POST /api/notificaciones/team` - Envía una notificación personalizada a todo el equipo - Público 
+
+
 ## Endpoints Principales
 
 ### Autenticación
@@ -207,6 +219,10 @@ Gestión del Product Backlog y definición de requerimientos detallados.
 - `POST /api/solicitudes/:id_solicitud/rechazar` - Rechazar una solicitud
 - `GET /api/notificaciones` - Listar notificaciones del usuario autenticado
 - `POST /api/notificaciones/:id_notificacion/leida` - Marcar notificación como leída
+- `POST /api/notificaciones/sprint-start` - Notificar al equipo que un sprint ha iniciado
+- `POST /api/notificaciones/sprint-reminder` - Enviar recordatorio de fin de sprint al equipo
+- `POST /api/notificaciones/sprint-completed` - Notificar al equipo que un sprint fue completado
+- `POST /api/notificaciones/team` - Enviar notificación personalizada a todo el equipo
 
 ## Pruebas
 
