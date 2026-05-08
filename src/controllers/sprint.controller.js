@@ -1,5 +1,48 @@
 import pool from "../utils/database.js";
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const startOfDay = (value = new Date()) => {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const getDateMetadata = (value) => {
+  const eventDate = startOfDay(value);
+  if (Number.isNaN(eventDate.getTime())) {
+    return {
+      esHoy: false,
+      proximoEvento: false,
+      atrasado: false,
+      diasRestantes: null,
+      prioridad: "baja",
+    };
+  }
+
+  const today = startOfDay();
+  const diasRestantes = Math.round((eventDate - today) / DAY_IN_MS);
+  const esHoy = diasRestantes === 0;
+  const proximoEvento = diasRestantes > 0 && diasRestantes <= 3;
+  const atrasado = diasRestantes < 0;
+
+  return {
+    esHoy,
+    proximoEvento,
+    atrasado,
+    diasRestantes,
+    prioridad: esHoy || atrasado ? "alta" : proximoEvento ? "media" : "baja",
+  };
+};
+
+const withSprintCalendarMetadata = (sprint) => {
+  if (!sprint) return sprint;
+  return {
+    ...sprint,
+    ...getDateMetadata(sprint.fecha_fin || sprint.fecha_inicio),
+  };
+};
+
 function normalizeSprintPayload(body) {
   return {
     id_proyecto: body.id_proyecto ?? body.proyectoId,
@@ -52,7 +95,7 @@ export const createSprint = async (req, res) => {
       success: true,
       data: {
         id_sprint: result.insertId,
-        ...sprint,
+        ...withSprintCalendarMetadata(sprint),
       },
       message: "sprint creado correctamente",
     });
@@ -91,7 +134,7 @@ export const getSprints = async (req, res) => {
 
     res.json({
       success: true,
-      data: rows,
+      data: rows.map(withSprintCalendarMetadata),
     });
   } catch (error) {
     console.error(error);
@@ -118,7 +161,7 @@ export const getSprintById = async (req, res) => {
 
     res.json({
       success: true,
-      data: rows[0],
+      data: withSprintCalendarMetadata(rows[0]),
     });
   } catch (error) {
     console.error(error);

@@ -1,5 +1,47 @@
 import pool from "../utils/database.js";
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
+
+const startOfDay = (value = new Date()) => {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const getDateMetadata = (value, priority) => {
+  const eventDate = startOfDay(value);
+  if (Number.isNaN(eventDate.getTime())) {
+    return {
+      esHoy: false,
+      proximoEvento: false,
+      atrasado: false,
+      diasRestantes: null,
+      prioridad: VALID_PRIORITIES.has(priority) ? priority : "baja",
+    };
+  }
+
+  const today = startOfDay();
+  const diasRestantes = Math.round((eventDate - today) / DAY_IN_MS);
+  const esHoy = diasRestantes === 0;
+  const proximoEvento = diasRestantes > 0 && diasRestantes <= 3;
+  const atrasado = diasRestantes < 0;
+
+  return {
+    esHoy,
+    proximoEvento,
+    atrasado,
+    diasRestantes,
+    prioridad: VALID_PRIORITIES.has(priority)
+      ? priority
+      : esHoy || atrasado
+        ? "alta"
+        : proximoEvento
+          ? "media"
+          : "baja",
+  };
+};
+
 const ensureMeetingTable = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS meeting (
@@ -10,6 +52,7 @@ const ensureMeetingTable = async () => {
       status VARCHAR(100) DEFAULT 'programada',
       date DATETIME NOT NULL,
       type VARCHAR(100),
+      priority VARCHAR(20) DEFAULT 'media',
       startTime VARCHAR(20),
       duration VARCHAR(50),
       room VARCHAR(100),
@@ -18,6 +61,11 @@ const ensureMeetingTable = async () => {
       fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
     )
   `);
+
+  const [columns] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'priority'");
+  if (columns.length === 0) {
+    await pool.query("ALTER TABLE meeting ADD COLUMN priority VARCHAR(20) DEFAULT 'media' AFTER type");
+  }
 };
 
 const parseMeetingDate = (value) => {
@@ -40,6 +88,7 @@ const normalizeMeetingPayload = (body) => {
   const sprint = String(body.sprint || "").trim();
   const status = String(body.status || "").trim();
   const type = String(body.type || "").trim();
+  const priority = String(body.priority || body.prioridad || "media").trim().toLowerCase();
   const room = String(body.room || "").trim();
   const link = String(body.link || "").trim();
   const date = parseMeetingDate(body.date);
@@ -67,6 +116,7 @@ const normalizeMeetingPayload = (body) => {
     sprint,
     status,
     type,
+    priority: VALID_PRIORITIES.has(priority) ? priority : "media",
     room,
     link,
     date: startDate,
@@ -81,6 +131,7 @@ const withMeetingAliases = (meeting) => {
   if (!meeting) return meeting;
 
   const startDate = meeting.start_date || meeting.date || null;
+  const priority = String(meeting.priority || meeting.prioridad || "").toLowerCase();
 
   return {
     ...meeting,
@@ -90,6 +141,8 @@ const withMeetingAliases = (meeting) => {
     endDate: meeting.end_date || null,
     startTime: meeting.startTime || meeting.start_time || null,
     endTime: meeting.endTime || meeting.end_time || null,
+    priority: VALID_PRIORITIES.has(priority) ? priority : undefined,
+    ...getDateMetadata(startDate, priority),
   };
 };
 
@@ -107,8 +160,8 @@ export const createMeeting = async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO meeting
-        (title, description, sprint, status, date, type, startTime, duration, room, link)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (title, description, sprint, status, date, type, priority, startTime, duration, room, link)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.title,
         payload.description,
@@ -116,6 +169,7 @@ export const createMeeting = async (req, res) => {
         payload.status,
         payload.date,
         payload.type,
+        payload.priority,
         payload.startTime,
         payload.duration,
         payload.room,
