@@ -46,6 +46,85 @@ export const unirseAProyecto = async (req, res, next) => {
   }
 };
 
+export const listarMiembrosProyecto = async (req, res, next) => {
+  try {
+    const data = await proyectosService.listarMiembrosProyecto(req.params.id);
+    res.status(200).json({ success: true, data, message: "Miembros del proyecto listados" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const eliminarMiembroProyecto = async (req, res, next) => {
+  try {
+    const data = await proyectosService.eliminarMiembroProyecto(
+      req.params.id,
+      req.params.id_usuario,
+    );
+    res.status(200).json({ success: true, data, message: "Miembro eliminado del proyecto" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const actualizarRolMiembroProyecto = async (req, res, next) => {
+  try {
+    const { id, id_usuario } = req.params;
+    const { id_rol } = req.body;
+
+    if (!id_rol) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "El id_rol es requerido",
+        details: { id_rol: "id_rol es requerido" },
+      });
+    }
+
+    const data = await proyectosService.actualizarRolMiembroProyecto(
+      id,
+      id_usuario,
+      id_rol,
+      req.user,
+    );
+
+    res.status(200).json({ success: true, data, message: "Rol del miembro actualizado" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const actualizarEstadoMiembroProyecto = async (req, res, next) => {
+  try {
+    const { id, id_usuario } = req.params;
+    const { activo } = req.body;
+
+    if (activo === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "El campo activo es requerido",
+        details: { activo: "activo es requerido" },
+      });
+    }
+
+    const data = await proyectosService.actualizarEstadoMiembroProyecto(
+      id,
+      id_usuario,
+      Boolean(activo),
+      req.user,
+    );
+
+    res.status(200).json({
+      success: true,
+      data,
+      message: `Miembro ${activo ? "habilitado" : "inhabilitado"} correctamente`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Crear un nuevo proyecto
  */

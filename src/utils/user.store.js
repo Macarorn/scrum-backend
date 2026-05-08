@@ -101,8 +101,13 @@ const sanitizeUser = (user) => {
   return safeUser;
 };
 
-const getRoleById = (idRol) =>
-  roles.find((role) => role.id_rol === Number(idRol));
+const getRoleById = async (idRol) => {
+  const [rows] = await pool.query(
+    "SELECT id_rol, nombre_rol, descripcion FROM rol WHERE id_rol = ?",
+    [Number(idRol)],
+  );
+  return rows.length ? rows[0] : null;
+};
 
 const getPermissionsForRole = (roleName) =>
   permisos.filter((permiso) =>
@@ -117,7 +122,7 @@ const buildUser = async ({
   ciudad = null,
   id_rol = 2,
 }) => {
-  const role = getRoleById(id_rol);
+  const role = await getRoleById(id_rol);
   if (!role) {
     const error = new Error("Rol no valido");
     error.statusCode = 400;
@@ -276,8 +281,18 @@ export const findUserWithSecretById = async (id) => {
   return user;
 };
 
-export const listUsers = async () => {
-  const [rows] = await pool.query("SELECT * FROM usuario WHERE activo = 1");
+export const listUsers = async (searchTerm = "") => {
+  const trimmed = String(searchTerm || "").trim().toLowerCase();
+  let query = "SELECT * FROM usuario WHERE activo = 1";
+  const params = [];
+
+  if (trimmed) {
+    query += " AND (LOWER(email) LIKE ? OR LOWER(nombre) LIKE ?);";
+    const like = `%${trimmed}%`;
+    params.push(like, like);
+  }
+
+  const [rows] = await pool.query(query, params);
   return rows.map(sanitizeUser);
 };
 
@@ -308,7 +323,7 @@ export const updateUser = async (id, payload) => {
   if (payload.passwordHash) user.passwordHash = payload.passwordHash;
 
   if (payload.id_rol) {
-    const role = getRoleById(payload.id_rol);
+    const role = await getRoleById(payload.id_rol);
     if (!role) {
       const error = new Error("Rol no valido");
       error.statusCode = 400;
@@ -337,7 +352,7 @@ export const deleteUser = async (id) => {
 };
 
 export const setUserRole = async (id, id_rol) => {
-  const role = getRoleById(id_rol);
+  const role = await getRoleById(id_rol);
   if (!role) {
     const error = new Error("Rol no valido");
     error.statusCode = 400;
@@ -350,7 +365,10 @@ export const setUserRole = async (id, id_rol) => {
 };
 
 export const listRoles = async () => {
-  return roles;
+  const [rows] = await pool.query(
+    "SELECT id_rol, nombre_rol, descripcion FROM rol ORDER BY id_rol",
+  );
+  return rows;
 };
 
 export const listPermissions = async () => {

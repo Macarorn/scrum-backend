@@ -89,7 +89,18 @@ const notificacionesService = {
 
   async listarNotificaciones({ id_usuario }) {
     const [rows] = await pool.query(
-      `SELECT n.*, u.nombre AS nombre_usuario_solicitante, p.nombre AS nombre_proyecto, s.estado AS estado_solicitud
+      `SELECT n.*, 
+              u.nombre AS nombre_usuario_solicitante, 
+              p.nombre AS nombre_proyecto, 
+              s.estado AS estado_solicitud,
+              CASE
+                WHEN s.mensaje_opcional LIKE 'Solicitante:%' THEN TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(s.mensaje_opcional, ';', 1), ':', -1))
+                ELSE NULL
+              END AS nombre_solicitante,
+              CASE
+                WHEN s.mensaje_opcional LIKE '%Rol:%' THEN TRIM(SUBSTRING_INDEX(s.mensaje_opcional, 'Rol: ', -1))
+                ELSE NULL
+              END AS rol_solicitud
        FROM notificacion n
        LEFT JOIN solicitud s ON n.id_solicitud = s.id_solicitud
        LEFT JOIN usuario u ON s.id_usuario = u.id_usuario

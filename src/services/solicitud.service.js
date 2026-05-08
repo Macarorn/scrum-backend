@@ -481,6 +481,103 @@ const solicitudService = {
 
     return { status: 201, data: null, message: "Usuario invitado" };
   },
+
+  async enviarInvitacionProyecto({
+    id_usuario_aprobador,
+    id_usuario,
+    id_proyecto,
+    id_rol,
+  }) {
+    // Validar que el aprobador tenga permisos
+    if (!(await esAprobador(id_usuario_aprobador, id_proyecto))) {
+      return { status: 403, data: null, message: "Sin permisos" };
+    }
+
+    // Validar que el proyecto existe y está activo
+    if (!(await proyectoActivo(id_proyecto))) {
+      return { status: 404, data: null, message: "Proyecto no válido" };
+    }
+
+    // Verificar si ya existe solicitud pendiente
+    const [existingSolicitud] = await pool.query(
+      `SELECT 1 FROM solicitud 
+       WHERE id_usuario = ? AND id_proyecto = ? AND estado = "Pendiente"`,
+      [id_usuario, id_proyecto],
+    );
+
+    if (existingSolicitud.length) {
+      return { status: 409, data: null, message: "Ya existe solicitud pendiente" };
+    }
+
+    // Verificar si ya es miembro
+    const [eqRows] = await pool.query(
+      "SELECT id_equipo_proyecto FROM equipo_proyecto WHERE id_proyecto = ? LIMIT 1",
+      [id_proyecto],
+    );
+
+    if (eqRows.length) {
+      const [isMember] = await pool.query(
+        `SELECT 1 FROM usuario_equipo_proyecto 
+         WHERE id_usuario = ? AND id_equipo_proyecto = ?`,
+        [id_usuario, eqRows[0].id_equipo_proyecto],
+      );
+
+      if (isMember.length) {
+        return { status: 409, data: null, message: "Ya pertenece al proyecto" };
+      }
+    }
+
+    const [rolInfo] = await pool.query(
+      "SELECT nombre_rol FROM rol WHERE id_rol = ?",
+      [id_rol],
+    );
+    const nombreRol = rolInfo.length ? rolInfo[0].nombre_rol : "Developer";
+
+    const [aprobadorInfo] = await pool.query(
+      "SELECT nombre FROM usuario WHERE id_usuario = ?",
+      [id_usuario_aprobador],
+    );
+    const nombreAprobador = aprobadorInfo.length ? aprobadorInfo[0].nombre : "Admin";
+
+    // Crear solicitud de invitación (tipo de invitación)
+    const [result] = await pool.query(
+      `INSERT INTO solicitud (id_usuario, id_proyecto, estado, id_rol, mensaje_opcional)
+       VALUES (?, ?, "Pendiente", ?, ?)`,
+      [
+        id_usuario,
+        id_proyecto,
+        id_rol,
+        `Solicitante: ${nombreAprobador}; Rol: ${nombreRol}`,
+      ],
+    );
+
+    // Obtener info del proyecto
+    const [proyInfo] = await pool.query(
+      "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
+      [id_proyecto],
+    );
+    const nombreProyecto = proyInfo.length ? proyInfo[0].nombre : "un proyecto";
+
+    // Crear notificación para el usuario invitado
+    await pool.query(
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
+       VALUES (?, 'prioritaria', 'Invitación a proyecto', ?, ?)`,
+      [
+        id_usuario,
+        `Has recibido una invitación al proyecto "${nombreProyecto}"`,
+        result.insertId,
+      ],
+    );
+
+    logSolicitud("invitacion_proyecto_enviada", {
+      id_usuario_aprobador,
+      id_usuario,
+      id_proyecto,
+      id_rol,
+    });
+
+    return { status: 201, data: null, message: "Invitación enviada" };
+  },
 };
 
 export default solicitudService;
