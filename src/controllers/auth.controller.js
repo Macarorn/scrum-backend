@@ -20,7 +20,7 @@ import {
 
 export const register = async (req, res, next) => {
   try {
-    const { email, nombre, password, confirmPassword } = req.body;
+    const { email, nombre, password, confirmPassword, consent_granted, consent_version } = req.body;
     const validation = validateRegister(
       email,
       nombre,
@@ -38,7 +38,24 @@ export const register = async (req, res, next) => {
       );
     }
 
-    const user = await createUser({ email, nombre, password });
+    // Validar consentimiento obligatoriamente
+    if (consent_granted !== true) {
+      return next(
+        buildError("Debes aceptar los términos y condiciones", {
+          statusCode: 400,
+          error: "CONSENT_REQUIRED",
+          details: { consent_granted: "El consentimiento es obligatorio" },
+        }),
+      );
+    }
+
+    const user = await createUser({ 
+      email, 
+      nombre, 
+      password,
+      consent_granted: true,
+      consent_version: consent_version || "v1.0",
+    });
 
     return sendSuccess(res, user, "Usuario registrado correctamente", 201);
   } catch (error) {
@@ -180,6 +197,61 @@ export const refreshToken = async (req, res, next) => {
     );
 
     return sendSuccess(res, { accessToken }, "Token refrescado correctamente");
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Endpoint para obtener versión vigente de términos
+export const getTerms = async (req, res, next) => {
+  try {
+    const termsText = `Términos y Condiciones — v1.0
+
+Responsable del tratamiento:
+Scrum App.
+
+Finalidad:
+Gestión de usuarios, autenticación y administración de proyectos Scrum.
+
+Datos recolectados:
+Nombre, correo electrónico y credenciales de acceso.
+
+Conservación:
+Los datos serán almacenados mientras la cuenta permanezca activa.
+
+Derechos:
+El usuario podrá solicitar actualización o eliminación de sus datos personales.`;
+
+    return sendSuccess(res, {
+      version: "v1.0",
+      title: "Términos y Condiciones",
+      text: termsText,
+    }, "Términos obtenidos correctamente");
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Endpoint para obtener consentimiento del usuario
+export const getUserConsent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await findUserWithSecretById(id);
+
+    if (!user) {
+      return next(
+        buildError("Usuario no encontrado", {
+          statusCode: 404,
+          error: "USER_NOT_FOUND",
+        }),
+      );
+    }
+
+    return sendSuccess(res, {
+      consent_granted: user.consent_granted || false,
+      consent_at: user.consent_at || null,
+      consent_version: user.consent_version || null,
+    }, "Consentimiento obtenido correctamente");
   } catch (error) {
     next(error);
   }

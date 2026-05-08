@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import legalRoutes from "./routes/legal.routes.js";
 
 // Cargar configuración primero
 import config from "./config/config.js";
@@ -104,6 +105,7 @@ app.use("/api/sprints", sprintRoutes);
 app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
+app.use("/api/legal", legalRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
