@@ -26,6 +26,7 @@ import solicitudRoutes from "./routes/solicitud.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
+import { initializeLegalStore } from "./utils/legal.store.js";
 
 const app = express();
 const PORT = config.server.port;
@@ -49,6 +50,7 @@ const corsOrigin =
       };
 
 await bootstrapStore();
+await initializeLegalStore();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -65,6 +67,7 @@ const limiter = rateLimit({
   windowMs: config.rateLimit.window * 60 * 1000,
   max: config.rateLimit.max,
   message: "Demasiadas solicitudes, intenta más tarde",
+  skip: (req) => req.originalUrl?.startsWith("/api/legal"),
 });
 app.use("/api/", limiter);
 

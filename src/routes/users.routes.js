@@ -5,6 +5,7 @@ import {
   getPermisos,
   getRoles,
   getUsuarioById,
+  getUserConsent,
   getUsuarios,
   putUsuario,
   removeUsuario,
@@ -25,6 +26,12 @@ router.get(
   authMiddleware,
   canAccessUserResource(["admin"]),
   getUsuarioById,
+);
+router.get(
+  "/usuarios/:id/consent",
+  authMiddleware,
+  canAccessUserResource(["admin"]),
+  getUserConsent,
 );
 router.put(
   "/usuarios/:id",

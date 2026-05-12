@@ -14,6 +14,10 @@ import {
   storeRefreshToken,
 } from "../utils/user.store.js";
 import {
+  findLegalVersion,
+  insertUserConsent,
+} from "../utils/legal.store.js";
+import {
   validateLogin,
   validateRegister,
 } from "../validations/auth.validations.js";
@@ -49,12 +53,35 @@ export const register = async (req, res, next) => {
       );
     }
 
+    const legalVersion = await findLegalVersion(consent_version || "v1.0");
+    if (!legalVersion) {
+      return next(
+        buildError("Versión de términos inválida", {
+          statusCode: 400,
+          error: "INVALID_CONSENT_VERSION",
+          details: { consent_version },
+        }),
+      );
+    }
+
+    const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").toString().split(",")[0].trim();
+    const userAgent = req.headers["user-agent"] || null;
+
     const user = await createUser({ 
       email, 
       nombre, 
       password,
       consent_granted: true,
-      consent_version: consent_version || "v1.0",
+      consent_version: legalVersion.version,
+    });
+
+    await insertUserConsent({
+      userId: user.id_usuario,
+      consentVersion: legalVersion.version,
+      accepted: true,
+      ipAddress,
+      userAgent,
+      consentAt: new Date(),
     });
 
     return sendSuccess(res, user, "Usuario registrado correctamente", 201);
