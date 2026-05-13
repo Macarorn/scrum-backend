@@ -255,14 +255,93 @@ export const actualizarRolMiembroProyecto = async (
     throw error;
   }
 
+  // Validación de rol válido
   const [roleRows] = await pool.query(
-    "SELECT id_rol FROM rol WHERE id_rol = ?",
+    "SELECT id_rol, nombre_rol FROM rol WHERE id_rol = ?",
     [idRol],
   );
   if (roleRows.length === 0) {
     const error = new Error("El rol especificado no es válido");
     error.statusCode = 400;
     throw error;
+  }
+
+  // Obtener información del miembro actual
+  const [currentMemberRows] = await pool.query(
+    `SELECT uep.id_usuario, r.nombre_rol
+     FROM usuario_equipo_proyecto uep
+     JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE uep.id_equipo_proyecto = ?
+       AND uep.id_usuario = ?`,
+    [idEquipoProyecto, usuarioId],
+  );
+
+  if (currentMemberRows.length === 0) {
+    const error = new Error("Miembro no encontrado en el proyecto");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const currentMemberRole = currentMemberRows[0].nombre_rol;
+  const newRoleName = roleRows[0].nombre_rol;
+  const specialRoles = ["Product Owner", "Scrum Master"];
+
+  console.log(`Actualizando rol: ${currentMemberRole} -> ${newRoleName}`);
+  console.log(`Usuario actual rol: ${requesterRole}, global: ${usuarioActual.rol}, principal: ${usuarioActual.rol_principal}`);
+
+  // VALIDACIÓN DE NEGOCIO: solo un Product Owner y un Scrum Master por proyecto
+  if (specialRoles.includes(newRoleName) && currentMemberRole !== newRoleName) {
+    const [existingSpecialRows] = await pool.query(
+      `SELECT COUNT(*) AS count
+       FROM usuario_equipo_proyecto uep
+       JOIN rol r ON uep.id_rol = r.id_rol
+       WHERE uep.id_equipo_proyecto = ?
+         AND uep.id_usuario != ?
+         AND uep.activo = 1
+         AND r.nombre_rol = ?`,
+      [idEquipoProyecto, usuarioId, newRoleName],
+    );
+
+    const existingSpecialCount = existingSpecialRows[0].count;
+    console.log(`Miembros activos con rol ${newRoleName} distintos del usuario actual: ${existingSpecialCount}`);
+
+    if (existingSpecialCount > 0) {
+      console.log(`BLOQUEANDO: Ya existe otro ${newRoleName}`);
+      const error = new Error(
+        `Ya existe un ${newRoleName} activo en el proyecto`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  if (specialRoles.includes(currentMemberRole) && currentMemberRole !== newRoleName) {
+    console.log(`Cambiando rol especial ${currentMemberRole} a ${newRoleName}`);
+
+    const [remainingRoleCountRows] = await pool.query(
+      `SELECT COUNT(*) AS count
+       FROM usuario_equipo_proyecto uep
+       JOIN rol r ON uep.id_rol = r.id_rol
+       WHERE uep.id_equipo_proyecto = ?
+         AND uep.id_usuario != ?
+         AND uep.activo = 1
+         AND r.nombre_rol = ?`,
+      [idEquipoProyecto, usuarioId, currentMemberRole],
+    );
+
+    const remainingCount = remainingRoleCountRows[0].count;
+    console.log(`Miembros restantes con rol ${currentMemberRole}: ${remainingCount}`);
+
+    if (remainingCount === 0) {
+      console.log(`BLOQUEANDO: No queda ningún ${currentMemberRole}`);
+      const error = new Error(
+        `No se puede dejar el proyecto sin ${currentMemberRole}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    } else {
+      console.log(`PERMITIENDO: Hay ${remainingCount} miembro(s) restante(s) con rol ${currentMemberRole}`);
+    }
   }
 
   const [result] = await pool.query(
