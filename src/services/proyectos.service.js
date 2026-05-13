@@ -279,6 +279,19 @@ export const actualizarRolMiembroProyecto = async (
     throw error;
   }
 
+  // Actualizar también el rol global en usuario_rol para que el JWT se refresque correctamente
+  // Eliminar el rol anterior si existe
+  await pool.query(
+    "DELETE FROM usuario_rol WHERE id_usuario = ?",
+    [usuarioId],
+  );
+
+  // Insertar el nuevo rol
+  await pool.query(
+    `INSERT INTO usuario_rol (id_usuario, id_rol, fecha_asignacion) VALUES (?, ?, NOW())`,
+    [usuarioId, idRol],
+  );
+
   const [rows] = await pool.query(
     `SELECT u.id_usuario,
             u.nombre,

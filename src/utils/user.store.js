@@ -297,30 +297,57 @@ export const listUsers = async (searchTerm = "") => {
 };
 
 export const updateUser = async (id, payload) => {
-  const user = users.find((u) => u.id_usuario === Number(id));
-  if (!user) return null;
+  const userId = Number(id);
+  const [existingRows] = await pool.query(
+    "SELECT id_usuario FROM usuario WHERE id_usuario = ?",
+    [userId],
+  );
+  if (existingRows.length === 0) return null;
 
-  if (payload.email && payload.email.toLowerCase() !== user.email) {
-    const emailExists = users.some(
-      (u) =>
-        u.email === payload.email.toLowerCase() &&
-        u.id_usuario !== user.id_usuario,
+  const updates = [];
+  const params = [];
+
+  if (payload.email) {
+    const [emailRows] = await pool.query(
+      "SELECT id_usuario FROM usuario WHERE email = ? AND id_usuario <> ?",
+      [payload.email.toLowerCase(), userId],
     );
-    if (emailExists) {
+    if (emailRows.length > 0) {
       const error = new Error("El email ya se encuentra registrado");
       error.statusCode = 409;
       error.error = "EMAIL_ALREADY_EXISTS";
       error.details = { email: payload.email };
       throw error;
     }
-    user.email = payload.email.toLowerCase();
+    updates.push("email = ?");
+    params.push(payload.email.toLowerCase());
   }
 
-  if (payload.nombre) user.nombre = payload.nombre;
-  if (payload.telefono !== undefined) user.telefono = payload.telefono;
-  if (payload.ciudad !== undefined) user.ciudad = payload.ciudad;
+  if (payload.nombre !== undefined) {
+    updates.push("nombre = ?");
+    params.push(payload.nombre);
+  }
 
-  if (payload.passwordHash) user.passwordHash = payload.passwordHash;
+  if (payload.telefono !== undefined) {
+    updates.push("telefono = ?");
+    params.push(payload.telefono);
+  }
+
+  if (payload.ciudad !== undefined) {
+    updates.push("ciudad = ?");
+    params.push(payload.ciudad);
+  }
+
+  if (payload.passwordHash !== undefined) {
+    updates.push("password = ?");
+    params.push(payload.passwordHash);
+  }
+
+  if (updates.length > 0) {
+    updates.push("fecha_actualizacion = NOW()");
+    const sql = `UPDATE usuario SET ${updates.join(", ")} WHERE id_usuario = ?`;
+    await pool.query(sql, [...params, userId]);
+  }
 
   if (payload.id_rol) {
     const role = await getRoleById(payload.id_rol);
@@ -332,23 +359,27 @@ export const updateUser = async (id, payload) => {
       throw error;
     }
 
-    user.roles = [role];
-    user.permisos = getPermissionsForRole(role.nombre_rol);
-    user.rol_principal = role.nombre_rol;
+    await pool.query(
+      "DELETE FROM usuario_rol WHERE id_usuario = ?",
+      [userId],
+    );
+    await pool.query(
+      "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)",
+      [userId, payload.id_rol],
+    );
   }
 
-  user.fecha_actualizacion = new Date().toISOString();
-  await persistUsers();
-  return sanitizeUser(user);
+  return await findUserWithSecretById(userId);
 };
 
 export const deleteUser = async (id) => {
-  const index = users.findIndex((u) => u.id_usuario === Number(id));
-  if (index === -1) return false;
+  const userId = Number(id);
+  const [result] = await pool.query(
+    "DELETE FROM usuario WHERE id_usuario = ?",
+    [userId],
+  );
 
-  users.splice(index, 1);
-  await persistUsers();
-  return true;
+  return result.affectedRows > 0;
 };
 
 export const setUserRole = async (id, id_rol) => {
