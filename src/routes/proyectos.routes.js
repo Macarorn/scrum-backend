@@ -46,6 +46,14 @@ router.patch(
   proyectosController.actualizarEstadoMiembroProyecto,
 );
 
+// POST /api/proyectos/:id/transferir-product-owner - Transferir Product Owner a otro miembro
+router.post(
+  "/:id/transferir-product-owner",
+  authMiddleware,
+  authorizationMiddleware(["admin", "Product Owner", "Scrum Master"]),
+  proyectosController.transferirProductOwner,
+);
+
 // GET /api/proyectos/:id - Obtener proyecto
 router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
 

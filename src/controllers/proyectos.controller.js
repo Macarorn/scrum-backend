@@ -126,6 +126,40 @@ export const actualizarEstadoMiembroProyecto = async (req, res, next) => {
 };
 
 /**
+ * Transferir rol de Product Owner a otro miembro
+ * El PO actual se inactiva automáticamente
+ */
+export const transferirProductOwner = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { id_usuario_nuevo_po } = req.body;
+
+    if (!id_usuario_nuevo_po) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "El id del nuevo Product Owner es requerido",
+        details: { id_usuario_nuevo_po: "id_usuario_nuevo_po es requerido" },
+      });
+    }
+
+    const result = await proyectosService.transferirProductOwner(
+      id,
+      id_usuario_nuevo_po,
+      req.user,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: "Product Owner transferido exitosamente",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Crear un nuevo proyecto
  */
 export const crearProyecto = async (req, res, next) => {

@@ -289,7 +289,8 @@ export const actualizarRolMiembroProyecto = async (
   console.log(`Actualizando rol: ${currentMemberRole} -> ${newRoleName}`);
   console.log(`Usuario actual rol: ${requesterRole}, global: ${usuarioActual.rol}, principal: ${usuarioActual.rol_principal}`);
 
-  // VALIDACIÓN DE NEGOCIO: solo un Product Owner y un Scrum Master por proyecto
+  // VALIDACIÓN DE NEGOCIO: Asegurar que el proyecto no se queda sin roles críticos
+  // Primero, verificar si el nuevo rol es un rol especial y ya existe otro activo
   if (specialRoles.includes(newRoleName) && currentMemberRole !== newRoleName) {
     const [existingSpecialRows] = await pool.query(
       `SELECT COUNT(*) AS count
@@ -298,7 +299,7 @@ export const actualizarRolMiembroProyecto = async (
        WHERE uep.id_equipo_proyecto = ?
          AND uep.id_usuario != ?
          AND uep.activo = 1
-         AND r.nombre_rol = ?`,
+         AND LOWER(r.nombre_rol) = LOWER(?)`,
       [idEquipoProyecto, usuarioId, newRoleName],
     );
 
@@ -315,6 +316,7 @@ export const actualizarRolMiembroProyecto = async (
     }
   }
 
+  // Segundo, si el rol actual es especial, asegurar que hay otros disponibles antes de cambiarlo
   if (specialRoles.includes(currentMemberRole) && currentMemberRole !== newRoleName) {
     console.log(`Cambiando rol especial ${currentMemberRole} a ${newRoleName}`);
 
@@ -325,7 +327,7 @@ export const actualizarRolMiembroProyecto = async (
        WHERE uep.id_equipo_proyecto = ?
          AND uep.id_usuario != ?
          AND uep.activo = 1
-         AND r.nombre_rol = ?`,
+         AND LOWER(r.nombre_rol) = LOWER(?)`,
       [idEquipoProyecto, usuarioId, currentMemberRole],
     );
 
@@ -335,7 +337,7 @@ export const actualizarRolMiembroProyecto = async (
     if (remainingCount === 0) {
       console.log(`BLOQUEANDO: No queda ningún ${currentMemberRole}`);
       const error = new Error(
-        `No se puede dejar el proyecto sin ${currentMemberRole}`,
+        `No se puede cambiar el rol. El proyecto necesita al menos un ${currentMemberRole} activo`,
       );
       error.statusCode = 400;
       throw error;
@@ -444,4 +446,185 @@ export const buscarProyectoPorCodigo = async (codigo) => {
     throw notFoundError();
   }
   return rows[0];
+};
+
+/**
+ * Transfiere el rol de Product Owner a otro miembro
+ * - El PO actual se inactiva automáticamente
+ * - El nuevo miembro se activa como PO
+ * - Solo el PO actual activo puede hacer esta transferencia
+ */
+export const transferirProductOwner = async (
+  proyectoId,
+  nuevoProductOwnerId,
+  usuarioActual,
+) => {
+  const idEquipoProyecto = await getEquipoProyectoId(proyectoId);
+  if (!idEquipoProyecto) {
+    throw notFoundError();
+  }
+
+  // Verificar que el usuario actual es Product Owner activo
+  const [requesterRows] = await pool.query(
+    `SELECT uep.id_usuario, r.nombre_rol, uep.activo
+     FROM usuario_equipo_proyecto uep
+     JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE uep.id_equipo_proyecto = ?
+       AND uep.id_usuario = ?`,
+    [idEquipoProyecto, usuarioActual.id_usuario],
+  );
+
+  if (requesterRows.length === 0) {
+    const error = new Error("No eres miembro de este proyecto");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const requesterRole = requesterRows[0].nombre_rol;
+  const requesterActivo = requesterRows[0].activo;
+
+  if (requesterRole !== "Product Owner" || requesterActivo === 0) {
+    const error = new Error("Solo el Product Owner activo puede transferir este rol");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // Obtener el rol de Product Owner
+  const [poRoleRows] = await pool.query(
+    `SELECT id_rol FROM rol WHERE nombre_rol = ?`,
+    ["Product Owner"],
+  );
+
+  if (poRoleRows.length === 0) {
+    const error = new Error("Rol de Product Owner no encontrado en el sistema");
+    error.statusCode = 500;
+    throw error;
+  }
+
+  const poRoleId = poRoleRows[0].id_rol;
+
+  // Verificar que el nuevo Product Owner es miembro del proyecto
+  const [newPORows] = await pool.query(
+    `SELECT uep.id_usuario, uep.activo, r.nombre_rol
+     FROM usuario_equipo_proyecto uep
+     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE uep.id_equipo_proyecto = ?
+       AND uep.id_usuario = ?`,
+    [idEquipoProyecto, nuevoProductOwnerId],
+  );
+
+  if (newPORows.length === 0) {
+    const error = new Error("El nuevo Product Owner debe ser miembro del proyecto");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Validación: Asegurar que el proyecto tiene un Scrum Master activo
+  const [smCheckRows] = await pool.query(
+    `SELECT COUNT(*) AS count
+     FROM usuario_equipo_proyecto uep
+     JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE uep.id_equipo_proyecto = ?
+       AND uep.activo = 1
+       AND LOWER(r.nombre_rol) = LOWER('Scrum Master')`,
+    [idEquipoProyecto],
+  );
+
+  if (smCheckRows[0].count === 0) {
+    const error = new Error(
+      "El proyecto debe tener un Scrum Master activo antes de transferir el Product Owner",
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Iniciar transacción para actualizar el rol del nuevo PO y desactivar el anterior
+  try {
+    // 1. Actualizar al nuevo miembro como Product Owner (ACTIVO)
+    const [updateNewPO] = await pool.query(
+      `UPDATE usuario_equipo_proyecto
+       SET id_rol = ?, activo = 1
+       WHERE id_equipo_proyecto = ?
+         AND id_usuario = ?`,
+      [poRoleId, idEquipoProyecto, nuevoProductOwnerId],
+    );
+
+    if (updateNewPO.affectedRows === 0) {
+      throw new Error("No se pudo actualizar el nuevo Product Owner");
+    }
+
+    // 2. Desactivar el Product Owner anterior
+    const [updateOldPO] = await pool.query(
+      `UPDATE usuario_equipo_proyecto
+       SET activo = 0
+       WHERE id_equipo_proyecto = ?
+         AND id_usuario = ?`,
+      [idEquipoProyecto, usuarioActual.id_usuario],
+    );
+
+    if (updateOldPO.affectedRows === 0) {
+      throw new Error("No se pudo desactivar el Product Owner anterior");
+    }
+
+    // 3. Actualizar roles globales - Nuevo PO
+    await pool.query(
+      "DELETE FROM usuario_rol WHERE id_usuario = ?",
+      [nuevoProductOwnerId],
+    );
+
+    await pool.query(
+      `INSERT INTO usuario_rol (id_usuario, id_rol, fecha_asignacion) VALUES (?, ?, NOW())`,
+      [nuevoProductOwnerId, poRoleId],
+    );
+
+    // 4. Remover rol global al antiguo PO si lo tiene
+    await pool.query(
+      "DELETE FROM usuario_rol WHERE id_usuario = ?",
+      [usuarioActual.id_usuario],
+    );
+
+    // Obtener datos actualizados del nuevo Product Owner
+    const [nuevoPoData] = await pool.query(
+      `SELECT u.id_usuario,
+              u.nombre,
+              u.email,
+              r.nombre_rol AS rol,
+              uep.fecha_ingreso,
+              uep.activo
+       FROM usuario_equipo_proyecto uep
+       JOIN usuario u ON uep.id_usuario = u.id_usuario
+       LEFT JOIN rol r ON uep.id_rol = r.id_rol
+       WHERE uep.id_equipo_proyecto = ?
+         AND uep.id_usuario = ?`,
+      [idEquipoProyecto, nuevoProductOwnerId],
+    );
+
+    const [antiguoPoData] = await pool.query(
+      `SELECT u.id_usuario,
+              u.nombre,
+              u.email,
+              r.nombre_rol AS rol,
+              uep.fecha_ingreso,
+              uep.activo
+       FROM usuario_equipo_proyecto uep
+       JOIN usuario u ON uep.id_usuario = u.id_usuario
+       LEFT JOIN rol r ON uep.id_rol = r.id_rol
+       WHERE uep.id_equipo_proyecto = ?
+         AND uep.id_usuario = ?`,
+      [idEquipoProyecto, usuarioActual.id_usuario],
+    );
+
+    return {
+      success: true,
+      message: "Product Owner transferido exitosamente",
+      nuevoProductOwner: nuevoPoData[0] || { id_usuario: nuevoProductOwnerId },
+      antiguoProductOwner: antiguoPoData[0] || {
+        id_usuario: usuarioActual.id_usuario,
+        activo: 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error al transferir Product Owner:", error);
+    throw error;
+  }
 };
