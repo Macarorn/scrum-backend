@@ -11,8 +11,13 @@ function notFoundError(entity = "Épica") {
 export const listarEpicas = async (proyectoId) => {
   const query =
     proyectoId !== undefined
-      ? "SELECT * FROM epica WHERE id_proyecto = ? ORDER BY id_epica DESC"
-      : "SELECT * FROM epica ORDER BY id_epica DESC";
+      ? `SELECT e.*, 
+         (SELECT COUNT(*) FROM historia_usuario h WHERE h.id_epica = e.id_epica AND h.estado <> 'eliminado') as total_historias 
+         FROM epica e 
+         WHERE e.id_proyecto = ? ORDER BY e.id_epica DESC`
+      : `SELECT e.*, 
+         (SELECT COUNT(*) FROM historia_usuario h WHERE h.id_epica = e.id_epica AND h.estado <> 'eliminado') as total_historias 
+         FROM epica e ORDER BY e.id_epica DESC`;
   const params = proyectoId !== undefined ? [Number(proyectoId)] : [];
   const [rows] = await pool.query(query, params);
 
@@ -26,6 +31,7 @@ export const listarEpicas = async (proyectoId) => {
     categoria: row.categoria || "",
     prioridad: row.prioridad,
     estado: row.estado,
+    total_historias: row.total_historias || 0,
     createdAt: row.fecha_creacion,
     updatedAt: row.fecha_actualizacion,
   }));
