@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { hashPassword } from "./password.utils.js";
 import pool from "./database.js";
+import config from "../config/config.js";
 
 const roles = [
   { id_rol: 1, nombre_rol: "admin", descripcion: "Acceso total al sistema" },
@@ -60,7 +61,7 @@ let userIdSequence = 1;
 const DATA_DIR = path.resolve(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
-const isTestEnv = () => process.env.NODE_ENV === "test";
+const isTestEnv = () => config.server.nodeEnv === "test";
 
 const ensureDataDir = async () => {
   await fs.mkdir(DATA_DIR, { recursive: true });
@@ -189,6 +190,8 @@ export const createUser = async ({
   telefono = null,
   ciudad = null,
   id_rol = 2,
+  consent_granted = false,
+  consent_version = "v1.0",
 }) => {
   // Verificar si el email ya existe
   const [existing] = await pool.query("SELECT id_usuario FROM usuario WHERE email = ?", [email.toLowerCase()]);
@@ -203,10 +206,13 @@ export const createUser = async ({
   // Hashear la contraseña
   const passwordHash = await hashPassword(password);
 
-  // Insertar usuario
+  // Calcular fecha actual para consent_at
+  const consentAt = consent_granted ? new Date() : null;
+
+  // Insertar usuario con campos de consentimiento
   const [result] = await pool.query(
-    "INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES (?, ?, ?, ?, ?)",
-    [email.toLowerCase(), passwordHash, nombre, telefono, ciudad]
+    "INSERT INTO usuario (email, password, nombre, telefono, ciudad, consent_granted, consent_at, consent_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [email.toLowerCase(), passwordHash, nombre, telefono, ciudad, consent_granted ? 1 : 0, consentAt, consent_version]
   );
 
   const userId = result.insertId;

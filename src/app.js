@@ -1,8 +1,11 @@
 import cors from "cors";
-import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import legalRoutes from "./routes/legal.routes.js";
+
+// Cargar configuración primero
+import config from "./config/config.js";
 
 import {
   errorHandler,
@@ -21,24 +24,21 @@ import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import solicitudRoutes from "./routes/solicitud.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
+import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
+import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-const configuredOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const PORT = config.server.port;
 
 const devOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
 const allowedOrigins =
-  process.env.NODE_ENV === "development"
-    ? Array.from(new Set([...configuredOrigins, ...devOrigins]))
-    : configuredOrigins;
+  config.server.nodeEnv === "development"
+    ? Array.from(new Set([...config.cors.origin, ...devOrigins]))
+    : config.cors.origin;
 
 const corsOrigin =
   allowedOrigins.length === 0
@@ -53,6 +53,7 @@ const corsOrigin =
       };
 
 await bootstrapStore();
+await initializeLegalStore();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -66,9 +67,10 @@ app.use(
 );
 
 const limiter = rateLimit({
-  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW, 10) || 15) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+  windowMs: config.rateLimit.window * 60 * 1000,
+  max: config.rateLimit.max,
   message: "Demasiadas solicitudes, intenta más tarde",
+  skip: (req) => req.originalUrl?.startsWith("/api/legal"),
 });
 app.use("/api/", limiter);
 
@@ -92,12 +94,14 @@ app.get("/", (req, res) => {
       etiquetas: "/api/etiquetas",
       sprints: "/api/sprints",
       tareas: "/api/tareas",
+      meetings: "/api/meetings",
     },
   });
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
+app.use("/api/meetings", meetingsRoutes);
 app.use("/api/proyectos", proyectosRoutes);
 app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);
@@ -107,6 +111,7 @@ app.use("/api/sprints", sprintRoutes);
 app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
+app.use("/api/legal", legalRoutes);
 
 // Iniciar scheduler de notificaciones de sprint
 iniciarSchedulerSprint();
@@ -114,10 +119,10 @@ iniciarSchedulerSprint();
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== "test") {
+if (config.server.nodeEnv !== "test") {
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`Ambiente: ${process.env.NODE_ENV}`);
+    console.log(`Ambiente: ${config.server.nodeEnv}`);
   });
 }
 export default app;
