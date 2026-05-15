@@ -24,7 +24,7 @@ import {
 
 export const register = async (req, res, next) => {
   try {
-    const { email, nombre, password, confirmPassword, consent_granted, consent_version } = req.body;
+    const { email, nombre, password, confirmPassword, telefono, ciudad, consent_granted, consent_version } = req.body;
     const validation = validateRegister(
       email,
       nombre,
@@ -71,6 +71,8 @@ export const register = async (req, res, next) => {
       email, 
       nombre, 
       password,
+      telefono,
+      ciudad,
       consent_granted: true,
       consent_version: legalVersion.version,
     });
