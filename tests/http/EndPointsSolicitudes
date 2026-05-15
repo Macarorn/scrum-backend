@@ -1,0 +1,449 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Imported Collection
+meta:
+  id: wrk_659037d526444b73a645dbf27b9def11
+  created: 1777472867372
+  modified: 1777472867372
+  description: ""
+collection:
+  - url: "{{ base_url }}/api/auth/login"
+    name: Login Jefferson
+    meta:
+      id: req_fdcbe8398cc04f4f818a853b20d2ee95
+      created: 1777473216143
+      modified: 1777473582211
+      isPrivate: false
+      description: ""
+      sortKey: -1777473216143
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "email": "jefferson@gmail.com",
+          "password": "Jefferson1234"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/auth/login"
+    name: Login Sofia
+    meta:
+      id: req_aa03d467f2b2452a8674840f81e7f574
+      created: 1777473527732
+      modified: 1777473534097
+      isPrivate: false
+      description: ""
+      sortKey: -1777473216093
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "email": "sofia@gmail.com",
+          "password": "Sofia1234"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes"
+    name: E1 Solicita unirse
+    meta:
+      id: req_808a30a8fe7248baafd5aa32945afb7d
+      created: 1777473638703
+      modified: 1777474139139
+      isPrivate: false
+      description: ""
+      sortKey: -1777473638703
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_proyecto": 1,
+          "mensaje_opcional": "Quiero unirme al equipo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes/{{ id_solicitud }}/aprobar"
+    name: E2 Aprobar solicitud
+    meta:
+      id: req_1fc4a5beed4a447ca0f34da603965816
+      created: 1777474285899
+      modified: 1777474366563
+      isPrivate: false
+      description: ""
+      sortKey: -1777474285899
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_rol": 3
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_po }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes"
+    name: E1 Solicita unirse 2
+    meta:
+      id: req_296b30aabd5c4f2f89b806d02bf0fa15
+      created: 1777474672619
+      modified: 1777474766469
+      isPrivate: false
+      description: ""
+      sortKey: -1777473427423
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_proyecto": 1,
+          "mensaje_opcional": "Quiero unirme al equipo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo2 }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes/{{ id_solicitud2}}/rechazar"
+    name: E3 Rechazar solicitud
+    meta:
+      id: req_9bfc61863e9c448c94251c89ab9ccc9e
+      created: 1777474993010
+      modified: 1777475146404
+      isPrivate: false
+      description: ""
+      sortKey: -1777474993010
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "motivo": "Por feo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_po }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes"
+    name: E1 Solicita unirse 3
+    meta:
+      id: req_57b22413905a4c3fb7dbf269f30a7be6
+      created: 1777475320538
+      modified: 1777475341104
+      isPrivate: false
+      description: ""
+      sortKey: -1777473533063
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_proyecto": 1,
+          "mensaje_opcional": "Quiero unirme al equipo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo3 }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes/{{ id_solicitud3 }}/aprobar"
+    name: "E4 - Aprobar sin permisos "
+    meta:
+      id: req_79f7d26a893b4da48eb80fc61f15bfb0
+      created: 1777475423209
+      modified: 1777475499565
+      isPrivate: false
+      description: ""
+      sortKey: -1777475423209
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_rol": 3
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/notificaciones"
+    name: E8 - Ver Notificaciones
+    meta:
+      id: req_29a528e90e994c07897c4d7e66fc9320
+      created: 1777475537708
+      modified: 1777475583816
+      isPrivate: false
+      description: ""
+      sortKey: -1777475537708
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes"
+    name: E5 Miembro solicita unirse
+    meta:
+      id: req_bef3ac59cf4b4a77b510664051d14b36
+      created: 1777475732912
+      modified: 1777475732912
+      isPrivate: false
+      description: ""
+      sortKey: -1777473585883
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_proyecto": 1,
+          "mensaje_opcional": "Quiero unirme al equipo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes"
+    name: E6 Solicitud duplicada
+    meta:
+      id: req_7ea2e2704eca4635803e7ec46457fdeb
+      created: 1777475994377
+      modified: 1777476021752
+      isPrivate: false
+      description: ""
+      sortKey: -1777473612293
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_proyecto": 1,
+          "mensaje_opcional": "Quiero unirme al equipo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo4 }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ base_url }}/api/solicitudes/{{ id_solicitud4 }}/cancelar"
+    name: "E7 Cancelar Solicitud "
+    meta:
+      id: req_39127ebc1d0e4c7b8af1b670b9348718
+      created: 1777476065488
+      modified: 1777476168227
+      isPrivate: false
+      description: ""
+      sortKey: -1777473599088
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "id_proyecto": 1,
+          "mensaje_opcional": "Quiero unirme al equipo"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+      - name: Authorization
+        value: Bearer {{ token_nuevo4 }}
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_0c5b5f670548397fb04ab0b4e6eb3b15e3ba74c2
+    created: 1777472867565
+    modified: 1777472867565
+environments:
+  name: Base Environment
+  meta:
+    id: env_0c5b5f670548397fb04ab0b4e6eb3b15e3ba74c2
+    created: 1777472867390
+    modified: 1777476111461
+    isPrivate: false
+  data:
+    base_url: http://localhost:3000
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjozLCJlbWFpbCI6ImplZmZlcnNvbkBnbWFpbC5jb20iLCJyb2wiOiJEZXZlbG9wZXIiLCJwZXJtaXNvcyI6WyJ2ZXJfYmFja2xvZyIsIm1vdmVyX3RhcmVhcyJdLCJpYXQiOjE3Nzc0NzMzNDcsImV4cCI6MTc3NzU1OTc0N30.5jqbw0QJ3pVDPhWZAJKzF4c9pwmAL1h_Z048jaDuoA0
+    token_po: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjoyLCJlbWFpbCI6InNvZmlhQGdtYWlsLmNvbSIsInJvbCI6IlByb2R1Y3QgT3duZXIiLCJwZXJtaXNvcyI6WyJ2ZXJfYmFja2xvZyIsImVkaXRhcl9iYWNrbG9nIiwiZ2VzdGlvbmFyX3NwcmludHMiLCJnZXN0aW9uYXJfZXF1aXBvIiwidmVyX21ldHJpY2FzIl0sImlhdCI6MTc3NzQ3MzUzNiwiZXhwIjoxNzc3NTU5OTM2fQ.Tjo-StxztqOuorvD5rmPVXJ6GISsaOS-6IRTUzvbyXc
+    token_johan: ""
+    id_solicitud: "3"
+    id_notificacion: ""
+    id_proyecto: "1"
+    token_nuevo: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjo1LCJlbWFpbCI6InBydWViYUBnbWFpbC5jb20iLCJyb2wiOiJTY3J1bSBNYXN0ZXIiLCJwZXJtaXNvcyI6WyJ2ZXJfYmFja2xvZyIsImdlc3Rpb25hcl9zcHJpbnRzIiwibW92ZXJfdGFyZWFzIiwiZ2VzdGlvbmFyX2VxdWlwbyIsInZlcl9tZXRyaWNhcyJdLCJpYXQiOjE3Nzc0NzM5MzYsImV4cCI6MTc3NzU2MDMzNn0._6rBvd19L0dir8XBEKxYvXVwgCk0ADx7wiCSmZ6c5zU
+    token_nuevo2: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjo2LCJlbWFpbCI6InBydWViYTJAZ21haWwuY29tIiwicm9sIjoiU2NydW0gTWFzdGVyIiwicGVybWlzb3MiOlsidmVyX2JhY2tsb2ciLCJnZXN0aW9uYXJfc3ByaW50cyIsIm1vdmVyX3RhcmVhcyIsImdlc3Rpb25hcl9lcXVpcG8iLCJ2ZXJfbWV0cmljYXMiXSwiaWF0IjoxNzc3NDc0NjM4LCJleHAiOjE3Nzc1NjEwMzh9.utV32kW1FVfyWy_H2EuPF5Rg1sh0xax8eD2XWj_8F_4
+    id_solicitud2: "4"
+    token_nuevo3: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjo3LCJlbWFpbCI6Im5vdGlAZ21haWwuY29tIiwicm9sIjoiU2NydW0gTWFzdGVyIiwicGVybWlzb3MiOlsidmVyX2JhY2tsb2ciLCJnZXN0aW9uYXJfc3ByaW50cyIsIm1vdmVyX3RhcmVhcyIsImdlc3Rpb25hcl9lcXVpcG8iLCJ2ZXJfbWV0cmljYXMiXSwiaWF0IjoxNzc3NDc1MjcxLCJleHAiOjE3Nzc1NjE2NzF9.ugiBGwLUQv-YrIam7oBD1yluNu233C57OX9KEv0NAlA
+    id_solicitud3: "5"
+    token_nuevo4: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjo4LCJlbWFpbCI6ImR1cGxpQGdtYWlsLmNvbSIsInJvbCI6IlNjcnVtIE1hc3RlciIsInBlcm1pc29zIjpbInZlcl9iYWNrbG9nIiwiZ2VzdGlvbmFyX3NwcmludHMiLCJtb3Zlcl90YXJlYXMiLCJnZXN0aW9uYXJfZXF1aXBvIiwidmVyX21ldHJpY2FzIl0sImlhdCI6MTc3NzQ3NTgyNywiZXhwIjoxNzc3NTYyMjI3fQ.PfHMAq7RCDSfXwVjkocgBjE-3JavkOavgTrcHmz8HJQ
+    id_solicitud4: "6"

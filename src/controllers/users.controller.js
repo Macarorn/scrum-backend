@@ -13,7 +13,8 @@ import { validateProfileUpdate } from "../validations/auth.validations.js";
 
 export const getUsuarios = async (req, res, next) => {
   try {
-    const users = await listUsers();
+    const search = req.query.search || req.query.q || "";
+    const users = await listUsers(search);
     return sendSuccess(res, users, "Usuarios listados correctamente");
   } catch (error) {
     next(error);
