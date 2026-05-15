@@ -189,6 +189,52 @@ export const actualizarEstadoMiembroProyecto = async (
     throw error;
   }
 
+  const [currentMemberRows] = await pool.query(
+    `SELECT uep.id_usuario, r.nombre_rol
+     FROM usuario_equipo_proyecto uep
+     JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE uep.id_equipo_proyecto = ?
+       AND uep.id_usuario = ?`,
+    [idEquipoProyecto, usuarioId],
+  );
+
+  if (currentMemberRows.length === 0) {
+    const error = new Error("Miembro no encontrado en el proyecto");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const targetRole = currentMemberRows[0].nombre_rol;
+  const specialRoles = ["Product Owner", "Scrum Master"];
+
+  if (!activo && specialRoles.includes(targetRole)) {
+    const error = new Error(
+      "No se puede inactivar a un Product Owner o Scrum Master directamente. Utiliza la transferencia de Product Owner si se trata de cambiar el PO.",
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+  if (activo && specialRoles.includes(targetRole)) {
+    const [existingActiveRoleRows] = await pool.query(
+      `SELECT COUNT(*) AS count
+       FROM usuario_equipo_proyecto uep
+       JOIN rol r ON uep.id_rol = r.id_rol
+       WHERE uep.id_equipo_proyecto = ?
+         AND uep.id_usuario != ?
+         AND uep.activo = 1
+         AND LOWER(r.nombre_rol) = LOWER(?)`,
+      [idEquipoProyecto, usuarioId, targetRole],
+    );
+
+    const existingActiveCount = existingActiveRoleRows[0].count;
+    if (existingActiveCount > 0) {
+      const error = new Error(
+        `No se puede activar a este ${targetRole} porque ya existe un ${targetRole} activo en el proyecto.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+  }
   const [result] = await pool.query(
     `UPDATE usuario_equipo_proyecto
      SET activo = ?
