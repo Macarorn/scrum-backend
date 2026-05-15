@@ -20,7 +20,7 @@ import {
 
 export const register = async (req, res, next) => {
   try {
-    const { email, nombre, password, confirmPassword } = req.body;
+    const { email, nombre, password, confirmPassword, telefono, ciudad } = req.body;
     const validation = validateRegister(
       email,
       nombre,
@@ -38,7 +38,7 @@ export const register = async (req, res, next) => {
       );
     }
 
-    const user = await createUser({ email, nombre, password });
+    const user = await createUser({ email, nombre, password, telefono, ciudad });
 
     return sendSuccess(res, user, "Usuario registrado correctamente", 201);
   } catch (error) {
@@ -85,6 +85,7 @@ export const login = async (req, res, next) => {
     const accessToken = generateToken(
       user.id_usuario,
       user.email,
+      user.nombre,
       user.rol_principal,
       permisos,
     );
@@ -175,6 +176,7 @@ export const refreshToken = async (req, res, next) => {
     const accessToken = generateToken(
       payload.id_usuario,
       email,
+      user.nombre,
       role,
       user.permisos?.map((permiso) => permiso.nombre) || [],
     );
