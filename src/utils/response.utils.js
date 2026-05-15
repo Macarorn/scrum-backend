@@ -4,8 +4,9 @@ export const sendSuccess = (
   message = "Operación exitosa",
   status = 200,
 ) => {
+  const success = status >= 200 && status < 400;
   return res.status(status).json({
-    success: true,
+    success,
     data,
     message,
   });

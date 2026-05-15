@@ -1,4 +1,5 @@
 import pool from "../utils/database.js";
+import notificacionesService from "../services/notificaciones.service.js";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -89,6 +90,22 @@ export const createSprint = async (req, res) => {
         sprint.velocidad_real,
         sprint.fecha_liberacion,
       ],
+    );
+
+    // Obtener nombre del proyecto para la notificación
+    const [proyectoRows] = await pool.query(
+      "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
+      [sprint.id_proyecto]
+    );
+    const nombreProyecto = proyectoRows.length > 0 ? proyectoRows[0].nombre : 'Proyecto desconocido';
+
+    // Notificar a los miembros del proyecto sobre el nuevo sprint
+    const userId = req.user?.id_usuario;
+    await notificacionesService.notificarNuevoSprint(
+      sprint.id_proyecto,
+      nombreProyecto,
+      sprint.nombre,
+      userId
     );
 
     res.status(201).json({
@@ -252,6 +269,24 @@ export const updateEstado = async (req, res) => {
       });
     }
 
+    // Obtener el sprint actual para comparar el estado
+    const [sprintActual] = await pool.query(
+      "SELECT s.*, p.nombre as nombre_proyecto FROM sprint s JOIN proyecto p ON s.id_proyecto = p.id_proyecto WHERE s.id_sprint = ?",
+      [id]
+    );
+
+    if (sprintActual.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Sprint no encontrado",
+      });
+    }
+
+    const estadoAnterior = sprintActual[0].estado;
+    const nombreSprint = sprintActual[0].nombre;
+    const nombreProyecto = sprintActual[0].nombre_proyecto;
+    const fechaFin = new Date(sprintActual[0].fecha_fin);
+
     const [result] = await pool.query(
       "UPDATE sprint SET estado = ? WHERE id_sprint = ?",
       [estado, id],
@@ -262,6 +297,30 @@ export const updateEstado = async (req, res) => {
         success: false,
         message: "Sprint no encontrado",
       });
+    }
+
+    // Notificar según el tipo de cambio de estado
+    const userId = req.user?.id_usuario;
+
+    if (estado === "en_curso" && estadoAnterior !== "en_curso") {
+      // Calcular días restantes hasta la fecha fin
+      const hoy = new Date();
+      const diasRestantes = Math.ceil((fechaFin - hoy) / (1000 * 60 * 60 * 24));
+      
+      await notificacionesService.notificarInicioSprint(
+        sprintActual[0].id_proyecto,
+        nombreProyecto,
+        nombreSprint,
+        diasRestantes > 0 ? diasRestantes : 0,
+        userId
+      );
+    } else if (estado === "completado" && estadoAnterior !== "completado") {
+      await notificacionesService.notificarSprintCompletado(
+        sprintActual[0].id_proyecto,
+        nombreProyecto,
+        nombreSprint,
+        userId
+      );
     }
 
     res.json({

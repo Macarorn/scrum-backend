@@ -27,6 +27,9 @@ import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 import { initializeLegalStore } from "./utils/legal.store.js";
+import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
+
+dotenv.config();
 
 const app = express();
 const PORT = config.server.port;
@@ -109,6 +112,9 @@ app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/legal", legalRoutes);
+
+// Iniciar scheduler de notificaciones de sprint
+iniciarSchedulerSprint();
 
 app.use(notFoundHandler);
 app.use(errorHandler);

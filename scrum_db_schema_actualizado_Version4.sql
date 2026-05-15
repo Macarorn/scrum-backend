@@ -448,10 +448,12 @@ INSERT INTO rol_permiso VALUES
 
 -- Usuarios (Equipo del proyecto)
 INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES
-('mariana@gmail.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa',     'Mariana García',      '3256321587', 'Bogotá'),
-('sofia@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeyOaFZUc4hpcfYpeFDetloS4Ul5K2yRC',       'Sofía Bonilla',       '3101234567', 'Bogotá'),
-('jefferson@gmail.com',   '$2a$10$SrJgihtLEYaZVXZUGfSeLeoDu3Ao2J6PLIVLWIkYecmXMmkUOArwm',   'Jefferson López',      '3026984120', 'Medellín'),
-('johan@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeDweOSRbhc.BuRtdVaYQRzbUq3wgk04K',       'Johan Rodríguez',      '3147856942', 'Cali');
+('mariana@gmail.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa',     'Mariana García',   '3256321587', 'Bogotá'),
+('sofia@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeyOaFZUc4hpcfYpeFDetloS4Ul5K2yRC',     'Sofía Bonilla',    '3101234567', 'Bogotá'),
+('jefferson@gmail.com',   '$2a$10$SrJgihtLEYaZVXZUGfSeLeoDu3Ao2J6PLIVLWIkYecmXMmkUOArwm',     'Jefferson López',  '3026984120', 'Medellín'),
+('johan@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeDweOSRbhc.BuRtdVaYQRzbUq3wgk04K',     'Johan Rodríguez',  '3147856942', 'Cali'),
+('carlos@gmail.com',      '$2a$10$PoIk8UpD40bxdHOjuBd/8eIaJKhXqHEyk3ErR8LLZEMc5n0kF3FEe',     'Carlos Mendes',    '3181234567', 'Medellín'),
+('elena@gmail.com',       '$2a$10$lC061lLK0o339z9ONyWzv.7U951qTmWta/jfOhR91E1N7CDBIvNo.',       'Elena Sánchez',    '3209876543', 'Bogotá');
 
 -- Roles a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
@@ -575,11 +577,12 @@ INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje) VALUES
 (4, 'informativa', 'Sprint 1 iniciado', 'El Sprint 1 ha sido creado. Revisa tus tareas asignadas en el tablero.'),
 (1, 'prioritaria', 'Nuevo sprint creado', 'Se ha creado el Sprint 1 - Autenticación. Comienza en 2 días.');
 
--- Solicitudes de ingreso a proyecto de prueba
-INSERT INTO solicitud (id_usuario, id_proyecto, mensaje_opcional)
-VALUES
-(3, 1, 'Quiero unirme al proyecto'),
-(4, 1, 'Me interesa participar');
+-- ============================================================
+-- Solicitudes de ingreso a proyecto
+-- ============================================================
+INSERT INTO solicitud (id_proyecto, id_usuario, mensaje_opcional, estado) VALUES
+(1, 5, 'Me interesa unirme a este proyecto Scrum como Developer', 'Pendiente'),
+(1, 6, 'Quiero participar en el desarrollo de la app Scrum', 'Pendiente');
 
 -- ============================================================
 -- CONSULTAS DE VERIFICACIÓN
@@ -608,4 +611,3 @@ UNION ALL
 SELECT 'notificaciones',     COUNT(*) FROM notificacion
 UNION ALL
 SELECT 'equipo_proyecto',    COUNT(*) FROM equipo_proyecto;
-

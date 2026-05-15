@@ -21,6 +21,7 @@ import {
 const router = express.Router();
 
 router.get("/usuarios", authMiddleware, requireRole(["admin"]), getUsuarios);
+router.get("/usuarios/buscar", authMiddleware, getUsuarios);
 router.get(
   "/usuarios/:id",
   authMiddleware,
@@ -51,7 +52,7 @@ router.post(
   requirePermission("roles:assign"),
   asignarRol,
 );
-router.get("/roles", authMiddleware, requireRole(["admin"]), getRoles);
+router.get("/roles", authMiddleware, getRoles);
 router.get("/permisos", authMiddleware, requireRole(["admin"]), getPermisos);
 router.get("/perfil", authMiddleware, getPerfil);
 router.put("/perfil", authMiddleware, updatePerfil);

@@ -152,6 +152,24 @@ const controller = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async enviarInvitacionProyecto(req, res, next) {
+    try {
+      const id_usuario_aprobador = userIdFromReq(req);
+      const { id_usuario, id_proyecto, id_rol } = req.body;
+
+      const result = await solicitudService.enviarInvitacionProyecto({
+        id_usuario_aprobador,
+        id_usuario,
+        id_proyecto,
+        id_rol
+      });
+
+      return sendSuccess(res, result.data, result.message, result.status);
+    } catch (error) {
+      next(error);
+    }
   }
 
 };
