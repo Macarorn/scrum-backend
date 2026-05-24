@@ -1,4 +1,48 @@
 import pool from "../utils/database.js";
+import notificacionesService from "../services/notificaciones.service.js";
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const startOfDay = (value = new Date()) => {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const getDateMetadata = (value) => {
+  const eventDate = startOfDay(value);
+  if (Number.isNaN(eventDate.getTime())) {
+    return {
+      esHoy: false,
+      proximoEvento: false,
+      atrasado: false,
+      diasRestantes: null,
+      prioridad: "baja",
+    };
+  }
+
+  const today = startOfDay();
+  const diasRestantes = Math.round((eventDate - today) / DAY_IN_MS);
+  const esHoy = diasRestantes === 0;
+  const proximoEvento = diasRestantes > 0 && diasRestantes <= 3;
+  const atrasado = diasRestantes < 0;
+
+  return {
+    esHoy,
+    proximoEvento,
+    atrasado,
+    diasRestantes,
+    prioridad: esHoy || atrasado ? "alta" : proximoEvento ? "media" : "baja",
+  };
+};
+
+const withSprintCalendarMetadata = (sprint) => {
+  if (!sprint) return sprint;
+  return {
+    ...sprint,
+    ...getDateMetadata(sprint.fecha_fin || sprint.fecha_inicio),
+  };
+};
 
 function normalizeSprintPayload(body) {
   return {
@@ -14,7 +58,7 @@ function normalizeSprintPayload(body) {
   };
 }
 
-// ✅ CREAR
+// CREAR
 export const createSprint = async (req, res) => {
   try {
     const sprint = normalizeSprintPayload(req.body);
@@ -48,11 +92,27 @@ export const createSprint = async (req, res) => {
       ],
     );
 
+    // Obtener nombre del proyecto para la notificación
+    const [proyectoRows] = await pool.query(
+      "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
+      [sprint.id_proyecto]
+    );
+    const nombreProyecto = proyectoRows.length > 0 ? proyectoRows[0].nombre : 'Proyecto desconocido';
+
+    // Notificar a los miembros del proyecto sobre el nuevo sprint
+    const userId = req.user?.id_usuario;
+    await notificacionesService.notificarNuevoSprint(
+      sprint.id_proyecto,
+      nombreProyecto,
+      sprint.nombre,
+      userId
+    );
+
     res.status(201).json({
       success: true,
       data: {
         id_sprint: result.insertId,
-        ...sprint,
+        ...withSprintCalendarMetadata(sprint),
       },
       message: "sprint creado correctamente",
     });
@@ -66,14 +126,32 @@ export const createSprint = async (req, res) => {
   }
 };
 
-// ✅ OBTENER TODOS
+// OBTENER TODOS
 export const getSprints = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM sprint");
+    const projectIdRaw = req.query.id_proyecto ?? req.query.proyectoId;
+
+    let rows;
+    if (projectIdRaw !== undefined && projectIdRaw !== null && String(projectIdRaw).trim() !== "") {
+      const projectId = Number(projectIdRaw);
+      if (!Number.isInteger(projectId) || projectId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "id_proyecto invalido",
+        });
+      }
+
+      [rows] = await pool.query(
+        "SELECT * FROM sprint WHERE id_proyecto = ? ORDER BY id_sprint DESC",
+        [projectId],
+      );
+    } else {
+      [rows] = await pool.query("SELECT * FROM sprint ORDER BY id_sprint DESC");
+    }
 
     res.json({
       success: true,
-      data: rows,
+      data: rows.map(withSprintCalendarMetadata),
     });
   } catch (error) {
     console.error(error);
@@ -81,7 +159,7 @@ export const getSprints = async (req, res) => {
   }
 };
 
-// ✅ OBTENER POR ID
+//  OBTENER POR ID
 export const getSprintById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -100,7 +178,7 @@ export const getSprintById = async (req, res) => {
 
     res.json({
       success: true,
-      data: rows[0],
+      data: withSprintCalendarMetadata(rows[0]),
     });
   } catch (error) {
     console.error(error);
@@ -108,7 +186,7 @@ export const getSprintById = async (req, res) => {
   }
 };
 
-// ✅ ACTUALIZAR
+//  ACTUALIZAR
 export const updateSprint = async (req, res) => {
   try {
     const { id } = req.params;
@@ -149,7 +227,7 @@ export const updateSprint = async (req, res) => {
   }
 };
 
-// ✅ ELIMINAR
+//  ELIMINAR
 export const deleteSprint = async (req, res) => {
   try {
     const { id } = req.params;
@@ -176,7 +254,7 @@ export const deleteSprint = async (req, res) => {
   }
 };
 
-// ✅ CAMBIAR ESTADO
+//  CAMBIAR ESTADO
 export const updateEstado = async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,6 +269,24 @@ export const updateEstado = async (req, res) => {
       });
     }
 
+    // Obtener el sprint actual para comparar el estado
+    const [sprintActual] = await pool.query(
+      "SELECT s.*, p.nombre as nombre_proyecto FROM sprint s JOIN proyecto p ON s.id_proyecto = p.id_proyecto WHERE s.id_sprint = ?",
+      [id]
+    );
+
+    if (sprintActual.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Sprint no encontrado",
+      });
+    }
+
+    const estadoAnterior = sprintActual[0].estado;
+    const nombreSprint = sprintActual[0].nombre;
+    const nombreProyecto = sprintActual[0].nombre_proyecto;
+    const fechaFin = new Date(sprintActual[0].fecha_fin);
+
     const [result] = await pool.query(
       "UPDATE sprint SET estado = ? WHERE id_sprint = ?",
       [estado, id],
@@ -201,6 +297,30 @@ export const updateEstado = async (req, res) => {
         success: false,
         message: "Sprint no encontrado",
       });
+    }
+
+    // Notificar según el tipo de cambio de estado
+    const userId = req.user?.id_usuario;
+
+    if (estado === "en_curso" && estadoAnterior !== "en_curso") {
+      // Calcular días restantes hasta la fecha fin
+      const hoy = new Date();
+      const diasRestantes = Math.ceil((fechaFin - hoy) / (1000 * 60 * 60 * 24));
+      
+      await notificacionesService.notificarInicioSprint(
+        sprintActual[0].id_proyecto,
+        nombreProyecto,
+        nombreSprint,
+        diasRestantes > 0 ? diasRestantes : 0,
+        userId
+      );
+    } else if (estado === "completado" && estadoAnterior !== "completado") {
+      await notificacionesService.notificarSprintCompletado(
+        sprintActual[0].id_proyecto,
+        nombreProyecto,
+        nombreSprint,
+        userId
+      );
     }
 
     res.json({

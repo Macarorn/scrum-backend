@@ -103,22 +103,6 @@ CREATE TABLE perfil_usuario (
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
 );
 
--- Notificaciones del sistema
-CREATE TABLE notificacion (
-    id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario          INT NOT NULL,
-    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio') NOT NULL DEFAULT 'informativa',
-    titulo              VARCHAR(200) NOT NULL,
-    mensaje             TEXT,
-    leida               TINYINT(1) NOT NULL DEFAULT 0,
-    fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
-);
-
--- Índices en notificación
-CREATE INDEX idx_notificacion_usuario ON notificacion(id_usuario);
-CREATE INDEX idx_notificacion_leida ON notificacion(leida);
-
 -- ============================================================
 -- MÓDULO 2 — BACKLOG DE PRODUCTO
 -- ============================================================
@@ -129,18 +113,55 @@ CREATE TABLE proyecto (
     nombre          VARCHAR(150) NOT NULL,
     descripcion     TEXT,
     tipo            VARCHAR(100),
-    estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'inicio',
+    estado          ENUM('inicio','activo','pausado','completado','cancelado') NOT NULL DEFAULT 'activo',
     fecha_inicio    DATE,
     fecha_fin_est   DATE,
+    codigo_proyecto VARCHAR(10) NOT NULL UNIQUE,
     creado_por      INT NOT NULL,
     fecha_creacion  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (creado_por) REFERENCES usuario(id_usuario) ON DELETE RESTRICT
 );
 
+-- Tabla para manejar solicitudes de ingreso a proyectos
+CREATE TABLE solicitud (
+    id_solicitud      INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto       INT NOT NULL,
+    id_usuario        INT NOT NULL,
+    mensaje_opcional  TEXT,
+    estado            ENUM('Pendiente', 'Aprobada', 'Rechazada', 'Cancelada') DEFAULT 'Pendiente',
+    motivo            TEXT,
+    id_rol            INT DEFAULT NULL,
+    fecha_creacion    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_rol) REFERENCES rol(id_rol) ON DELETE SET NULL
+);
+
+-- Notificaciones del sistema
+CREATE TABLE notificacion (
+    id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario          INT NOT NULL,
+    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio') NOT NULL DEFAULT 'informativa',
+    titulo              VARCHAR(200) NOT NULL,
+    mensaje             TEXT,
+    leida               TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_solicitud        INT DEFAULT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud) ON DELETE CASCADE
+);
+
+-- Índices en notificación
+CREATE INDEX idx_notificacion_usuario ON notificacion(id_usuario);
+CREATE INDEX idx_notificacion_leida ON notificacion(leida);
+
 -- Índices en proyecto
 CREATE INDEX idx_proyecto_estado ON proyecto(estado);
 CREATE INDEX idx_proyecto_creado_por ON proyecto(creado_por);
+CREATE INDEX idx_proyecto_codigo ON proyecto(codigo_proyecto);
 
 -- Equipo de trabajo ligado a un proyecto
 CREATE TABLE equipo_proyecto (
@@ -275,6 +296,26 @@ CREATE TABLE sprint (
 CREATE INDEX idx_sprint_proyecto ON sprint(id_proyecto);
 CREATE INDEX idx_sprint_estado ON sprint(estado);
 
+-- Reuniones del sprint
+CREATE TABLE meeting (
+    id_meeting INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    sprint VARCHAR(100) NOT NULL,
+    status VARCHAR(100) DEFAULT 'programada',
+    date DATETIME NOT NULL,
+    type VARCHAR(100),
+    startTime VARCHAR(20),
+    duration VARCHAR(50),
+    room VARCHAR(100),
+    link VARCHAR(255),
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_meeting_sprint ON meeting(sprint);
+CREATE INDEX idx_meeting_date ON meeting(date);
+
 -- Agregar FK en historia_usuario
 ALTER TABLE historia_usuario
     ADD CONSTRAINT fk_hu_sprint
@@ -407,10 +448,12 @@ INSERT INTO rol_permiso VALUES
 
 -- Usuarios (Equipo del proyecto)
 INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES
-('mariana@gmail.com',     '$2b$10$hash_mariana',     'Mariana García',      '3256321587', 'Bogotá'),
-('sofia@gmail.com',       '$2b$10$hash_sofia',       'Sofía Bonilla',       '3101234567', 'Bogotá'),
-('jefferson@gmail.com',   '$2b$10$hash_jefferson',   'Jefferson López',      '3026984120', 'Medellín'),
-('johan@gmail.com',       '$2b$10$hash_johan',       'Johan Rodríguez',      '3147856942', 'Cali');
+('mariana@gmail.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa',     'Mariana García',   '3256321587', 'Bogotá'),
+('sofia@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeyOaFZUc4hpcfYpeFDetloS4Ul5K2yRC',     'Sofía Bonilla',    '3101234567', 'Bogotá'),
+('jefferson@gmail.com',   '$2a$10$SrJgihtLEYaZVXZUGfSeLeoDu3Ao2J6PLIVLWIkYecmXMmkUOArwm',     'Jefferson López',  '3026984120', 'Medellín'),
+('johan@gmail.com',       '$2a$10$SrJgihtLEYaZVXZUGfSeLeDweOSRbhc.BuRtdVaYQRzbUq3wgk04K',     'Johan Rodríguez',  '3147856942', 'Cali'),
+('carlos@gmail.com',      '$2a$10$PoIk8UpD40bxdHOjuBd/8eIaJKhXqHEyk3ErR8LLZEMc5n0kF3FEe',     'Carlos Mendes',    '3181234567', 'Medellín'),
+('elena@gmail.com',       '$2a$10$lC061lLK0o339z9ONyWzv.7U951qTmWta/jfOhR91E1N7CDBIvNo.',       'Elena Sánchez',    '3209876543', 'Bogotá');
 
 -- Roles a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
@@ -459,8 +502,8 @@ INSERT INTO etiqueta (nombre, color) VALUES
 ('Documentación',   '#9B59B6');
 
 -- Proyecto
-INSERT INTO proyecto (nombre, descripcion, tipo, estado, creado_por) VALUES
-('App Scrum', 'Sistema de gestión de proyectos con metodología Scrum para equipos ágiles', 'Desarrollo de software', 'activo', 2);
+INSERT INTO proyecto (nombre, descripcion, tipo, estado, codigo_proyecto, creado_por) VALUES
+('App Scrum', 'Sistema de gestión de proyectos con metodología Scrum para equipos ágiles', 'Desarrollo de software', 'activo', 'SCRUM001', 2);
 
 -- Equipo del proyecto
 INSERT INTO equipo_proyecto (id_proyecto, nombre, descripcion) VALUES
@@ -533,6 +576,13 @@ INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje) VALUES
 (3, 'informativa', 'Sprint 1 iniciado', 'El Sprint 1 ha sido creado. Revisa tus tareas asignadas en el tablero.'),
 (4, 'informativa', 'Sprint 1 iniciado', 'El Sprint 1 ha sido creado. Revisa tus tareas asignadas en el tablero.'),
 (1, 'prioritaria', 'Nuevo sprint creado', 'Se ha creado el Sprint 1 - Autenticación. Comienza en 2 días.');
+
+-- ============================================================
+-- Solicitudes de ingreso a proyecto
+-- ============================================================
+INSERT INTO solicitud (id_proyecto, id_usuario, mensaje_opcional, estado) VALUES
+(1, 5, 'Me interesa unirme a este proyecto Scrum como Developer', 'Pendiente'),
+(1, 6, 'Quiero participar en el desarrollo de la app Scrum', 'Pendiente');
 
 -- ============================================================
 -- CONSULTAS DE VERIFICACIÓN

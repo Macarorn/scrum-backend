@@ -1,27 +1,25 @@
-import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-
-dotenv.config();
+import config from "../config/config.js";
 
 export const generateToken = (idUsuario, email, rol, permisos = []) => {
   return jwt.sign(
     { id_usuario: idUsuario, email, rol, permisos },
-    process.env.JWT_SECRET,
+    config.jwt.secret,
     {
-      expiresIn: process.env.JWT_EXPIRE,
+      expiresIn: config.jwt.expire,
     },
   );
 };
 
 export const generateRefreshToken = (idUsuario) => {
-  return jwt.sign({ id_usuario: idUsuario }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRE,
+  return jwt.sign({ id_usuario: idUsuario }, config.jwt.refreshSecret, {
+    expiresIn: config.jwt.refreshExpire,
   });
 };
 
 export const verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return jwt.verify(token, config.jwt.secret);
   } catch (error) {
     return null;
   }
@@ -29,7 +27,7 @@ export const verifyToken = (token) => {
 
 export const verifyRefreshToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    return jwt.verify(token, config.jwt.refreshSecret);
   } catch (error) {
     return null;
   }

@@ -3,8 +3,8 @@ import * as tareaController from "../controllers/tarea.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import {
   soloAsignadosPuedenCambiarEstado,
-  soloResponsablePuedeActualizarTiempo,
-  validarTransicionEstado,
+  // soloResponsablePuedeActualizarTiempo, //se puso en comenario para permitir que cualquier usuario asignado pueda registrar tiempo real, no solo el responsable
+  validarTransicionEstado
 } from "../middleware/tarea.middleware.js";
 
 const router = express.Router();
@@ -20,8 +20,8 @@ router.delete("/:id", authMiddleware, tareaController.eliminarTarea);
 router.patch(
   "/:id/estado",
   authMiddleware,
-  soloAsignadosPuedenCambiarEstado,
   validarTransicionEstado,
+  // soloAsignadosPuedenCambiarEstado, se puso en comentario para permitir que cualquier usuario asignado pueda cambiar el estado, no solo el responsable
   tareaController.cambiarEstadoTarea,
 );
 
@@ -36,7 +36,7 @@ router.put(
 router.patch(
   "/:id/tiempo-real",
   authMiddleware,
-  soloResponsablePuedeActualizarTiempo,
+  // soloResponsablePuedeActualizarTiempo,
   tareaController.registrarTiempoReal,
 );
 

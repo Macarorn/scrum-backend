@@ -9,11 +9,13 @@ import {
   setUserRole,
   updateUser,
 } from "../utils/user.store.js";
+import { getLatestUserConsent } from "../utils/legal.store.js";
 import { validateProfileUpdate } from "../validations/auth.validations.js";
 
 export const getUsuarios = async (req, res, next) => {
   try {
-    const users = await listUsers();
+    const search = req.query.search || req.query.q || "";
+    const users = await listUsers(search);
     return sendSuccess(res, users, "Usuarios listados correctamente");
   } catch (error) {
     next(error);
@@ -164,6 +166,44 @@ export const getPerfil = async (req, res, next) => {
     }
 
     return sendSuccess(res, user, "Perfil obtenido correctamente");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserConsent = async (req, res, next) => {
+  try {
+    const user = await findUserById(req.params.id);
+    if (!user) {
+      return next(
+        buildError("Usuario no encontrado", {
+          statusCode: 404,
+          error: "USER_NOT_FOUND",
+          details: { id_usuario: req.params.id },
+        }),
+      );
+    }
+
+    const consent = await getLatestUserConsent(user.id_usuario);
+    return sendSuccess(
+      res,
+      {
+        user: {
+          id_usuario: user.id_usuario,
+          email: user.email,
+        },
+        consent: consent
+          ? {
+              consent_version: consent.consent_version,
+              consent_at: consent.consent_at,
+              accepted: consent.accepted === 1,
+              ip_address: consent.ip_address,
+              user_agent: consent.user_agent,
+            }
+          : null,
+      },
+      "Consentimiento obtenido correctamente",
+    );
   } catch (error) {
     next(error);
   }

@@ -1,3 +1,5 @@
+import config from "../config/config.js";
+
 export const errorHandler = (err, req, res, next) => {
   console.error("Error:", err);
 
@@ -11,7 +13,7 @@ export const errorHandler = (err, req, res, next) => {
     message: message,
     details:
       err.details ||
-      (process.env.NODE_ENV === "development" ? { stack: err.stack } : {}),
+      (config.server.nodeEnv === "development" ? { stack: err.stack } : {}),
   });
 };
 

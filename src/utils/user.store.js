@@ -1,4 +1,8 @@
+import { promises as fs } from "fs";
+import path from "path";
 import { hashPassword } from "./password.utils.js";
+import pool from "./database.js";
+import config from "../config/config.js";
 
 const roles = [
   { id_rol: 1, nombre_rol: "admin", descripcion: "Acceso total al sistema" },
@@ -54,14 +58,57 @@ const users = [];
 const refreshTokens = new Set();
 let userIdSequence = 1;
 
+const DATA_DIR = path.resolve(process.cwd(), "data");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+
+const isTestEnv = () => config.server.nodeEnv === "test";
+
+const ensureDataDir = async () => {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+};
+
+const persistUsers = async () => {
+  if (isTestEnv()) return;
+  await ensureDataDir();
+  const payload = {
+    userIdSequence,
+    users,
+  };
+  await fs.writeFile(USERS_FILE, JSON.stringify(payload, null, 2), "utf-8");
+};
+
+const loadUsers = async () => {
+  if (isTestEnv()) return false;
+
+  try {
+    const raw = await fs.readFile(USERS_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+
+    if (Array.isArray(parsed.users)) {
+      users.splice(0, users.length, ...parsed.users);
+      userIdSequence = parsed.userIdSequence || users.length + 1;
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+
+  return false;
+};
+
 const sanitizeUser = (user) => {
   if (!user) return null;
   const { passwordHash, ...safeUser } = user;
   return safeUser;
 };
 
-const getRoleById = (idRol) =>
-  roles.find((role) => role.id_rol === Number(idRol));
+const getRoleById = async (idRol) => {
+  const [rows] = await pool.query(
+    "SELECT id_rol, nombre_rol, descripcion FROM rol WHERE id_rol = ?",
+    [Number(idRol)],
+  );
+  return rows.length ? rows[0] : null;
+};
 
 const getPermissionsForRole = (roleName) =>
   permisos.filter((permiso) =>
@@ -76,7 +123,7 @@ const buildUser = async ({
   ciudad = null,
   id_rol = 2,
 }) => {
-  const role = getRoleById(id_rol);
+  const role = await getRoleById(id_rol);
   if (!role) {
     const error = new Error("Rol no valido");
     error.statusCode = 400;
@@ -105,6 +152,9 @@ const buildUser = async ({
 export const bootstrapStore = async () => {
   if (users.length > 0) return;
 
+  const loaded = await loadUsers();
+  if (loaded) return;
+
   const admin = await buildUser({
     nombre: "Admin",
     email: "admin@scrum.local",
@@ -129,6 +179,8 @@ export const bootstrapStore = async () => {
   users.push(admin);
   users.push(productOwner);
   users.push(scrumMaster);
+
+  await persistUsers();
 };
 
 export const createUser = async ({
@@ -138,9 +190,12 @@ export const createUser = async ({
   telefono = null,
   ciudad = null,
   id_rol = 2,
+  consent_granted = false,
+  consent_version = "v1.0",
 }) => {
-  const exists = users.some((u) => u.email === email.toLowerCase());
-  if (exists) {
+  // Verificar si el email ya existe
+  const [existing] = await pool.query("SELECT id_usuario FROM usuario WHERE email = ?", [email.toLowerCase()]);
+  if (existing.length > 0) {
     const error = new Error("El email ya se encuentra registrado");
     error.statusCode = 409;
     error.error = "EMAIL_ALREADY_EXISTS";
@@ -148,69 +203,160 @@ export const createUser = async ({
     throw error;
   }
 
-  const user = await buildUser({
-    nombre,
-    email,
-    password,
-    telefono,
-    ciudad,
-    id_rol,
-  });
-  users.push(user);
+  // Hashear la contraseña
+  const passwordHash = await hashPassword(password);
 
+  // Calcular fecha actual para consent_at
+  const consentAt = consent_granted ? new Date() : null;
+
+  // Insertar usuario con campos de consentimiento
+  const [result] = await pool.query(
+    "INSERT INTO usuario (email, password, nombre, telefono, ciudad, consent_granted, consent_at, consent_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [email.toLowerCase(), passwordHash, nombre, telefono, ciudad, consent_granted ? 1 : 0, consentAt, consent_version]
+  );
+
+  const userId = result.insertId;
+
+  // Asignar rol por defecto
+  await pool.query("INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)", [userId, id_rol]);
+
+  // Obtener el usuario completo
+  const user = await findUserWithSecretById(userId);
   return sanitizeUser(user);
 };
 
 export const findUserByEmail = async (email) => {
-  const user = users.find((u) => u.email === email.toLowerCase());
+  const user = await findUserWithSecretByEmail(email);
   return user ? sanitizeUser(user) : null;
 };
 
 export const findUserWithSecretByEmail = async (email) => {
-  return users.find((u) => u.email === email.toLowerCase()) || null;
+  const [rows] = await pool.query(`
+    SELECT u.*, r.nombre_rol as rol_principal
+    FROM usuario u
+    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+    LEFT JOIN rol r ON ur.id_rol = r.id_rol
+    WHERE u.email = ? AND u.activo = 1
+  `, [email.toLowerCase()]);
+
+  if (rows.length === 0) return null;
+
+  const user = rows[0];
+  // Obtener permisos
+  const [permisosRows] = await pool.query(`
+    SELECT p.nombre
+    FROM permiso p
+    JOIN rol_permiso rp ON p.id_permiso = rp.id_permiso
+    JOIN usuario_rol ur ON rp.id_rol = ur.id_rol
+    WHERE ur.id_usuario = ?
+  `, [user.id_usuario]);
+
+  user.permisos = permisosRows;
+  user.passwordHash = user.password; // Renombrar para consistencia
+  return user;
 };
 
 export const findUserById = async (id) => {
-  const user = users.find((u) => u.id_usuario === Number(id));
+  const user = await findUserWithSecretById(id);
   return user ? sanitizeUser(user) : null;
 };
 
 export const findUserWithSecretById = async (id) => {
-  return users.find((u) => u.id_usuario === Number(id)) || null;
+  const [rows] = await pool.query(`
+    SELECT u.*, r.nombre_rol as rol_principal
+    FROM usuario u
+    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+    LEFT JOIN rol r ON ur.id_rol = r.id_rol
+    WHERE u.id_usuario = ? AND u.activo = 1
+  `, [id]);
+
+  if (rows.length === 0) return null;
+
+  const user = rows[0];
+  // Obtener permisos
+  const [permisosRows] = await pool.query(`
+    SELECT p.nombre
+    FROM permiso p
+    JOIN rol_permiso rp ON p.id_permiso = rp.id_permiso
+    JOIN usuario_rol ur ON rp.id_rol = ur.id_rol
+    WHERE ur.id_usuario = ?
+  `, [user.id_usuario]);
+
+  user.permisos = permisosRows;
+  user.passwordHash = user.password;
+  return user;
 };
 
-export const listUsers = async () => {
-  return users.map(sanitizeUser);
+export const listUsers = async (searchTerm = "") => {
+  const trimmed = String(searchTerm || "").trim().toLowerCase();
+  let query = "SELECT * FROM usuario WHERE activo = 1";
+  const params = [];
+
+  if (trimmed) {
+    query += " AND (LOWER(email) LIKE ? OR LOWER(nombre) LIKE ?);";
+    const like = `%${trimmed}%`;
+    params.push(like, like);
+  }
+
+  const [rows] = await pool.query(query, params);
+  return rows.map(sanitizeUser);
 };
 
 export const updateUser = async (id, payload) => {
-  const user = users.find((u) => u.id_usuario === Number(id));
-  if (!user) return null;
+  const userId = Number(id);
+  const [existingRows] = await pool.query(
+    "SELECT id_usuario FROM usuario WHERE id_usuario = ?",
+    [userId],
+  );
+  if (existingRows.length === 0) return null;
 
-  if (payload.email && payload.email.toLowerCase() !== user.email) {
-    const emailExists = users.some(
-      (u) =>
-        u.email === payload.email.toLowerCase() &&
-        u.id_usuario !== user.id_usuario,
+  const updates = [];
+  const params = [];
+
+  if (payload.email) {
+    const [emailRows] = await pool.query(
+      "SELECT id_usuario FROM usuario WHERE email = ? AND id_usuario <> ?",
+      [payload.email.toLowerCase(), userId],
     );
-    if (emailExists) {
+    if (emailRows.length > 0) {
       const error = new Error("El email ya se encuentra registrado");
       error.statusCode = 409;
       error.error = "EMAIL_ALREADY_EXISTS";
       error.details = { email: payload.email };
       throw error;
     }
-    user.email = payload.email.toLowerCase();
+    updates.push("email = ?");
+    params.push(payload.email.toLowerCase());
   }
 
-  if (payload.nombre) user.nombre = payload.nombre;
-  if (payload.telefono !== undefined) user.telefono = payload.telefono;
-  if (payload.ciudad !== undefined) user.ciudad = payload.ciudad;
+  if (payload.nombre !== undefined) {
+    updates.push("nombre = ?");
+    params.push(payload.nombre);
+  }
 
-  if (payload.passwordHash) user.passwordHash = payload.passwordHash;
+  if (payload.telefono !== undefined) {
+    updates.push("telefono = ?");
+    params.push(payload.telefono);
+  }
+
+  if (payload.ciudad !== undefined) {
+    updates.push("ciudad = ?");
+    params.push(payload.ciudad);
+  }
+
+  if (payload.passwordHash !== undefined) {
+    updates.push("password = ?");
+    params.push(payload.passwordHash);
+  }
+
+  if (updates.length > 0) {
+    updates.push("fecha_actualizacion = NOW()");
+    const sql = `UPDATE usuario SET ${updates.join(", ")} WHERE id_usuario = ?`;
+    await pool.query(sql, [...params, userId]);
+  }
 
   if (payload.id_rol) {
-    const role = getRoleById(payload.id_rol);
+    const role = await getRoleById(payload.id_rol);
     if (!role) {
       const error = new Error("Rol no valido");
       error.statusCode = 400;
@@ -219,25 +365,31 @@ export const updateUser = async (id, payload) => {
       throw error;
     }
 
-    user.roles = [role];
-    user.permisos = getPermissionsForRole(role.nombre_rol);
-    user.rol_principal = role.nombre_rol;
+    await pool.query(
+      "DELETE FROM usuario_rol WHERE id_usuario = ?",
+      [userId],
+    );
+    await pool.query(
+      "INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (?, ?)",
+      [userId, payload.id_rol],
+    );
   }
 
-  user.fecha_actualizacion = new Date().toISOString();
-  return sanitizeUser(user);
+  return await findUserWithSecretById(userId);
 };
 
 export const deleteUser = async (id) => {
-  const index = users.findIndex((u) => u.id_usuario === Number(id));
-  if (index === -1) return false;
+  const userId = Number(id);
+  const [result] = await pool.query(
+    "DELETE FROM usuario WHERE id_usuario = ?",
+    [userId],
+  );
 
-  users.splice(index, 1);
-  return true;
+  return result.affectedRows > 0;
 };
 
 export const setUserRole = async (id, id_rol) => {
-  const role = getRoleById(id_rol);
+  const role = await getRoleById(id_rol);
   if (!role) {
     const error = new Error("Rol no valido");
     error.statusCode = 400;
@@ -250,7 +402,10 @@ export const setUserRole = async (id, id_rol) => {
 };
 
 export const listRoles = async () => {
-  return roles;
+  const [rows] = await pool.query(
+    "SELECT id_rol, nombre_rol, descripcion FROM rol ORDER BY id_rol",
+  );
+  return rows;
 };
 
 export const listPermissions = async () => {

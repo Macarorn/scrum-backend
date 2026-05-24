@@ -8,3 +8,10 @@ npm-debug.log*
 .vscode/
 dist/
 build/
+data/users.json
+
+# Docker
+docker-compose.override.yml
+
+# Production env (contains secrets)
+.env.production
