@@ -31,6 +31,9 @@ export default {
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME,
     port: parseInt(process.env.DB_PORT) || 3306,
+    ...(process.env.DB_SSL === "true" && {
+      ssl: { rejectUnauthorized: false },
+    }),
   },
   server: {
     port: parseInt(process.env.PORT) || 3000,
