@@ -114,6 +114,25 @@ app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/legal", legalRoutes);
 
+import pool from "./utils/database.js";
+app.get("/api/fix-encoding", async (req, res) => {
+  try {
+    const queries = [
+      "UPDATE proyectos SET nombre = REPLACE(nombre, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó'), nombre = REPLACE(nombre, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã', 'í'), descripcion = REPLACE(descripcion, 'Ã©', 'é')",
+      "UPDATE epicas SET nombre = REPLACE(nombre, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó'), nombre = REPLACE(nombre, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã', 'í')",
+      "UPDATE sprints SET nombre = REPLACE(nombre, 'Ã³', 'ó'), objetivo = REPLACE(objetivo, 'Ã³', 'ó')",
+      "UPDATE historias_usuario SET titulo = REPLACE(titulo, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó')",
+      "UPDATE tareas SET titulo = REPLACE(titulo, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó')"
+    ];
+    for (const q of queries) {
+      await pool.query(q);
+    }
+    res.json({ success: true, message: "Encoding fixed!" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Iniciar scheduler de notificaciones de sprint
 iniciarSchedulerSprint();
 
