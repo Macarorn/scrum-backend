@@ -300,7 +300,7 @@ const solicitudService = {
     }
 
     await pool.query(
-      `UPDATE solicitud SET estado = "Aprobada" WHERE id_solicitud = ?`,
+      `UPDATE solicitud SET estado = 'Aprobada' WHERE id_solicitud = ?`,
       [id_solicitud],
     );
 
@@ -359,7 +359,7 @@ const solicitudService = {
 
     await pool.query(
       `UPDATE solicitud 
-       SET estado = "Rechazada", motivo = ? 
+       SET estado = 'Rechazada', motivo = ? 
        WHERE id_solicitud = ?`,
       [motivo || null, id_solicitud],
     );
@@ -409,7 +409,7 @@ const solicitudService = {
 
     await pool.query(
       `UPDATE solicitud 
-       SET estado = "Cancelada" 
+       SET estado = 'Cancelada' 
        WHERE id_solicitud = ?`,
       [id_solicitud],
     );
@@ -501,7 +501,7 @@ const solicitudService = {
     // Verificar si ya existe solicitud pendiente
     const [existingSolicitud] = await pool.query(
       `SELECT 1 FROM solicitud 
-       WHERE id_usuario = ? AND id_proyecto = ? AND estado = "Pendiente"`,
+       WHERE id_usuario = ? AND id_proyecto = ? AND estado = 'Pendiente'`,
       [id_usuario, id_proyecto],
     );
 
@@ -542,7 +542,7 @@ const solicitudService = {
     // Crear solicitud de invitación (tipo de invitación)
     const [result] = await pool.query(
       `INSERT INTO solicitud (id_usuario, id_proyecto, estado, id_rol, mensaje_opcional)
-       VALUES (?, ?, "Pendiente", ?, ?)`,
+       VALUES (?, ?, 'Pendiente', ?, ?)`,
       [
         id_usuario,
         id_proyecto,
