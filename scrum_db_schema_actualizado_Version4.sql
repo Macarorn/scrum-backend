@@ -9,7 +9,9 @@
 -- Versión: 2.1 (optimizada con índices y mejoras)
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS scrum_db
+DROP DATABASE IF EXISTS scrum_db;
+
+CREATE DATABASE scrum_db
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
@@ -334,6 +336,19 @@ CREATE TABLE sprint_historia (
     FOREIGN KEY (id_historia) REFERENCES historia_usuario(id_historia) ON DELETE CASCADE
 );
 
+-- Tabla pivot sprint ↔ épica (relación muchos a muchos)
+CREATE TABLE sprint_epica (
+    id_sprint       INT NOT NULL,
+    id_epica        INT NOT NULL,
+    fecha_asignacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_sprint, id_epica),
+    FOREIGN KEY (id_sprint)   REFERENCES sprint(id_sprint) ON DELETE CASCADE,
+    FOREIGN KEY (id_epica)    REFERENCES epica(id_epica) ON DELETE CASCADE
+);
+
+-- Índice en sprint_epica
+CREATE INDEX idx_sprint_epica_epica ON sprint_epica(id_epica);
+
 -- ============================================================
 -- MÓDULO 4 — TABLÓN DE TAREAS (KANBAN / SCRUM BOARD)
 -- ============================================================
@@ -518,9 +533,12 @@ INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol) VAL
 
 -- Épicas
 INSERT INTO epica (id_proyecto, nombre, descripcion, categoria, prioridad, estado) VALUES
-(1, 'Landing / Presentación', 'Información de la plataforma para nuevos usuarios', 'UI', 3, 'por_hacer'),
-(1, 'Registro e Inicio de Sesión', 'Autenticación de usuarios con email o Google', 'Seguridad', 1, 'por_hacer'),
-(1, 'Gestión de Proyectos', 'Crear, configurar e ingresar a proyectos', 'Core', 1, 'por_hacer');
+(1, 'E1 - Landing / Presentación', 'Información de la plataforma para nuevos usuarios', 'UI', 3, 'por_hacer'),
+(1, 'E2 - Registro e Inicio de Sesión', 'Autenticación de usuarios con email o Google', 'Seguridad', 1, 'por_hacer'),
+(1, 'E3 - Gestión de Proyectos', 'Crear, configurar e ingresar a proyectos', 'Core', 1, 'por_hacer'),
+(1, 'E4 - Gestión de Equipo', 'Agregar miembros y asignar roles al equipo', 'Core', 2, 'por_hacer'),
+(1, 'E5 - Tablero Kanban', 'Visualizar y gestionar tareas en tablero Kanban', 'Core', 1, 'por_hacer'),
+(1, 'E6 - Métricas y Reportes', 'Burndown charts y métricas del sprint', 'Core', 3, 'por_hacer');
 
 -- Historias de usuario
 INSERT INTO historia_usuario (id_epica, nombre, como_quien, quiero, para, prioridad, story_points, estimacion_dias, estado) VALUES
@@ -542,13 +560,17 @@ INSERT INTO criterio_aceptacion (id_historia, descripcion) VALUES
 
 -- Sprint 1
 INSERT INTO sprint (id_proyecto, nombre, meta, fecha_inicio, fecha_fin, estado, velocidad_estimada) VALUES
-(1, 'Sprint 1 - Autenticación', 'Completar módulo de autenticación e inicio de sesión', NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), 'planeado', 9);
+(1, 'S1 - Autenticación', 'Completar módulo de autenticación e inicio de sesión', NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), 'planeado', 9);
 
 -- Asignar historias al sprint 1
 INSERT INTO sprint_historia (id_sprint, id_historia) VALUES
 (1, 1), (1, 2), (1, 3);
 
 UPDATE historia_usuario SET id_sprint = 1 WHERE id_historia IN (1, 2, 3);
+
+-- Asignar épicas al sprint 1
+INSERT INTO sprint_epica (id_sprint, id_epica) VALUES
+(1, 2), (1, 3);
 
 -- Tareas del sprint 1
 INSERT INTO tarea (id_historia, nombre, tipo, estado, prioridad, estimacion_dias, orden_columna) VALUES

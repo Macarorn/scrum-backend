@@ -55,6 +55,17 @@ export const listarMiembrosProyecto = async (req, res, next) => {
   }
 };
 
+export const obtenerMiRolEnProyecto = async (req, res, next) => {
+  try {
+    const userId = req.user.id_usuario;
+    const projectId = req.params.id;
+    const data = await proyectosService.obtenerMiRolEnProyecto(projectId, userId);
+    res.status(200).json({ success: true, data, message: "Rol en proyecto obtenido" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const eliminarMiembroProyecto = async (req, res, next) => {
   try {
     const data = await proyectosService.eliminarMiembroProyecto(
