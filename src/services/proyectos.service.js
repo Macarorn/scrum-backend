@@ -112,9 +112,36 @@ export const crearProyecto = async (data) => {
       data.creado_por || 1, // Asumir usuario 1 si no se pasa
     ],
   );
+  const proyectoId = result.insertId;
+
+  // Crear equipo del proyecto
+  const [equipoResult] = await pool.query(
+    "INSERT INTO equipo_proyecto (id_proyecto, nombre, descripcion) VALUES (?, ?, ?)",
+    [proyectoId, "Equipo del proyecto", "Equipo principal del proyecto"],
+  );
+  const idEquipoProyecto = equipoResult.insertId;
+
+  // Obtener el rol de Product Owner
+  const [poRoleRows] = await pool.query(
+    `SELECT id_rol FROM rol WHERE nombre_rol = ?`,
+    ["Product Owner"],
+  );
+
+  if (poRoleRows.length === 0) {
+    throw new Error("Rol de Product Owner no encontrado en el sistema");
+  }
+
+  const poRoleId = poRoleRows[0].id_rol;
+
+  // Asignar al creador como Product Owner del proyecto (solo en el contexto del proyecto)
+  await pool.query(
+    "INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol, activo, fecha_ingreso) VALUES (?, ?, ?, 1, NOW())",
+    [data.creado_por || 1, idEquipoProyecto, poRoleId],
+  );
+
   const [rows] = await pool.query(
     "SELECT * FROM proyecto WHERE id_proyecto = ?",
-    [result.insertId],
+    [proyectoId],
   );
   return withCalendarDateAliases(rows[0]);
 };
@@ -159,6 +186,35 @@ export const listarMiembrosProyecto = async (proyectoId) => {
     [proyectoId],
   );
   return rows;
+};
+
+export const obtenerMiRolEnProyecto = async (proyectoId, userId) => {
+  const [rows] = await pool.query(
+    `SELECT r.nombre_rol AS rol, r.id_rol,
+     GROUP_CONCAT(p.nombre) AS permisos
+     FROM usuario_equipo_proyecto uep
+     JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+     JOIN rol r ON uep.id_rol = r.id_rol
+     LEFT JOIN rol_permiso rp ON r.id_rol = rp.id_rol
+     LEFT JOIN permiso p ON rp.id_permiso = p.id_permiso
+     WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1
+     GROUP BY r.nombre_rol, r.id_rol`,
+    [proyectoId, userId],
+  );
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const result = rows[0];
+  // Convertir permisos a array si existe
+  if (result.permisos) {
+    result.permisos = result.permisos.split(',');
+  } else {
+    result.permisos = [];
+  }
+
+  return result;
 };
 
 export const actualizarEstadoMiembroProyecto = async (
