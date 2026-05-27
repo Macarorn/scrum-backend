@@ -1,6 +1,7 @@
 import express from "express";
 import * as tareaController from "../controllers/tarea.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import { checkPermission } from "../middleware/authorization.middleware.js";
 import {
   soloAsignadosPuedenCambiarEstado,
   // soloResponsablePuedeActualizarTiempo, //se puso en comenario para permitir que cualquier usuario asignado pueda registrar tiempo real, no solo el responsable
@@ -11,24 +12,26 @@ const router = express.Router();
 
 // CRUD básico
 router.get("/", authMiddleware, tareaController.listarTareas);
-router.post("/", authMiddleware, tareaController.crearTarea);
+router.post("/", authMiddleware, checkPermission("editar_backlog"), tareaController.crearTarea);
 router.get("/:id", authMiddleware, tareaController.obtenerTarea);
-router.put("/:id", authMiddleware, tareaController.actualizarTarea);
-router.delete("/:id", authMiddleware, tareaController.eliminarTarea);
+router.put("/:id", authMiddleware, checkPermission("editar_backlog"), tareaController.actualizarTarea);
+router.delete("/:id", authMiddleware, checkPermission("editar_backlog"), tareaController.eliminarTarea);
 
-// Cambiar estado de tarea (Kanban)
+// Cambiar estado de tarea (Kanban) - Developers pueden mover tareas
 router.patch(
   "/:id/estado",
   authMiddleware,
+  checkPermission("mover_tareas"),
   validarTransicionEstado,
   // soloAsignadosPuedenCambiarEstado, se puso en comentario para permitir que cualquier usuario asignado pueda cambiar el estado, no solo el responsable
   tareaController.cambiarEstadoTarea,
 );
 
-// Actualizar orden de tarea (drag and drop)
+// Actualizar orden de tarea (drag and drop) - Developers pueden mover tareas
 router.put(
   "/:id/orden",
   authMiddleware,
+  checkPermission("mover_tareas"),
   tareaController.actualizarOrdenTarea,
 );
 
