@@ -331,6 +331,19 @@ CREATE TABLE sprint_historia (
     FOREIGN KEY (id_historia) REFERENCES historia_usuario(id_historia) ON DELETE CASCADE
 );
 
+-- Tabla pivot sprint ↔ épica (relación muchos a muchos)
+CREATE TABLE sprint_epica (
+    id_sprint       INT NOT NULL,
+    id_epica        INT NOT NULL,
+    fecha_asignacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_sprint, id_epica),
+    FOREIGN KEY (id_sprint)   REFERENCES sprint(id_sprint) ON DELETE CASCADE,
+    FOREIGN KEY (id_epica)    REFERENCES epica(id_epica) ON DELETE CASCADE
+);
+
+-- Índice en sprint_epica
+CREATE INDEX idx_sprint_epica_epica ON sprint_epica(id_epica);
+
 -- ============================================================
 -- MÃ“DULO 4 â€” TABLÃ“N DE TAREAS (KANBAN / SCRUM BOARD)
 -- ============================================================
