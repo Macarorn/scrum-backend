@@ -119,6 +119,7 @@ CREATE TABLE proyecto (
     fecha_inicio    DATE,
     fecha_fin_est   DATE,
     codigo_proyecto VARCHAR(10) NOT NULL UNIQUE,
+    team_size       INT NOT NULL DEFAULT 1,
     creado_por      INT NOT NULL,
     fecha_creacion  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,

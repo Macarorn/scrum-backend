@@ -99,8 +99,8 @@ export const crearProyecto = async (data) => {
   const codigoProyecto = await generarCodigoUnicoProyecto(pool);
 
   const [result] = await pool.query(
-    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, creado_por)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, team_size, creado_por)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.nombre,
       data.descripcion || null,
@@ -109,6 +109,7 @@ export const crearProyecto = async (data) => {
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
       codigoProyecto,
+      data.team_size || 1,
       data.creado_por || 1, // Asumir usuario 1 si no se pasa
     ],
   );
@@ -523,7 +524,7 @@ export const eliminarMiembroProyecto = async (proyectoId, usuarioId) => {
 
 export const actualizarProyecto = async (id, data) => {
   const [result] = await pool.query(
-    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, fecha_actualizacion = NOW()
+    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, team_size = ?, fecha_actualizacion = NOW()
      WHERE id_proyecto = ?`,
     [
       data.nombre || null,
@@ -532,6 +533,7 @@ export const actualizarProyecto = async (id, data) => {
       data.estado || null,
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
+      data.team_size || 1,
       id,
     ],
   );
