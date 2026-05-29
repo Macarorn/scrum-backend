@@ -412,5 +412,5 @@ export const getMeetingsByProject = async (req, res) => {
   } catch (error) {
     console.error("Error getMeetingsByProject:", error);
     return res.status(500).json({ success: false, message: "Error al obtener reuniones por proyecto." });
-  }
+e  }
 };
