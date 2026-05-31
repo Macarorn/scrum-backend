@@ -140,9 +140,33 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 if (config.server.nodeEnv !== "test") {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Ambiente: ${config.server.nodeEnv}`);
+
+    // Automatic migration to ensure password_reset_token exists
+    try {
+        const createTable = `
+          CREATE TABLE IF NOT EXISTS password_reset_token (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              id_usuario INT NOT NULL,
+              token VARCHAR(255) NOT NULL UNIQUE,
+              expira_en DATETIME NOT NULL,
+              usado TINYINT(1) DEFAULT 0,
+              fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+          )
+        `;
+        const createIndex1 = `CREATE INDEX idx_prt_token ON password_reset_token(token)`;
+        const createIndex2 = `CREATE INDEX idx_prt_usuario ON password_reset_token(id_usuario)`;
+
+        await pool.query(createTable);
+        try { await pool.query(createIndex1); } catch (e) {}
+        try { await pool.query(createIndex2); } catch (e) {}
+        console.log('Automigrations checked/completed.');
+    } catch (e) {
+        console.error('Automigration failed:', e);
+    }
   });
 }
 export default app;
