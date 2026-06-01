@@ -79,7 +79,18 @@ Método | Endpoint              | Descripción                                | 
 `POST /api/auth/login` - Valida credenciales y entrega un token - JWT Publico             
 `POST /api/auth/logout` - Invalida la sesion actual del usuario - Usuario Autenticado 
 `POST /api/auth/refresh-token`- Genera un nuevo token de acceso - Usuario Autenticado 
+`GET /api/auth/verify-email` - Verifica el correo de un usuario usando un token - Publico
+`POST /api/auth/forgot-password` - Solicita un correo de recuperación de contraseña - Publico
+`POST /api/auth/reset-password` - Restablece la contraseña usando un token - Publico
 
+
+### Módulo: Legal y Términos
+
+Gestiona los términos y condiciones de uso y el consentimiento legal de los usuarios.
+
+`GET /api/legal/terms/latest` - Obtiene la versión más reciente de los términos y condiciones - Público
+`POST /api/legal/consent` - Registra la aceptación de términos de un usuario - Usuario Autenticado
+`GET /api/legal/consent/:userId` - Verifica si un usuario ha aceptado los términos actuales - Usuario Autenticado
 
 ### Modulo: Usuarios y Perfil
 
@@ -185,6 +196,15 @@ Gestión del Product Backlog y definición de requerimientos detallados.
 - `POST /api/auth/login` - Iniciar sesión
 - `POST /api/auth/logout` - Cerrar sesión
 - `POST /api/auth/refresh-token` - Refrescar access token
+- `GET /api/auth/verify-email` - Verificar correo electrónico
+- `POST /api/auth/forgot-password` - Recuperar contraseña
+- `POST /api/auth/reset-password` - Restablecer contraseña
+
+### Legal y Términos
+
+- `GET /api/legal/terms/latest` - Obtener términos recientes
+- `POST /api/legal/consent` - Aceptar términos
+- `GET /api/legal/consent/:userId` - Ver estado de consentimiento
 
 ### Usuarios y Perfil
 

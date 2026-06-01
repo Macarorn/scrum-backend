@@ -144,9 +144,10 @@ if (config.server.nodeEnv !== "test") {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Ambiente: ${config.server.nodeEnv}`);
 
-    // Automatic migration to ensure password_reset_token exists
+    // Automatic migration to ensure all tables and columns exist
     try {
-        const createTable = `
+        // password_reset_token
+        await pool.query(`
           CREATE TABLE IF NOT EXISTS password_reset_token (
               id INT AUTO_INCREMENT PRIMARY KEY,
               id_usuario INT NOT NULL,
@@ -156,13 +157,70 @@ if (config.server.nodeEnv !== "test") {
               fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
               FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
           )
-        `;
-        const createIndex1 = `CREATE INDEX idx_prt_token ON password_reset_token(token)`;
-        const createIndex2 = `CREATE INDEX idx_prt_usuario ON password_reset_token(id_usuario)`;
+        `);
+        try { await pool.query(`CREATE INDEX idx_prt_token ON password_reset_token(token)`); } catch (e) {}
+        try { await pool.query(`CREATE INDEX idx_prt_usuario ON password_reset_token(id_usuario)`); } catch (e) {}
 
-        await pool.query(createTable);
-        try { await pool.query(createIndex1); } catch (e) {}
-        try { await pool.query(createIndex2); } catch (e) {}
+        // email_verification_token
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS email_verification_token (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              id_usuario INT NOT NULL,
+              token VARCHAR(255) NOT NULL UNIQUE,
+              expira_en DATETIME NOT NULL,
+              usado TINYINT(1) DEFAULT 0,
+              fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+          )
+        `);
+        try { await pool.query(`CREATE INDEX idx_evt_token ON email_verification_token(token)`); } catch (e) {}
+        try { await pool.query(`CREATE INDEX idx_evt_usuario ON email_verification_token(id_usuario)`); } catch (e) {}
+
+        // legal_version
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS legal_version (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              version VARCHAR(20) NOT NULL UNIQUE,
+              terms_text TEXT NOT NULL,
+              is_active TINYINT(1) DEFAULT 1,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        // user_consent_log
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS user_consent_log (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              id_usuario INT NOT NULL,
+              consent_version VARCHAR(20) NOT NULL,
+              accepted TINYINT(1) NOT NULL,
+              ip_address VARCHAR(45),
+              user_agent TEXT,
+              consent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+          )
+        `);
+
+        // Check columns in usuario
+        const addCol = async (col, def) => {
+            try {
+                await pool.query(`ALTER TABLE usuario ADD COLUMN ${col} ${def}`);
+                console.log(`Column ${col} added to usuario.`);
+            } catch (err) {
+                if (!err.message.includes("Duplicate column name")) {
+                    console.error(`Error adding column ${col}:`, err.message);
+                }
+            }
+        };
+
+        await addCol('is_verified', 'TINYINT(1) DEFAULT 0');
+        await addCol('consent_granted', 'TINYINT(1) DEFAULT 0');
+        await addCol('consent_at', 'DATETIME NULL');
+        await addCol('consent_version', 'VARCHAR(20) DEFAULT \\\'v1.0\\\'');
+
+        // Verify older dummy users so they can still log in
+        await pool.query("UPDATE usuario SET is_verified = 1 WHERE email LIKE '%@scrum.local' OR email LIKE '%@gmail.com'");
+
         console.log('Automigrations checked/completed.');
     } catch (e) {
         console.error('Automigration failed:', e);
