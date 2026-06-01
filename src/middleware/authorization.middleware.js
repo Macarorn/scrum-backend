@@ -441,3 +441,62 @@ export const canAccessUserResource = (allowedRoles = ["admin"]) => {
     });
   };
 };
+
+  // Comprueba que el usuario es miembro activo del proyecto especificado
+  export const requireProjectMember = () => {
+    return async (req, res, next) => {
+      try {
+        const useAuth = process.env.USE_AUTH === "true";
+        const userId = req.user?.id_usuario;
+        if (useAuth && !userId) {
+          return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Usuario no autenticado' });
+        }
+
+        let projectId = req.params.id_proyecto || req.params.idProyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
+
+        if (!projectId && req.params.id) {
+          // intentar obtener id_proyecto desde tablas relacionadas (sprint, epica, historia, tarea)
+          try {
+            const [sprint] = await pool.query(`SELECT id_proyecto FROM sprint WHERE id_sprint = ?`, [req.params.id]);
+            if (sprint.length > 0) projectId = sprint[0].id_proyecto;
+          } catch (err) {
+            // ignore
+          }
+        }
+
+        if (!projectId) {
+          return res.status(400).json({ success: false, error: 'MISSING_PROJECT', message: 'Se requiere id_proyecto' });
+        }
+
+        if (!useAuth) {
+          req.resolvedProjectId = Number(projectId);
+          return next();
+        }
+
+        const [rows] = await pool.query(
+          `SELECT 1 FROM usuario_equipo_proyecto uep
+           JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+           WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1 LIMIT 1`,
+          [projectId, userId]
+        );
+
+        if (rows.length === 0) {
+          const [projectRows] = await pool.query(
+            `SELECT creado_por FROM proyecto WHERE id_proyecto = ? LIMIT 1`,
+            [projectId]
+          );
+          const creatorId = projectRows.length > 0 ? projectRows[0].creado_por : null;
+          if (!creatorId || Number(creatorId) !== Number(userId)) {
+            return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'No perteneces a este proyecto' });
+          }
+        }
+
+        // Attach resolved projectId for downstream handlers
+        req.resolvedProjectId = Number(projectId);
+        next();
+      } catch (error) {
+        console.error('Error requireProjectMember:', error);
+        return res.status(500).json({ success: false, error: 'INTERNAL_ERROR', message: 'Error al verificar pertenencia al proyecto' });
+      }
+    };
+  };
