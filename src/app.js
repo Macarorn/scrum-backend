@@ -218,8 +218,14 @@ if (config.server.nodeEnv !== "test") {
         await addCol('consent_at', 'DATETIME NULL');
         await addCol('consent_version', 'VARCHAR(20) DEFAULT \\\'v1.0\\\'');
 
-        // Verify older dummy users so they can still log in
-        await pool.query("UPDATE usuario SET is_verified = 1 WHERE email LIKE '%@scrum.local' OR email LIKE '%@gmail.com'");
+        // Auto-verify ALL existing unverified users.
+        // The verify-email frontend page was previously missing, so no user
+        // who registered could ever get verified through the normal flow.
+        // This fixes all existing users so they can log in.
+        const [verifyResult] = await pool.query("UPDATE usuario SET is_verified = 1 WHERE is_verified = 0");
+        if (verifyResult.affectedRows > 0) {
+          console.log(`Auto-verified ${verifyResult.affectedRows} existing users.`);
+        }
 
         console.log('Automigrations checked/completed.');
     } catch (e) {
