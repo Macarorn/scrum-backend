@@ -30,11 +30,15 @@ CREATE TABLE permiso (
 );
 
 -- Roles del sistema (Product Owner, Scrum Master, Developer, etc.)
+-- Definimos aquí id_proyecto y la clave única en el momento de creación de la tabla,
+-- en lugar de hacerlo después con ALTER TABLE al final del script.
 CREATE TABLE rol (
     id_rol          INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_rol      VARCHAR(100) NOT NULL UNIQUE,
+    nombre_rol      VARCHAR(100) NOT NULL,
     descripcion     VARCHAR(255),
-    fecha_creacion  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_proyecto     INT NULL,
+    fecha_creacion  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_rol_nombre_proyecto (id_proyecto, nombre_rol)
 );
 
 -- Relación rol → permisos (qué puede hacer cada rol)
@@ -130,6 +134,7 @@ CREATE TABLE solicitud (
     id_solicitud      INT AUTO_INCREMENT PRIMARY KEY,
     id_proyecto       INT NOT NULL,
     id_usuario        INT NOT NULL,
+    id_usuario_creador INT DEFAULT NULL,
     mensaje_opcional  TEXT,
     estado            ENUM('Pendiente', 'Aprobada', 'Rechazada', 'Cancelada') DEFAULT 'Pendiente',
     motivo            TEXT,
@@ -139,6 +144,7 @@ CREATE TABLE solicitud (
 
     FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario_creador) REFERENCES usuario(id_usuario) ON DELETE SET NULL,
     FOREIGN KEY (id_rol) REFERENCES rol(id_rol) ON DELETE SET NULL
 );
 

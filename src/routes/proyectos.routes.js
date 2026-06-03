@@ -30,6 +30,17 @@ router.get("/:id/miembros", authMiddleware, proyectosController.listarMiembrosPr
 // GET /api/proyectos/:id/mi-rol - Obtener el rol del usuario autenticado en un proyecto
 router.get("/:id/mi-rol", authMiddleware, proyectosController.obtenerMiRolEnProyecto);
 
+// GET /api/proyectos/:id/roles - Listar roles disponibles para el proyecto
+router.get("/:id/roles", authMiddleware, proyectosController.listarRolesProyecto);
+
+// POST /api/proyectos/:id/roles - Crear un rol nuevo en el proyecto (PO/SM)
+router.post(
+  "/:id/roles",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master"]),
+  proyectosController.crearRolProyecto,
+);
+
 // DELETE /api/proyectos/:id/miembros/:id_usuario - Eliminar miembro de un proyecto
 router.delete("/:id/miembros/:id_usuario", authMiddleware, proyectosController.eliminarMiembroProyecto);
 

@@ -15,18 +15,12 @@ const logSolicitud = (event, details = {}) => {
 // VALIDAR APROBADOR
 // =============================
 async function esAprobador(userId, idProyecto) {
-  const [proy] = await pool.query(
-    "SELECT creado_por FROM proyecto WHERE id_proyecto = ?",
-    [idProyecto],
-  );
-
-  if (proy.length && proy[0].creado_por === userId) return true;
-
+  // Solo el Product Owner (rol id_rol = 1) puede aprobar solicitudes
   const [rows] = await pool.query(
     `
     SELECT 1 FROM usuario_equipo_proyecto uep
     JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-    WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.id_rol IN (1,2)
+    WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.id_rol = 1 AND uep.activo = 1
   `,
     [idProyecto, userId],
   );
@@ -109,31 +103,44 @@ const solicitudService = {
     }
 
     const [result] = await pool.query(
-      `INSERT INTO solicitud (id_usuario, id_proyecto, estado, mensaje_opcional)
-       VALUES (?, ?, 'Pendiente', ?)`,
-      [id_usuario, id_proyecto, mensaje_opcional || null],
+      `INSERT INTO solicitud (id_usuario, id_proyecto, id_usuario_creador, estado, mensaje_opcional)
+       VALUES (?, ?, ?, 'Pendiente', ?)`,
+      [id_usuario, id_proyecto, id_usuario, mensaje_opcional || null],
     );
 
-    // Obtener info del proyecto para la notificación
+    // Obtener info del proyecto y el Product Owner actual para la notificación
     const [proy] = await pool.query(
-      "SELECT nombre, creado_por FROM proyecto WHERE id_proyecto = ?",
+      "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
       [id_proyecto],
     );
 
-    if (proy.length) {
-      // Notificar al Product Owner (creador del proyecto)
+    // Obtener el Product Owner actual del proyecto (rol id_rol = 1)
+    const [poUsers] = await pool.query(
+      `SELECT u.id_usuario 
+       FROM usuario u
+       JOIN usuario_equipo_proyecto uep ON u.id_usuario = uep.id_usuario
+       JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+       WHERE ep.id_proyecto = ? AND uep.id_rol = 1 AND uep.activo = 1
+       LIMIT 1`,
+      [id_proyecto],
+    );
+
+    if (proy.length && poUsers.length) {
+      const poId = poUsers[0].id_usuario;
+      
+      // Notificar SOLO al Product Owner actual
       await pool.query(
         `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
          VALUES (?, 'prioritaria', 'Nueva solicitud de ingreso', ?, ?)`,
         [
-          proy[0].creado_por,
+          poId,
           `Un usuario ha solicitado unirse al proyecto "${proy[0].nombre}"`,
           result.insertId,
         ],
       );
       logSolicitud("notificacion_creada", {
         tipo: "Nueva solicitud de ingreso",
-        id_usuario: proy[0].creado_por,
+        id_usuario: poId,
         id_proyecto,
         id_solicitud: result.insertId,
       });
@@ -253,7 +260,10 @@ const solicitudService = {
     }
 
     if (!(await esAprobador(id_usuario_aprobador, solicitud.id_proyecto))) {
-      return { status: 403, data: null, message: "Sin permisos" };
+      // Permitir que el usuario invitado acepte su propia invitación
+      if (String(solicitud.id_usuario) !== String(id_usuario_aprobador)) {
+        return { status: 403, data: null, message: "Sin permisos" };
+      }
     }
 
     const [eqRows] = await pool.query(
@@ -277,10 +287,12 @@ const solicitudService = {
     );
 
     if (!exists.length) {
+      // Si no se proporcionó id_rol, usar el rol de la solicitud si existe
+      const roleToAssign = id_rol || solicitud.id_rol || 3;
       await pool.query(
         `INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol)
          VALUES (?, ?, ?)`,
-        [solicitud.id_usuario, id_equipo_proyecto, id_rol],
+        [solicitud.id_usuario, id_equipo_proyecto, Number(roleToAssign)],
       );
       logSolicitud("miembro_agregado", {
         id_usuario: solicitud.id_usuario,
@@ -353,7 +365,10 @@ const solicitudService = {
       };
     }
 
-    if (!(await esAprobador(id_usuario_aprobador, solicitud.id_proyecto))) {
+    const esAprobadorSolicitud = await esAprobador(id_usuario_aprobador, solicitud.id_proyecto);
+    const esSolicitante = String(id_usuario_aprobador) === String(solicitud.id_usuario);
+
+    if (!esAprobadorSolicitud && !esSolicitante) {
       return { status: 403, data: null, message: "Sin permisos" };
     }
 
@@ -364,14 +379,47 @@ const solicitudService = {
       [motivo || null, id_solicitud],
     );
 
+    const receptorNotificacion = solicitud.id_usuario_creador && String(solicitud.id_usuario_creador) !== String(solicitud.id_usuario)
+      ? solicitud.id_usuario_creador
+      : solicitud.id_usuario;
+
+    const [solicitanteInfo] = await pool.query(
+      "SELECT nombre FROM usuario WHERE id_usuario = ?",
+      [solicitud.id_usuario],
+    );
+    const nombreSolicitante = solicitanteInfo.length ? solicitanteInfo[0].nombre : "el usuario";
+
+    const [proyInfo] = await pool.query(
+      "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
+      [solicitud.id_proyecto],
+    );
+    const nombreProyecto = proyInfo.length ? proyInfo[0].nombre : "el proyecto";
+
+    const titulo = receptorNotificacion !== solicitud.id_usuario
+      ? "Invitación rechazada"
+      : "Solicitud rechazada";
+
+    const mensaje = receptorNotificacion !== solicitud.id_usuario
+      ? `La invitación a "${nombreProyecto}" enviada a ${nombreSolicitante} fue rechazada.`
+      : `Tu solicitud fue rechazada. Motivo: ${motivo || "No especificado"}`;
+
     await pool.query(
-      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje)
-       VALUES (?, 'informativa', 'Solicitud rechazada', ?)`,
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
+       VALUES (?, 'informativa', ?, ?, ?)`,
       [
-        solicitud.id_usuario,
-        `Tu solicitud fue rechazada. Motivo: ${motivo || "No especificado"}`,
+        receptorNotificacion,
+        titulo,
+        mensaje,
+        id_solicitud,
       ],
     );
+
+    logSolicitud("notificacion_creada", {
+      tipo: titulo,
+      id_usuario: receptorNotificacion,
+      id_proyecto: solicitud.id_proyecto,
+      id_solicitud,
+    });
 
     return { status: 200, data: null, message: "Solicitud rechazada" };
   },
@@ -379,7 +427,7 @@ const solicitudService = {
   // =============================
   // CANCELAR (MEJORADO)
   // =============================
-  async cancelarSolicitud({ id_usuario, id_solicitud }) {
+  async cancelarSolicitud({ id_usuario, id_solicitud, motivo }) {
     const [rows] = await pool.query(
       `SELECT * FROM solicitud WHERE id_solicitud = ?`,
       [id_solicitud],
@@ -409,17 +457,52 @@ const solicitudService = {
 
     await pool.query(
       `UPDATE solicitud 
-       SET estado = "Cancelada" 
+       SET estado = "Cancelada", motivo = ? 
        WHERE id_solicitud = ?`,
-      [id_solicitud],
+      [motivo || null, id_solicitud],
     );
 
-    await pool.query(
-      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje)
-       VALUES (?, 'informativa', 'Solicitud cancelada',
-       'Has cancelado tu solicitud al proyecto')`,
-      [id_usuario],
+    const receptorNotificacion = solicitud.id_usuario_creador && String(solicitud.id_usuario_creador) !== String(id_usuario)
+      ? solicitud.id_usuario_creador
+      : id_usuario;
+
+    const [solicitanteInfo] = await pool.query(
+      "SELECT nombre FROM usuario WHERE id_usuario = ?",
+      [solicitud.id_usuario],
     );
+    const nombreSolicitante = solicitanteInfo.length ? solicitanteInfo[0].nombre : "el usuario";
+
+    const [proyInfo] = await pool.query(
+      "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
+      [solicitud.id_proyecto],
+    );
+    const nombreProyecto = proyInfo.length ? proyInfo[0].nombre : "el proyecto";
+
+    const titulo = receptorNotificacion !== id_usuario
+      ? "Invitación rechazada"
+      : "Solicitud cancelada";
+
+    const mensaje = receptorNotificacion !== id_usuario
+      ? `La invitación al proyecto "${nombreProyecto}" enviada a ${nombreSolicitante} fue rechazada${motivo ? `. Motivo: ${motivo}` : ''}.`
+      : `Has cancelado tu solicitud al proyecto${motivo ? `. Motivo: ${motivo}` : ''}`;
+
+    await pool.query(
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
+       VALUES (?, 'informativa', ?, ?, ?)`,
+      [
+        receptorNotificacion,
+        titulo,
+        mensaje,
+        id_solicitud,
+      ],
+    );
+
+    logSolicitud("notificacion_creada", {
+      tipo: titulo,
+      id_usuario: receptorNotificacion,
+      id_proyecto: solicitud.id_proyecto,
+      id_solicitud,
+    });
 
     return { status: 200, data: null, message: "Solicitud cancelada" };
   },
@@ -541,11 +624,12 @@ const solicitudService = {
 
     // Crear solicitud de invitación (tipo de invitación)
     const [result] = await pool.query(
-      `INSERT INTO solicitud (id_usuario, id_proyecto, estado, id_rol, mensaje_opcional)
-       VALUES (?, ?, "Pendiente", ?, ?)`,
+      `INSERT INTO solicitud (id_usuario, id_proyecto, id_usuario_creador, estado, id_rol, mensaje_opcional)
+       VALUES (?, ?, ?, "Pendiente", ?, ?)`,
       [
         id_usuario,
         id_proyecto,
+        id_usuario_aprobador,
         id_rol,
         `Solicitante: ${nombreAprobador}; Rol: ${nombreRol}`,
       ],

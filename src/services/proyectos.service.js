@@ -188,6 +188,85 @@ export const listarMiembrosProyecto = async (proyectoId) => {
   return rows;
 };
 
+export const listarRolesProyecto = async (proyectoId) => {
+  await obtenerProyecto(proyectoId);
+
+  const [rows] = await pool.query(
+    `SELECT id_rol, nombre_rol, descripcion, id_proyecto
+     FROM rol
+     WHERE id_proyecto IS NULL OR id_proyecto = ?
+     ORDER BY id_proyecto IS NULL DESC, nombre_rol`,
+    [proyectoId],
+  );
+
+  return rows;
+};
+
+export const crearRolProyecto = async (
+  proyectoId,
+  nombre_rol,
+  descripcion,
+  usuarioActual,
+) => {
+  await obtenerProyecto(proyectoId);
+
+  const [requesterRows] = await pool.query(
+    `SELECT r.nombre_rol
+     FROM usuario_equipo_proyecto uep
+     JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+     JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE ep.id_proyecto = ?
+       AND uep.id_usuario = ?
+       AND uep.activo = 1`,
+    [proyectoId, usuarioActual.id_usuario],
+  );
+
+  const requesterRole = requesterRows.length > 0 ? requesterRows[0].nombre_rol : null;
+  const allowedRoles = ["Product Owner", "Scrum Master"];
+
+  if (!allowedRoles.includes(requesterRole)) {
+    const error = new Error("No tienes permiso para crear roles del proyecto");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const cleanedName = String(nombre_rol || "").trim();
+  if (!cleanedName) {
+    const error = new Error("El nombre del rol es requerido");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const [existing] = await pool.query(
+    `SELECT id_rol
+     FROM rol
+     WHERE LOWER(nombre_rol) = LOWER(?)
+       AND (id_proyecto IS NULL OR id_proyecto = ?)`,
+    [cleanedName, proyectoId],
+  );
+
+  if (existing.length > 0) {
+    const error = new Error("Ya existe un rol con ese nombre en este proyecto o a nivel global");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const [result] = await pool.query(
+    `INSERT INTO rol (nombre_rol, descripcion, id_proyecto)
+     VALUES (?, ?, ?)`,
+    [cleanedName, descripcion || null, proyectoId],
+  );
+
+  const [rows] = await pool.query(
+    `SELECT id_rol, nombre_rol, descripcion, id_proyecto
+     FROM rol
+     WHERE id_rol = ?`,
+    [result.insertId],
+  );
+
+  return rows[0] || null;
+};
+
 export const obtenerMiRolEnProyecto = async (proyectoId, userId) => {
   const [rows] = await pool.query(
     `SELECT r.nombre_rol AS rol, r.id_rol,

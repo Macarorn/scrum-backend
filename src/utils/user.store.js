@@ -412,6 +412,33 @@ export const listPermissions = async () => {
   return permisos;
 };
 
+export const createRole = async ({ nombre_rol, descripcion = null }) => {
+  if (!nombre_rol || !String(nombre_rol).trim()) {
+    const error = new Error('Nombre de rol requerido');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const [existing] = await pool.query(
+    'SELECT id_rol FROM rol WHERE LOWER(nombre_rol) = LOWER(?)',
+    [String(nombre_rol).trim()],
+  );
+
+  if (existing.length) {
+    const error = new Error('Ya existe un rol con ese nombre');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const [result] = await pool.query(
+    'INSERT INTO rol (nombre_rol, descripcion) VALUES (?, ?)',
+    [String(nombre_rol).trim(), descripcion],
+  );
+
+  const [rows] = await pool.query('SELECT id_rol, nombre_rol, descripcion FROM rol WHERE id_rol = ?', [result.insertId]);
+  return rows.length ? rows[0] : null;
+};
+
 export const storeRefreshToken = async (token) => {
   refreshTokens.add(token);
 };

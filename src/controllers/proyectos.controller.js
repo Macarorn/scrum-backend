@@ -66,6 +66,42 @@ export const obtenerMiRolEnProyecto = async (req, res, next) => {
   }
 };
 
+export const listarRolesProyecto = async (req, res, next) => {
+  try {
+    const data = await proyectosService.listarRolesProyecto(req.params.id);
+    res.status(200).json({ success: true, data, message: "Roles del proyecto listados" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const crearRolProyecto = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { nombre_rol, descripcion } = req.body;
+
+    if (!nombre_rol || !String(nombre_rol).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "El nombre del rol es requerido",
+        details: { nombre_rol: "nombre_rol es requerido" },
+      });
+    }
+
+    const data = await proyectosService.crearRolProyecto(
+      id,
+      nombre_rol,
+      descripcion,
+      req.user,
+    );
+
+    res.status(201).json({ success: true, data, message: "Rol creado en el proyecto" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const eliminarMiembroProyecto = async (req, res, next) => {
   try {
     const data = await proyectosService.eliminarMiembroProyecto(

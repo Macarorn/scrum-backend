@@ -124,10 +124,12 @@ const controller = {
     try {
       const id_usuario = userIdFromReq(req);
       const { id_solicitud } = req.params;
+      const { motivo } = req.body;
 
       const result = await solicitudService.cancelarSolicitud({
         id_usuario,
-        id_solicitud
+        id_solicitud,
+        motivo,
       });
 
       return sendSuccess(res, result.data, result.message, result.status);
