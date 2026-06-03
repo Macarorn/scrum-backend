@@ -237,6 +237,13 @@ export const crearRolProyecto = async (
     throw error;
   }
 
+  const cleanedDescription = String(descripcion || "").trim();
+  if (!cleanedDescription) {
+    const error = new Error("La descripción del rol es requerida");
+    error.statusCode = 400;
+    throw error;
+  }
+
   const [existing] = await pool.query(
     `SELECT id_rol
      FROM rol
@@ -254,7 +261,7 @@ export const crearRolProyecto = async (
   const [result] = await pool.query(
     `INSERT INTO rol (nombre_rol, descripcion, id_proyecto)
      VALUES (?, ?, ?)`,
-    [cleanedName, descripcion || null, proyectoId],
+    [cleanedName, cleanedDescription, proyectoId],
   );
 
   const [rows] = await pool.query(

@@ -89,6 +89,15 @@ export const crearRolProyecto = async (req, res, next) => {
       });
     }
 
+    if (!descripcion || !String(descripcion).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "La descripción del rol es requerida",
+        details: { descripcion: "descripcion es requerida" },
+      });
+    }
+
     const data = await proyectosService.crearRolProyecto(
       id,
       nombre_rol,
