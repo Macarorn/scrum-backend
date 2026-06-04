@@ -152,12 +152,15 @@ CREATE TABLE solicitud (
 CREATE TABLE notificacion (
     id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario          INT NOT NULL,
-    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio') NOT NULL DEFAULT 'informativa',
+    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio','reunion_creada','reunion_actualizada','reunion_eliminada') NOT NULL DEFAULT 'informativa',
     titulo              VARCHAR(200) NOT NULL,
     mensaje             TEXT,
     leida               TINYINT(1) NOT NULL DEFAULT 0,
     fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_solicitud        INT DEFAULT NULL,
+    id_meeting          INT DEFAULT NULL,
+    id_proyecto         INT DEFAULT NULL,
+    accion              VARCHAR(50) DEFAULT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud) ON DELETE CASCADE
 );
@@ -165,6 +168,8 @@ CREATE TABLE notificacion (
 -- Índices en notificación
 CREATE INDEX idx_notificacion_usuario ON notificacion(id_usuario);
 CREATE INDEX idx_notificacion_leida ON notificacion(leida);
+CREATE INDEX idx_notificacion_meeting ON notificacion(id_meeting);
+CREATE INDEX idx_notificacion_proyecto ON notificacion(id_proyecto);
 
 -- Índices en proyecto
 CREATE INDEX idx_proyecto_estado ON proyecto(estado);
