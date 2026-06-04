@@ -4,6 +4,7 @@ import {
   getPerfil,
   getPermisos,
   getRoles,
+  createRole,
   getUsuarioById,
   getUserConsent,
   getUsuarios,
@@ -53,6 +54,7 @@ router.post(
   asignarRol,
 );
 router.get("/roles", authMiddleware, getRoles);
+router.post("/roles", authMiddleware, requirePermission("roles:assign"), createRole);
 router.get("/permisos", authMiddleware, requireRole(["admin"]), getPermisos);
 router.get("/perfil", authMiddleware, getPerfil);
 router.put("/perfil", authMiddleware, updatePerfil);

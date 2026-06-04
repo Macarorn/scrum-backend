@@ -15,11 +15,11 @@ const notificacionesService = {
   },
 
   // Crear notificación para un usuario
-  async crearNotificacion({ id_usuario, tipo, titulo, mensaje, id_solicitud = null }) {
+  async crearNotificacion({ id_usuario, tipo, titulo, mensaje, id_solicitud = null, id_meeting = null, id_proyecto = null, accion = null }) {
     const [result] = await pool.query(
-      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id_usuario, tipo, titulo, mensaje, id_solicitud]
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud, id_meeting, id_proyecto, accion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id_usuario, tipo, titulo, mensaje, id_solicitud, id_meeting, id_proyecto, accion]
     );
     return result.insertId;
   },
@@ -28,7 +28,7 @@ const notificacionesService = {
   async notificarMiembrosProyecto(id_proyecto, tipo, titulo, mensaje, excluir_usuario = null) {
     const miembros = await this.obtenerMiembrosProyecto(id_proyecto);
     const resultados = [];
-    
+
     for (const miembro of miembros) {
       // Excluir al usuario que originó la acción si se especifica
       if (excluir_usuario && miembro.id_usuario === excluir_usuario) {
