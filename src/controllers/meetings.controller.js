@@ -1,7 +1,7 @@
 import pool from "../utils/database.js";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
+const VALID_PRIORITIES = new Set(["alta", "media", "baja", "estandar"]);
 
 const startOfDay = (value = new Date()) => {
   const date = value instanceof Date ? new Date(value) : new Date(value);
@@ -46,6 +46,7 @@ const ensureMeetingTable = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS meeting (
       id_meeting INT AUTO_INCREMENT PRIMARY KEY,
+      id_proyecto INT,
       title VARCHAR(200) NOT NULL,
       description TEXT,
       sprint VARCHAR(100) NOT NULL,
@@ -58,12 +59,19 @@ const ensureMeetingTable = async () => {
       room VARCHAR(100),
       link VARCHAR(255),
       fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
+      fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE
     )
   `);
 
-  const [columns] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'priority'");
+  const [columns] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'id_proyecto'");
   if (columns.length === 0) {
+    await pool.query("ALTER TABLE meeting ADD COLUMN id_proyecto INT AFTER id_meeting");
+    await pool.query("ALTER TABLE meeting ADD FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE");
+  }
+
+  const [priorityCol] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'priority'");
+  if (priorityCol.length === 0) {
     await pool.query("ALTER TABLE meeting ADD COLUMN priority VARCHAR(20) DEFAULT 'media' AFTER type");
   }
 };
@@ -83,6 +91,7 @@ const parseMeetingDate = (value) => {
 };
 
 const normalizeMeetingPayload = (body) => {
+  const id_proyecto = body.id_proyecto ? Number(body.id_proyecto) : null;
   const title = String(body.title || "").trim();
   const description = String(body.description || "").trim();
   const sprint = String(body.sprint || "").trim();
@@ -111,6 +120,7 @@ const normalizeMeetingPayload = (body) => {
   }
 
   return {
+    id_proyecto,
     title,
     description,
     sprint,
@@ -160,9 +170,10 @@ export const createMeeting = async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO meeting
-        (title, description, sprint, status, date, type, priority, startTime, duration, room, link)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id_proyecto, title, description, sprint, status, date, type, priority, startTime, duration, room, link)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        payload.id_proyecto,
         payload.title,
         payload.description,
         payload.sprint,
@@ -250,9 +261,14 @@ export const deleteMeeting = async (req, res) => {
 export const getMeetings = async (req, res) => {
   try {
     await ensureMeetingTable();
-    const { sprint, from, to, q } = req.query;
+    const { sprint, from, to, q, id_proyecto } = req.query;
     const conditions = [];
     const values = [];
+
+    if (id_proyecto) {
+      conditions.push("id_proyecto = ?");
+      values.push(id_proyecto);
+    }
 
     if (sprint) {
       conditions.push("sprint = ?");

@@ -19,15 +19,14 @@ const withCalendarDateAliases = (project) => ({
 export const listarProyectos = async (userId) => {
   const [rows] = await pool.query(
     `
-    SELECT DISTINCT p.* FROM proyecto p
+    SELECT DISTINCT p.*, r.nombre_rol as user_role FROM proyecto p
+    LEFT JOIN equipo_proyecto ep ON p.id_proyecto = ep.id_proyecto
+    LEFT JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto AND uep.id_usuario = ?
+    LEFT JOIN rol r ON uep.id_rol = r.id_rol
     WHERE p.creado_por = ?
-    OR EXISTS (
-      SELECT 1 FROM usuario_equipo_proyecto uep
-      JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-      WHERE ep.id_proyecto = p.id_proyecto AND uep.id_usuario = ?
-    )
+    OR uep.id_usuario = ?
   `,
-    [userId, userId],
+    [userId, userId, userId],
   );
   return rows.map(withCalendarDateAliases);
 };

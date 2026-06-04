@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-import legalRoutes from "./routes/legal.routes.js";
 
 // Cargar configuración primero
 import config from "./config/config.js";
@@ -19,13 +18,14 @@ import criteriosRoutes from "./routes/criterios.routes.js";
 import epicasRoutes from "./routes/epicas.routes.js";
 import etiquetasRoutes from "./routes/etiquetas.routes.js";
 import historiasRoutes from "./routes/historias.routes.js";
+import legalRoutes from "./routes/legal.routes.js";
+import meetingsRoutes from "./routes/meetings.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import proyectosRoutes from "./routes/proyectos.routes.js";
+import solicitudRoutes from "./routes/solicitud.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
-import solicitudRoutes from "./routes/solicitud.routes.js";
-import notificacionesRoutes from "./routes/notificaciones.routes.js";
-import meetingsRoutes from "./routes/meetings.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
