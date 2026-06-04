@@ -174,13 +174,16 @@ export const listarMiembrosProyecto = async (proyectoId) => {
     `SELECT u.id_usuario,
             u.nombre,
             u.email,
+            r.id_rol,
             r.nombre_rol AS rol,
+            r.descripcion AS roleDescription,
+            r.id_proyecto,
             uep.fecha_ingreso,
             uep.activo
      FROM usuario u
      JOIN usuario_equipo_proyecto uep ON u.id_usuario = uep.id_usuario
      JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE ep.id_proyecto = ?`,
     [proyectoId],
   );
@@ -400,12 +403,14 @@ export const actualizarEstadoMiembroProyecto = async (
     `SELECT u.id_usuario,
             u.nombre,
             u.email,
+            r.id_rol,
             r.nombre_rol AS rol,
+            r.id_proyecto,
             uep.fecha_ingreso,
             uep.activo
      FROM usuario_equipo_proyecto uep
      JOIN usuario u ON uep.id_usuario = u.id_usuario
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE uep.id_equipo_proyecto = ?
        AND uep.id_usuario = ?`,
     [idEquipoProyecto, usuarioId],
@@ -570,12 +575,14 @@ export const actualizarRolMiembroProyecto = async (
     `SELECT u.id_usuario,
             u.nombre,
             u.email,
+            r.id_rol,
             r.nombre_rol AS rol,
+            r.id_proyecto,
             uep.fecha_ingreso,
             uep.activo
      FROM usuario_equipo_proyecto uep
      JOIN usuario u ON uep.id_usuario = u.id_usuario
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE uep.id_equipo_proyecto = ?
        AND uep.id_usuario = ?`,
     [idEquipoProyecto, usuarioId],
@@ -698,9 +705,9 @@ export const transferirProductOwner = async (
 
   // Verificar que el nuevo Product Owner es miembro del proyecto
   const [newPORows] = await pool.query(
-    `SELECT uep.id_usuario, uep.activo, r.nombre_rol
+    `SELECT uep.id_usuario, uep.activo, r.id_rol, r.nombre_rol, r.id_proyecto
      FROM usuario_equipo_proyecto uep
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE uep.id_equipo_proyecto = ?
        AND uep.id_usuario = ?`,
     [idEquipoProyecto, nuevoProductOwnerId],
@@ -786,7 +793,7 @@ export const transferirProductOwner = async (
               uep.activo
        FROM usuario_equipo_proyecto uep
        JOIN usuario u ON uep.id_usuario = u.id_usuario
-       LEFT JOIN rol r ON uep.id_rol = r.id_rol
+       INNER JOIN rol r ON uep.id_rol = r.id_rol
        WHERE uep.id_equipo_proyecto = ?
          AND uep.id_usuario = ?`,
       [idEquipoProyecto, nuevoProductOwnerId],
@@ -796,12 +803,14 @@ export const transferirProductOwner = async (
       `SELECT u.id_usuario,
               u.nombre,
               u.email,
+              r.id_rol,
               r.nombre_rol AS rol,
+              r.id_proyecto,
               uep.fecha_ingreso,
               uep.activo
        FROM usuario_equipo_proyecto uep
        JOIN usuario u ON uep.id_usuario = u.id_usuario
-       LEFT JOIN rol r ON uep.id_rol = r.id_rol
+       INNER JOIN rol r ON uep.id_rol = r.id_rol
        WHERE uep.id_equipo_proyecto = ?
          AND uep.id_usuario = ?`,
       [idEquipoProyecto, usuarioActual.id_usuario],

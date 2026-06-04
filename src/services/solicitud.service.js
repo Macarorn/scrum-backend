@@ -203,9 +203,9 @@ const solicitudService = {
        FROM solicitud s
        JOIN proyecto p ON s.id_proyecto = p.id_proyecto
        JOIN usuario u ON s.id_usuario = u.id_usuario
-       WHERE s.id_proyecto = ? AND s.estado = 'Pendiente'
+       WHERE s.id_proyecto = ? AND s.estado = 'Pendiente' AND s.id_usuario_creador != ?
        ORDER BY s.fecha_creacion ASC`,
-      [proyecto],
+      [proyecto, id_usuario],
     );
 
     return { status: 200, data: rows, message: "Solicitudes pendientes" };
@@ -257,6 +257,12 @@ const solicitudService = {
         data: null,
         message: "Solo puedes aprobar solicitudes pendientes",
       };
+    }
+
+    // Prevenir que el creador de la invitación la apruebe (a menos que sea también el invitado)
+    if (String(solicitud.id_usuario_creador) === String(id_usuario_aprobador) && 
+        String(solicitud.id_usuario) !== String(id_usuario_aprobador)) {
+      return { status: 403, data: null, message: "No puedes aprobar una solicitud que tú creaste" };
     }
 
     if (!(await esAprobador(id_usuario_aprobador, solicitud.id_proyecto))) {
@@ -323,7 +329,13 @@ const solicitudService = {
     );
     const nombreProyecto = proyInfo.length ? proyInfo[0].nombre : "un proyecto";
 
-    // Notificar al usuario que solicitó
+    const [usuarioInfo] = await pool.query(
+      "SELECT nombre FROM usuario WHERE id_usuario = ?",
+      [solicitud.id_usuario],
+    );
+    const nombreSolicitante = usuarioInfo.length ? usuarioInfo[0].nombre : "el usuario";
+
+    // Notificar al usuario que solicitó o aceptó la invitación
     await pool.query(
       `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje)
        VALUES (?, 'informativa', 'Solicitud aprobada', ?)`,
@@ -338,6 +350,28 @@ const solicitudService = {
       id_proyecto: solicitud.id_proyecto,
       id_solicitud,
     });
+
+    // Si se trata de una invitación, notificar también al creador de la invitación
+    if (
+      solicitud.id_usuario_creador &&
+      String(solicitud.id_usuario_creador) !== String(solicitud.id_usuario)
+    ) {
+      await pool.query(
+        `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
+         VALUES (?, 'informativa', 'Invitación aceptada', ?, ?)`,
+        [
+          solicitud.id_usuario_creador,
+          `La invitación al proyecto "${nombreProyecto}" fue aceptada por ${nombreSolicitante}`,
+          id_solicitud,
+        ],
+      );
+      logSolicitud("notificacion_creada", {
+        tipo: "Invitación aceptada",
+        id_usuario: solicitud.id_usuario_creador,
+        id_proyecto: solicitud.id_proyecto,
+        id_solicitud,
+      });
+    }
 
     return { status: 200, data: null, message: "Solicitud aprobada" };
   },
@@ -363,6 +397,12 @@ const solicitudService = {
         data: null,
         message: "Solo puedes rechazar solicitudes pendientes",
       };
+    }
+
+    // Prevenir que el creador de la invitación la rechace (a menos que sea también el solicitante)
+    if (String(solicitud.id_usuario_creador) === String(id_usuario_aprobador) && 
+        String(solicitud.id_usuario) !== String(id_usuario_aprobador)) {
+      return { status: 403, data: null, message: "No puedes rechazar una solicitud que tú creaste" };
     }
 
     const esAprobadorSolicitud = await esAprobador(id_usuario_aprobador, solicitud.id_proyecto);
