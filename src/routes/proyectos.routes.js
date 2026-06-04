@@ -18,6 +18,9 @@ router.post(
   proyectosController.crearProyecto,
 );
 
+// GET /api/proyectos/dashboard-stats - Obtener estadísticas para el dashboard
+router.get("/dashboard-stats", authMiddleware, proyectosController.obtenerEstadisticasDashboard);
+
 // GET /api/proyectos/codigo/:codigo - Buscar proyecto por código (DEBE ir antes de /:id)
 router.get("/codigo/:codigo", authMiddleware, proyectosController.buscarProyectoPorCodigo);
 

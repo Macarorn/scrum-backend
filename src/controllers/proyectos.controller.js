@@ -280,3 +280,16 @@ export const eliminarProyecto = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Obtener estadísticas para el dashboard
+ */
+export const obtenerEstadisticasDashboard = async (req, res, next) => {
+  try {
+    const userId = req.user.id_usuario;
+    const data = await proyectosService.obtenerEstadisticasDashboard(userId);
+    res.status(200).json({ success: true, data, message: "Estadísticas del dashboard obtenidas" });
+  } catch (error) {
+    next(error);
+  }
+};
