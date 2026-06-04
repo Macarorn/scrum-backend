@@ -15,6 +15,18 @@ export const requireRole = (allowedRoles) => {
     // Obtener el ID del proyecto de la solicitud
     let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
 
+    console.log("=== requireRole DEBUG ===");
+    console.log("userId:", userId);
+    console.log("Initial projectId:", projectId);
+    console.log("req.baseUrl:", req.baseUrl);
+    console.log("req.params:", req.params);
+    console.log("req.body:", req.body);
+
+    // Si la ruta pertenece a proyectos, usar directamente el parámetro :id como id de proyecto
+    if (!projectId && req.params.id && req.baseUrl?.includes("/proyectos")) {
+      projectId = req.params.id;
+      console.log("ProjectId from project route param id:", projectId);
+    }
 
     // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del criterio de aceptación
     if (!projectId && req.params.id) {
