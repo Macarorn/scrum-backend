@@ -2,7 +2,7 @@ import pool from "../utils/database.js";
 import { obtenerProyecto } from "../services/proyectos.service.js";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
+const VALID_PRIORITIES = new Set(["alta", "media", "baja", "estandar"]);
 
 const startOfDay = (value = new Date()) => {
   const date = value instanceof Date ? new Date(value) : new Date(value);
