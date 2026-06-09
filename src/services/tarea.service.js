@@ -21,7 +21,7 @@ function normalizarIdSprint(data) {
 
 async function obtenerContextoHistoria(idHistoria) {
   const [rows] = await pool.query(
-    `SELECT h.id_historia, h.id_sprint, e.id_proyecto
+    `SELECT h.id_historia, h.id_sprint, e.id_proyecto, e.id_epica
      FROM historia_usuario h
      INNER JOIN epica e ON e.id_epica = h.id_epica
      WHERE h.id_historia = ?
@@ -29,7 +29,24 @@ async function obtenerContextoHistoria(idHistoria) {
     [Number(idHistoria)],
   );
 
-  return rows[0] || null;
+  const contexto = rows[0] || null;
+  if (!contexto) {
+    return null;
+  }
+
+  // Obtener sprint de la épica si existe
+  const [epicaSprintRows] = await pool.query(
+    `SELECT se.id_sprint
+     FROM sprint_epica se
+     WHERE se.id_epica = ?
+     LIMIT 1`,
+    [contexto.id_epica],
+  );
+
+  return {
+    ...contexto,
+    id_sprint_epica: epicaSprintRows[0]?.id_sprint || null,
+  };
 }
 
 async function resolverSprintDestino(idProyecto, idSprintSolicitado = null) {
@@ -93,9 +110,36 @@ async function asegurarHistoriaEnSprintParaKanban(idHistoria, idSprintSolicitado
   }
 
   const sprintActual = Number(contexto.id_sprint) || null;
+  const sprintEpica = Number(contexto.id_sprint_epica) || null;
 
-  // Si ya tiene sprint y no se solicita cambio, mantenemos la asignacion actual.
-  if (sprintActual && !idSprintSolicitado) {
+  // Si se solicita un sprint explícito, usar ese
+  if (idSprintSolicitado) {
+    const sprintDestino = await resolverSprintDestino(
+      contexto.id_proyecto,
+      idSprintSolicitado,
+    );
+    if (!sprintDestino) {
+      return null;
+    }
+
+    await pool.query(
+      `UPDATE historia_usuario
+       SET id_sprint = ?
+       WHERE id_historia = ?`,
+      [sprintDestino, Number(idHistoria)],
+    );
+
+    await pool.query(
+      `INSERT IGNORE INTO sprint_historia (id_sprint, id_historia)
+       VALUES (?, ?)`,
+      [sprintDestino, Number(idHistoria)],
+    );
+
+    return sprintDestino;
+  }
+
+  // Si la historia ya tiene sprint, mantener la asignación actual
+  if (sprintActual) {
     await pool.query(
       `INSERT IGNORE INTO sprint_historia (id_sprint, id_historia)
        VALUES (?, ?)`,
@@ -104,9 +148,28 @@ async function asegurarHistoriaEnSprintParaKanban(idHistoria, idSprintSolicitado
     return sprintActual;
   }
 
+  // Si la historia no tiene sprint pero la épica sí, heredar de la épica
+  if (sprintEpica) {
+    await pool.query(
+      `UPDATE historia_usuario
+       SET id_sprint = ?
+       WHERE id_historia = ?`,
+      [sprintEpica, Number(idHistoria)],
+    );
+
+    await pool.query(
+      `INSERT IGNORE INTO sprint_historia (id_sprint, id_historia)
+       VALUES (?, ?)`,
+      [sprintEpica, Number(idHistoria)],
+    );
+
+    return sprintEpica;
+  }
+
+  // Si nada de lo anterior, buscar un sprint activo del proyecto
   const sprintDestino = await resolverSprintDestino(
     contexto.id_proyecto,
-    idSprintSolicitado,
+    null,
   );
   if (!sprintDestino) {
     return null;
@@ -284,7 +347,7 @@ export async function listarTareasPorHistoria(idHistoria, estado) {
 
   const where = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
   const [rows] = await pool.query(
-    `SELECT t.*, h.nombre AS historia_nombre
+    `SELECT t.*, h.nombre AS historia_nombre, h.id_sprint AS historia_sprint
      FROM tarea t
      LEFT JOIN historia_usuario h ON h.id_historia = t.id_historia
      ${where}
@@ -292,7 +355,25 @@ export async function listarTareasPorHistoria(idHistoria, estado) {
     params,
   );
 
-  return rows.map((row) => ({ ...row }));
+  // Enriquecer con asignados
+  const tareasConAsignados = await Promise.all(
+    rows.map(async (row) => {
+      const [asignados] = await pool.query(
+        `SELECT u.id_usuario, u.nombre
+         FROM tarea_usuario tu
+         JOIN usuario u ON tu.id_usuario = u.id_usuario
+         WHERE tu.id_tarea = ?`,
+        [row.id_tarea]
+      );
+      return {
+        ...row,
+        asignados,
+        id_sprint: row.id_sprint || row.historia_sprint,
+      };
+    })
+  );
+
+  return tareasConAsignados;
 }
 
 export async function listarTareasPorSprint(idSprint, estado) {
@@ -319,7 +400,24 @@ export async function listarTareasPorSprint(idSprint, estado) {
     params,
   );
 
-  return rows.map((row) => ({ ...row }));
+  // Enriquecer con asignados
+  const tareasConAsignados = await Promise.all(
+    rows.map(async (row) => {
+      const [asignados] = await pool.query(
+        `SELECT u.id_usuario, u.nombre
+         FROM tarea_usuario tu
+         JOIN usuario u ON tu.id_usuario = u.id_usuario
+         WHERE tu.id_tarea = ?`,
+        [row.id_tarea]
+      );
+      return {
+        ...row,
+        asignados,
+      };
+    })
+  );
+
+  return tareasConAsignados;
 }
 
 export async function crearTarea(data, userId) {
@@ -392,13 +490,14 @@ export async function crearTarea(data, userId) {
     throw error;
   }
 
-  if (Number.isInteger(responsableId) && responsableId > 0) {
-    await pool.query(
-      `INSERT IGNORE INTO tarea_usuario (id_tarea, id_usuario, es_responsable)
-       VALUES (?, ?, 1)`,
-      [result.insertId, responsableId],
-    );
-  }
+  // NO asignar automáticamente al creador - solo asignar si se proporciona responsableId
+  // if (Number.isInteger(responsableId) && responsableId > 0) {
+  //   await pool.query(
+  //     `INSERT IGNORE INTO tarea_usuario (id_tarea, id_usuario, es_responsable)
+  //      VALUES (?, ?, 1)`,
+  //     [result.insertId, responsableId],
+  //   );
+  // }
 
   const sprintAsignadoKanban = await asegurarHistoriaEnSprintParaKanban(
     idHistoria,
