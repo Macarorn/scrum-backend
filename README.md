@@ -40,9 +40,21 @@ npm run dev
 npm start
 ```
 
-## Usuarios de Prueba
+## Datos de Demo y Pruebas (scrum_db_demo)
 
-Después de crear la base de datos con el esquema, puedes usar estos usuarios para probar el sistema:
+Para acceder a los datos de la demostración ampliada (3 proyectos en diferentes estados, múltiples sprints y tareas), asegúrate de que tu `.env` tenga `DB_NAME=scrum_db_demo` y utiliza estas credenciales (la contraseña para todos es **123456**):
+
+- **po1@demo.com** (Product Owner - Proyecto principal)
+- **sm1@demo.com** (Scrum Master - Proyecto principal)
+- **dev1@demo.com**, **dev2@demo.com**, **dev3@demo.com** (Developers)
+- **po2@demo.com** (Product Owner - E-commerce)
+- **po3@demo.com** (Product Owner - Mobile Banking)
+
+*(Nota: Para volver a tu base de datos vacía o anterior, solo cambia tu `.env` de nuevo a `DB_NAME=scrum_db`)*
+
+## Usuarios Originales de Prueba
+
+Después de crear la base de datos vacía original, estos eran los usuarios:
 
 - **sofia@gmail.com** / **Sofia1234** (Product Owner)
 - **mariana@gmail.com** / **Mariana1234** (Scrum Master)
