@@ -141,8 +141,10 @@ iniciarSchedulerSprint();
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+let server;
+
 if (config.server.nodeEnv !== "test") {
-  app.listen(PORT, async () => {
+  server = app.listen(PORT, async () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Ambiente: ${config.server.nodeEnv}`);
 
@@ -275,5 +277,23 @@ if (config.server.nodeEnv !== "test") {
         console.error('Automigration failed:', e);
     }
   });
+
+  // Manejo graceful shutdown para evitar que el puerto quede ocupado
+  const gracefulShutdown = (signal) => {
+    console.log(`\nRecibida señal ${signal}. Cerrando servidor...`);
+    server.close(() => {
+      console.log('Servidor cerrado correctamente');
+      process.exit(0);
+    });
+
+    // Forzar cierre después de 10 segundos si no se cierra
+    setTimeout(() => {
+      console.error('Forzando cierre del servidor...');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 }
 export default app;
