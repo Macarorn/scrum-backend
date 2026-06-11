@@ -378,12 +378,14 @@ CREATE TABLE tarea (
     estimacion_dias     DECIMAL(5,1),
     tiempo_real         DECIMAL(5,2) DEFAULT 0,
     orden_columna       INT NOT NULL DEFAULT 0,
+    id_usuario_responsable INT,
     fecha_inicio        DATETIME,
     fecha_fin_est       DATETIME,
     fecha_fin_real      DATETIME,
     fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_modificacion  DATETIME ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_historia) REFERENCES historia_usuario(id_historia) ON DELETE CASCADE
+    FOREIGN KEY (id_historia) REFERENCES historia_usuario(id_historia) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario_responsable) REFERENCES usuario(id_usuario) ON DELETE SET NULL
 );
 
 -- Índices en tarea
