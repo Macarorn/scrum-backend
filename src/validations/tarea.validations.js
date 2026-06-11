@@ -12,7 +12,12 @@ function obtenerHistoriaId(data) {
 }
 
 function obtenerResponsableId(data) {
-  return data.id_usuario_responsable ?? data.responsableId ?? data.id_usuario;
+  const value = data.id_usuario_responsable ?? data.responsableId ?? data.id_usuario;
+  // Return null for empty strings or undefined/null
+  if (value === "" || value === undefined || value === null) {
+    return null;
+  }
+  return value;
 }
 
 // Validar datos para crear tarea
@@ -33,9 +38,11 @@ export function validarCrearTarea(data) {
     );
   }
 
-  if (!esEnteroPositivo(obtenerResponsableId(data))) {
+  // id_usuario_responsable es opcional - se puede asignar después
+  const responsableId = obtenerResponsableId(data);
+  if (responsableId !== undefined && responsableId !== null && !esEnteroPositivo(responsableId)) {
     errores.push(
-      "El campo id_usuario_responsable es obligatorio y debe ser entero positivo",
+      "El campo id_usuario_responsable debe ser entero positivo si se proporciona",
     );
   }
 
