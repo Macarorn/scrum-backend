@@ -304,6 +304,33 @@ export const checkPermission = (permission) => {
         }
       }
 
+      // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del criterio de aceptación
+      if (!projectId && req.params.id) {
+        try {
+          const [criterio] = await pool.query(
+            `SELECT id_historia FROM criterio_aceptacion WHERE id_criterio = ?`,
+            [req.params.id]
+          );
+          if (criterio.length > 0) {
+            const [historia] = await pool.query(
+              `SELECT id_epica FROM historia_usuario WHERE id_historia = ?`,
+              [criterio[0].id_historia]
+            );
+            if (historia.length > 0) {
+              const [epica] = await pool.query(
+                `SELECT id_proyecto FROM epica WHERE id_epica = ?`,
+                [historia[0].id_epica]
+              );
+              if (epica.length > 0) {
+                projectId = epica[0].id_proyecto;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error al obtener proyecto desde criterio:", error);
+        }
+      }
+
 
       if (!projectId) {
         return res.status(403).json({
