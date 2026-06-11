@@ -1,5 +1,6 @@
 import express from "express";
 import * as proyectosController from "../controllers/proyectos.controller.js";
+import * as aiController from "../controllers/ai.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizationMiddleware } from "../middleware/authorization.middleware.js";
 
@@ -26,6 +27,9 @@ router.get("/codigo/:codigo", authMiddleware, proyectosController.buscarProyecto
 
 // POST /api/proyectos/:id/unirse - Unirse a un proyecto
 router.post("/:id/unirse", authMiddleware, proyectosController.unirseAProyecto);
+
+// POST /api/proyectos/:id/analisis-ia - Generar análisis del proyecto con IA
+router.post("/:id/analisis-ia", authMiddleware, aiController.analizarProyecto);
 
 // GET /api/proyectos/:id/miembros - Listar miembros de un proyecto
 router.get("/:id/miembros", authMiddleware, proyectosController.listarMiembrosProyecto);

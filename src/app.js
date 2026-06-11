@@ -29,6 +29,7 @@ import usersRoutes from "./routes/users.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
+import { iniciarSchedulerIA } from "./utils/ia-scheduler.utils.js";
 
 dotenv.config();
 
@@ -135,6 +136,9 @@ app.get("/api/fix-encoding", async (req, res) => {
 
 // Iniciar scheduler de notificaciones de sprint
 iniciarSchedulerSprint();
+
+// Iniciar scheduler de análisis con IA (revisa métricas cada 6 horas)
+iniciarSchedulerIA();
 
 app.use(notFoundHandler);
 app.use(errorHandler);
