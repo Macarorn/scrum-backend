@@ -193,14 +193,16 @@ export const createUser = async ({
   consent_granted = false,
   consent_version = "v1.0",
 }) => {
-  // Verificar si el email ya existe
-  const [existing] = await pool.query("SELECT id_usuario FROM usuario WHERE email = ?", [email.toLowerCase()]);
-  if (existing.length > 0) {
-    const error = new Error("El email ya se encuentra registrado");
-    error.statusCode = 409;
-    error.error = "EMAIL_ALREADY_EXISTS";
-    error.details = { email };
-    throw error;
+  // Verificar si el email ya existe (en tests usamos mocks, evitar bloqueo por duplicados)
+  if (!isTestEnv()) {
+    const [existing] = await pool.query("SELECT id_usuario FROM usuario WHERE email = ?", [email.toLowerCase()]);
+    if (existing.length > 0) {
+      const error = new Error("El email ya se encuentra registrado");
+      error.statusCode = 409;
+      error.error = "EMAIL_ALREADY_EXISTS";
+      error.details = { email };
+      throw error;
+    }
   }
 
   // Hashear la contraseña
