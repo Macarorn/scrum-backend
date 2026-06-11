@@ -29,6 +29,22 @@ async function esAprobador(userId, idProyecto) {
 }
 
 // =============================
+// VALIDAR MIEMBRO DE PROYECTO
+// =============================
+async function esMiembroProyecto(userId, idProyecto) {
+  const [rows] = await pool.query(
+    `
+    SELECT 1 FROM usuario_equipo_proyecto uep
+    JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+    WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1
+  `,
+    [idProyecto, userId],
+  );
+
+  return rows.length > 0;
+}
+
+// =============================
 // VALIDAR PROYECTO ACTIVO
 // =============================
 async function proyectoActivo(idProyecto) {
@@ -194,7 +210,7 @@ const solicitudService = {
   // PENDIENTES POR PROYECTO
   // =============================
   async listarPendientes({ id_usuario, proyecto }) {
-    if (!(await esAprobador(id_usuario, proyecto))) {
+    if (!(await esMiembroProyecto(id_usuario, proyecto))) {
       return { status: 403, data: null, message: "Sin permisos" };
     }
 
