@@ -593,10 +593,150 @@ INSERT INTO tarea (id_tarea, id_historia, nombre, tipo, estado, story_points, or
 (14, 8, 'Envío de email', 'RF', 'por_hacer', 1, 0),
 (15, 7, 'Filtros del tablero', 'mejora', 'por_hacer', 2, 0);
 
--- Asignación de tareas
+-- Asignación de tareas (responsables + colaboradores)
+-- Proyecto 1: Tareas del Sprint 1 (completadas)
 INSERT INTO tarea_usuario (id_tarea, id_usuario, es_responsable) VALUES
-(1, 3, 1), (2, 4, 1), (3, 5, 1), (4, 3, 1), (5, 4, 1), (6, 5, 1), (7, 3, 1),
-(8, 4, 1), (9, 5, 1), (10, 3, 1), (11, 4, 1), (12, 5, 1), (13, 3, 1), (14, 4, 1);
+(1, 3, 1), (1, 4, 0),           -- UI Login: David responsable, Elena colabora
+(2, 4, 1), (2, 3, 0),           -- Backend Login: Elena responsable, David colabora
+(3, 5, 1),                       -- UI Registro: Felipe responsable
+(4, 3, 1), (4, 5, 0),           -- Backend Registro: David responsable, Felipe colabora
+(5, 4, 1), (5, 3, 0),           -- Form Proyecto: Elena responsable, David colabora
+(6, 5, 1),                       -- Endpoint POST Proyecto: Felipe responsable
+(7, 3, 1),                       -- Vista proyectos: David responsable
+-- Proyecto 1: Tareas del Sprint 2 (en curso)
+(8, 4, 1), (8, 5, 0),           -- UI Crear Sprint: Elena responsable, Felipe colabora
+(9, 5, 1),                       -- Backend Sprint: Felipe responsable
+(10, 3, 1), (10, 4, 0),         -- Botón iniciar: David responsable, Elena colabora
+(11, 4, 1), (11, 3, 0), (11, 5, 0), -- Drag&Drop: Elena responsable, David y Felipe colaboran
+(12, 5, 1), (12, 3, 0),         -- Guardar estado: Felipe responsable, David colabora
+(13, 3, 1),                       -- Vista forgot password: David responsable
+(14, 4, 1),                       -- Envío email: Elena responsable
+(15, 5, 1), (15, 4, 0);         -- Filtros tablero: Felipe responsable, Elena colabora
+
+-- Criterios de aceptación para historias del Proyecto 1
+INSERT INTO criterio_aceptacion (id_historia, descripcion, cumplido) VALUES
+-- Historia 1: Login
+(1, 'El usuario puede iniciar sesión con email y contraseña', 1),
+(1, 'Si las credenciales son incorrectas, se muestra un mensaje de error claro', 1),
+(1, 'El token JWT se almacena en localStorage al iniciar sesión', 1),
+(1, 'El usuario es redirigido al dashboard tras login exitoso', 1),
+-- Historia 2: Registro
+(2, 'El formulario valida email único y formato correcto', 1),
+(2, 'La contraseña requiere mínimo 6 caracteres', 1),
+(2, 'Se muestra confirmación tras registro exitoso', 1),
+-- Historia 3: Crear proyecto
+(3, 'El formulario requiere nombre, tipo y código de proyecto', 1),
+(3, 'El código de proyecto es único y no permite duplicados', 1),
+(3, 'Se crea automáticamente un equipo y se asigna al creador como PO', 1),
+-- Historia 5: Crear Sprint
+(5, 'El formulario requiere nombre, meta, fechas de inicio y fin', 0),
+(5, 'No se pueden crear sprints con fechas solapadas', 0),
+(5, 'El sprint se crea en estado "planeado" por defecto', 1),
+-- Historia 6: Iniciar Sprint
+(6, 'Solo se puede iniciar un sprint que esté en estado "planeado"', 0),
+(6, 'Al iniciar, el estado cambia a "en_curso"', 1),
+(6, 'Solo el PO o SM puede iniciar un sprint', 0),
+-- Historia 7: Tablero Kanban
+(7, 'El tablero muestra columnas: Por hacer, En progreso, Terminado', 0),
+(7, 'Se pueden arrastrar tareas entre columnas', 0),
+(7, 'El cambio de columna actualiza el estado de la tarea en BD', 0),
+(7, 'Se muestra el responsable asignado en cada tarjeta', 0),
+-- Historia 8: Recuperar contraseña
+(8, 'El usuario puede solicitar recuperación por email', 0),
+(8, 'Se envía un enlace con token temporal al correo', 0);
+
+-- Historial de cambios de estado de tareas (auditoría)
+INSERT INTO historial_tarea (id_tarea, id_usuario, estado_anterior, estado_nuevo, observacion, fecha) VALUES
+-- Sprint 1: Flujo completo de tareas completadas
+(1, 3, 'por_hacer',    'en_progreso', 'Comenzando maquetación del login',         DATE_SUB(NOW(), INTERVAL 13 DAY)),
+(1, 3, 'en_progreso',  'terminado',   'Login UI terminado y revisado',            DATE_SUB(NOW(), INTERVAL 10 DAY)),
+(2, 4, 'por_hacer',    'en_progreso', 'Iniciando endpoints de autenticación',     DATE_SUB(NOW(), INTERVAL 12 DAY)),
+(2, 4, 'en_progreso',  'terminado',   'JWT implementado y probado',              DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(3, 5, 'por_hacer',    'en_progreso', 'Diseñando formulario de registro',         DATE_SUB(NOW(), INTERVAL 11 DAY)),
+(3, 5, 'en_progreso',  'terminado',   'Registro con validaciones completo',       DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(4, 3, 'por_hacer',    'en_progreso', 'Creando endpoint de registro',             DATE_SUB(NOW(), INTERVAL 10 DAY)),
+(4, 3, 'en_progreso',  'terminado',   'Backend de registro listo con bcrypt',     DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(5, 4, 'por_hacer',    'en_progreso', 'Formulario de crear proyecto en React',    DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(5, 4, 'en_progreso',  'terminado',   'Formulario completo con validaciones',     DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(6, 5, 'por_hacer',    'en_progreso', 'Endpoint POST /api/proyectos',             DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(6, 5, 'en_progreso',  'terminado',   'API de proyectos desplegada y funcional',  DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(7, 3, 'por_hacer',    'en_progreso', 'Creando vista de lista de proyectos',      DATE_SUB(NOW(), INTERVAL 7 DAY)),
+(7, 3, 'en_progreso',  'terminado',   'Vista de proyectos con filtros lista',     DATE_SUB(NOW(), INTERVAL 3 DAY)),
+-- Sprint 2: Tareas en progreso
+(8, 4, 'por_hacer',    'en_progreso', 'Iniciando UI de crear sprint',             DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(9, 5, 'por_hacer',    'en_progreso', 'Creando endpoints de sprint',              DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(9, 5, 'en_progreso',  'terminado',   'Backend de sprints completo',              DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(10, 3, 'por_hacer',   'en_progreso', 'Implementando lógica de iniciar sprint',   NOW());
+
+-- Comentarios en historias de usuario
+INSERT INTO comentario_historia (id_historia, id_usuario, comentario, fecha) VALUES
+(1, 1, 'Prioridad alta: necesitamos el login funcional para el demo del viernes.', DATE_SUB(NOW(), INTERVAL 13 DAY)),
+(1, 3, 'Login listo. Incluí validación de campos vacíos y manejo de errores 401.', DATE_SUB(NOW(), INTERVAL 10 DAY)),
+(1, 2, '¡Excelente trabajo David! Revisé y el flujo está perfecto.', DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(3, 1, 'El código de proyecto debe ser único y en mayúsculas, máximo 10 caracteres.', DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(3, 4, 'Implementé la validación. Si el código ya existe, muestra alerta SweetAlert.', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(5, 2, 'Recordar que las fechas del sprint no pueden solaparse con otros sprints activos.', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(5, 4, 'Estoy trabajando en la UI. Tengo una duda sobre el selector de épicas.', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(5, 1, 'El selector de épicas debe permitir múltiples selecciones con checkboxes.', NOW()),
+(7, 1, 'El tablero kanban es la feature principal de este sprint. Toda la atención aquí.', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(7, 4, 'Estoy investigando react-beautiful-dnd para el drag & drop. Se ve prometedor.', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(7, 3, 'Recomiendo usar @hello-pangea/dnd que es el fork activo. El original está deprecado.', DATE_SUB(NOW(), INTERVAL 1 DAY));
+
+-- Comentarios en tareas
+INSERT INTO comentario_tarea (id_tarea, id_usuario, comentario, fecha) VALUES
+(2, 4, 'JWT configurado con expiración de 1 hora. Refresh token pendiente.', DATE_SUB(NOW(), INTERVAL 9 DAY)),
+(2, 2, 'Agregar refresh token en el siguiente sprint.', DATE_SUB(NOW(), INTERVAL 8 DAY)),
+(8, 4, 'Tengo el formulario base listo. Falta integrar el selector de épicas.', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(8, 5, 'Puedo ayudarte con la integración del selector. Ya lo hice en otro componente.', NOW()),
+(10, 3, 'El botón de iniciar debe validar que haya al menos una épica asignada.', NOW()),
+(11, 4, 'Investigué las librerías de drag & drop. Propongo usar columnas dinámicas.', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(11, 3, 'Me sumo a implementar la persistencia de estado al mover tarjetas.', NOW()),
+(11, 5, 'Podemos usar WebSockets para actualizar en tiempo real entre usuarios.', NOW());
+
+-- Relación Sprint ↔ Épica (Proyecto 1 solamente)
+INSERT INTO sprint_epica (id_sprint, id_epica) VALUES
+(1, 1), (1, 2),     -- Sprint 1 del Proy 1: Épicas de Usuarios y Proyectos
+(2, 3), (2, 1);     -- Sprint 2 del Proy 1: Épicas de Sprints y Usuarios (historia 8)
+
+-- Perfiles de usuario
+INSERT INTO perfil_usuario (id_usuario, descripcion_personal, experiencia, portafolio_url, visibilidad) VALUES
+(1, 'Product Owner con 5 años de experiencia en gestión ágil de productos digitales.', 'Certified Scrum Product Owner (CSPO). Experiencia en fintech y e-commerce.', 'https://linkedin.com/in/ana-po', 'publico'),
+(2, 'Scrum Master apasionado por la mejora continua y la facilitación de equipos.', 'Certified ScrumMaster (CSM). 3 años liderando equipos de desarrollo.', 'https://linkedin.com/in/carlos-sm', 'publico'),
+(3, 'Desarrollador Full-Stack especializado en React y Node.js.', '4 años de experiencia en desarrollo web. Contribuidor open source.', 'https://github.com/david-dev', 'publico'),
+(4, 'Desarrolladora Backend con enfoque en arquitectura de microservicios.', '3 años en desarrollo backend. Experiencia con AWS y Docker.', 'https://github.com/elena-dev', 'publico'),
+(5, 'Desarrollador Mobile y Full-Stack. Amante de las tecnologías emergentes.', '2 años en desarrollo móvil con React Native y Flutter.', 'https://github.com/felipe-dev', 'publico'),
+(6, 'Product Owner del proyecto E-commerce. Experiencia en retail digital.', 'MBA en Marketing Digital. 6 años en e-commerce.', NULL, 'publico'),
+(7, 'Scrum Master junior con ganas de aprender.', '1 año como SM. Estudiante de Ingeniería de Software.', NULL, 'solo_equipo'),
+(8, 'Product Owner especializada en productos financieros digitales.', '7 años en banca digital. Certificada en PMP y SAFe.', 'https://linkedin.com/in/irene-po', 'publico'),
+(9, 'Scrum Master del equipo de Banking.', '2 años como SM en entornos regulados (fintech).', NULL, 'privado');
+
+-- Reuniones del calendario (Sprint actual - Proyecto 1)
+INSERT INTO meeting (title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
+('Daily Standup - Lunes',      'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 3 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+('Daily Standup - Martes',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 2 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+('Daily Standup - Miércoles',  'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+('Daily Standup - Jueves',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+('Sprint Review',              'Revisión de incremento del Sprint 2',        'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 10 DAY), 'sprint_review',  '14:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-review'),
+('Sprint Retrospective',       'Retrospectiva del Sprint 2',                 'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 11 DAY), 'retrospectiva',  '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-retro'),
+('Refinamiento de Backlog',    'Refinar historias para el Sprint 3',         'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 5 DAY),  'refinamiento',   '10:00', '2 horas','Sala Virtual B', 'https://meet.google.com/xyz-refine'),
+('Sprint Planning - Sprint 3', 'Planificación del próximo sprint',           'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 12 DAY), 'sprint_planning','09:00', '2 horas','Sala Principal', 'https://meet.google.com/xyz-plan');
+
+-- Etiquetas asignadas a tareas
+INSERT INTO tarea_etiqueta (id_tarea, id_etiqueta) VALUES
+(11, 1),  -- Drag&Drop: Alta prioridad
+(11, 4),  -- Drag&Drop: Mejora
+(13, 4),  -- Vista forgot password: Mejora
+(15, 4),  -- Filtros tablero: Mejora
+(8, 5),   -- UI Crear Sprint: Revisión
+(9, 6),   -- Backend Sprint: Testing
+(10, 1),  -- Botón iniciar: Alta prioridad
+(12, 6);  -- Guardar estado: Testing
+
+-- Etiquetas en historias
+INSERT INTO historia_etiqueta (id_historia, id_etiqueta) VALUES
+(7, 1),   -- Tablero Kanban: Alta prioridad
+(5, 5),   -- Crear Sprint: Revisión
+(8, 4);   -- Recuperar contraseña: Mejora
 
 
 -- ============================================================
@@ -628,6 +768,17 @@ INSERT INTO historia_usuario (id_historia, id_epica, id_sprint, nombre, priorida
 (12, 5, NULL, 'Agregar a carrito', 1, 5, 'por_hacer'),
 (13, 5, NULL, 'Pasarela de pagos', 1, 8, 'por_hacer');
 
+-- Criterios de aceptación para Proyecto 2
+INSERT INTO criterio_aceptacion (id_historia, descripcion, cumplido) VALUES
+(9, 'La vista muestra productos con imagen, nombre y precio', 0),
+(9, 'Se implementa paginación de 12 productos por página', 0),
+(10, 'La vista de detalle muestra galería de imágenes del producto', 0),
+(10, 'Se muestran las especificaciones técnicas del producto', 0),
+(12, 'El carrito persiste entre sesiones usando localStorage', 0),
+(12, 'Se puede modificar la cantidad de productos en el carrito', 0),
+(13, 'Integración con pasarela Stripe o MercadoPago', 0),
+(13, 'Se genera comprobante de pago tras transacción exitosa', 0);
+
 -- Tareas (todas por hacer)
 INSERT INTO tarea (id_tarea, id_historia, nombre, tipo, estado, story_points, orden_columna) VALUES
 (16, 9, 'Base de datos productos', 'RF', 'por_hacer', 3, 0),
@@ -641,6 +792,10 @@ INSERT INTO tarea (id_tarea, id_historia, nombre, tipo, estado, story_points, or
 
 INSERT INTO tarea_usuario (id_tarea, id_usuario, es_responsable) VALUES
 (16, 3, 1), (17, 4, 1), (18, 3, 1), (19, 4, 1);
+
+-- Sprint-Épica relación Proyecto 2
+INSERT INTO sprint_epica (id_sprint, id_epica) VALUES
+(3, 4);
 
 
 -- ============================================================
@@ -674,6 +829,17 @@ INSERT INTO historia_usuario (id_historia, id_epica, id_sprint, nombre, priorida
 (18, 7, 5, 'Transferir otros bancos', 1, 5, 'terminado'),
 (19, 7, 5, 'Historial', 2, 3, 'terminado');
 
+-- Criterios de aceptación para Proyecto 3 (todos cumplidos)
+INSERT INTO criterio_aceptacion (id_historia, descripcion, cumplido) VALUES
+(14, 'El usuario puede autenticarse con Face ID en iOS', 1),
+(14, 'Fallback a PIN si Face ID no está disponible', 1),
+(15, 'El usuario puede autenticarse con huella digital en Android', 1),
+(15, 'Se soportan múltiples huellas registradas', 1),
+(17, 'Se puede transferir a cuentas del mismo banco en menos de 5 segundos', 1),
+(17, 'Se genera comprobante de transferencia descargable', 1),
+(18, 'Las transferencias ACH se procesan correctamente', 1),
+(19, 'El historial muestra las últimas 50 transacciones por defecto', 1);
+
 -- Tareas
 INSERT INTO tarea (id_tarea, id_historia, nombre, tipo, estado, story_points, orden_columna) VALUES
 (24, 14, 'SDK FaceID', 'RF', 'terminado', 3, 0),
@@ -693,14 +859,55 @@ INSERT INTO tarea_usuario (id_tarea, id_usuario, es_responsable) VALUES
 (24, 5, 1), (25, 5, 1), (26, 5, 1), (27, 5, 1), (28, 5, 1), (29, 5, 1),
 (30, 5, 1), (31, 5, 1), (32, 5, 1), (33, 5, 1), (34, 5, 1), (35, 5, 1);
 
+-- Sprint-Épica relación Proyecto 3
+INSERT INTO sprint_epica (id_sprint, id_epica) VALUES
+(4, 6),              -- Sprint 1 del Proy 3: Épica de Auth Biométrica
+(5, 7);              -- Sprint 2 del Proy 3: Épica de Transacciones
+
+-- Historial de tareas del Proyecto 3 (todo completado)
+INSERT INTO historial_tarea (id_tarea, id_usuario, estado_anterior, estado_nuevo, observacion, fecha) VALUES
+(24, 5, 'por_hacer', 'en_progreso', 'Integrando SDK de Face ID',          DATE_SUB(NOW(), INTERVAL 44 DAY)),
+(24, 5, 'en_progreso', 'terminado', 'SDK integrado y probado en device',  DATE_SUB(NOW(), INTERVAL 40 DAY)),
+(25, 5, 'por_hacer', 'en_progreso', 'Endpoint de auth biométrica',        DATE_SUB(NOW(), INTERVAL 42 DAY)),
+(25, 5, 'en_progreso', 'terminado', 'Auth biométrica backend listo',      DATE_SUB(NOW(), INTERVAL 38 DAY)),
+(30, 5, 'por_hacer', 'en_progreso', 'Maquetando formulario transferencia', DATE_SUB(NOW(), INTERVAL 28 DAY)),
+(30, 5, 'en_progreso', 'terminado', 'Formulario con validaciones listo',   DATE_SUB(NOW(), INTERVAL 24 DAY)),
+(31, 5, 'por_hacer', 'en_progreso', 'Conectando con API del core bancario', DATE_SUB(NOW(), INTERVAL 26 DAY)),
+(31, 5, 'en_progreso', 'terminado', 'Integración con core bancario OK',    DATE_SUB(NOW(), INTERVAL 20 DAY)),
+(32, 5, 'por_hacer', 'en_progreso', 'Implementando protocolo ACH',         DATE_SUB(NOW(), INTERVAL 22 DAY)),
+(32, 5, 'en_progreso', 'terminado', 'ACH funcional en ambiente de pruebas', DATE_SUB(NOW(), INTERVAL 18 DAY));
+
 
 -- ============================================================
--- NOTIFICACIONES
+-- NOTIFICACIONES (todos los tipos, incluyendo los nuevos)
 -- ============================================================
-INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje) VALUES
-(3, 'informativa', 'Nueva Tarea Asignada', 'Se te ha asignado la tarea: UI Crear Sprint en el proyecto Scrum Track Development.'),
-(4, 'informativa', 'Nueva Tarea Asignada', 'Se te ha asignado la tarea: Columnas Drag and Drop en el proyecto Scrum Track Development.'),
-(1, 'informativa', 'Estado cambiado', 'La historia Login de usuario ha sido terminada.'),
-(6, 'urgente', 'Planeación de Sprint', 'Recuerda que debes iniciar el Sprint 1 de E-commerce.'),
-(8, 'informativa', 'Proyecto Completado', 'El proyecto Mobile Banking App ha finalizado con éxito.');
+INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, leida, fecha_creacion) VALUES
+-- Notificaciones de asignación de tareas (nuevas)
+(3, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Botón iniciar sprint logic" en el proyecto "Scrum Track Development"',           0, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(4, 'tarea_asignada',    'Tarea asignada como responsable','Has sido asignado como responsable de la tarea "UI Crear Sprint" en el proyecto "Scrum Track Development"',   0, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(5, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Filtros del tablero" en el proyecto "Scrum Track Development"',                  0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(4, 'tarea_asignada',    'Tarea asignada como responsable','Has sido asignado como responsable de la tarea "Columnas Drag and Drop" en el proyecto "Scrum Track Development"', 0, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(3, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Columnas Drag and Drop" como colaborador en el proyecto "Scrum Track Development"',  1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(5, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Columnas Drag and Drop" como colaborador en el proyecto "Scrum Track Development"',  1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+
+-- Notificaciones de sistema e informativas (existentes mejoradas)
+(1, 'informativa',       'Sprint completado',             'El Sprint 1 - Foundations del proyecto "Scrum Track Development" ha sido completado exitosamente.',           1, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(2, 'informativa',       'Sprint completado',             'El Sprint 1 - Foundations ha finalizado. Velocidad real: 20 puntos.',                                        1, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(1, 'informativa',       'Estado cambiado',               'La historia "Login de usuario" ha sido marcada como terminada por David Developer 1.',                       1, DATE_SUB(NOW(), INTERVAL 10 DAY)),
+(1, 'informativa',       'Todas las tareas completadas',  'Todas las tareas de la historia "Crear proyecto nuevo" han sido completadas.',                               1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+
+-- Notificaciones urgentes y recordatorios
+(6, 'urgente',           'Planeación de Sprint',          'Recuerda que debes iniciar el Sprint 1 - Catálogo Base del proyecto E-commerce Platform.',                   0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(2, 'recordatorio',      'Daily Standup',                 'La reunión Daily Standup está programada para mañana a las 9:00 AM.',                                        0, NOW()),
+(1, 'recordatorio',      'Refinamiento de Backlog',       'Tienes un Refinamiento de Backlog programado en 5 días. Prepara las historias del Sprint 3.',                0, NOW()),
+
+-- Notificación de proyecto completado
+(8, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" ha finalizado con éxito. Todas las épicas y sprints fueron completados.',    1, DATE_SUB(NOW(), INTERVAL 14 DAY)),
+(9, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" ha sido marcado como completado por Irene PO Banking.',                     1, DATE_SUB(NOW(), INTERVAL 14 DAY)),
+(5, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" en el que participaste ha sido completado exitosamente.',                    1, DATE_SUB(NOW(), INTERVAL 14 DAY)),
+
+-- Notificación de reunión
+(3, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(4, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(5, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY));
 
