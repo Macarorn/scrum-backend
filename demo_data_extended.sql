@@ -317,6 +317,7 @@ CREATE INDEX idx_sprint_estado ON sprint(estado);
 -- Reuniones del sprint
 CREATE TABLE meeting (
     id_meeting INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto INT NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     sprint VARCHAR(100) NOT NULL,
@@ -328,11 +329,13 @@ CREATE TABLE meeting (
     room VARCHAR(100),
     link VARCHAR(255),
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
+    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_meeting_sprint ON meeting(sprint);
 CREATE INDEX idx_meeting_date ON meeting(date);
+CREATE INDEX idx_meeting_proyecto ON meeting(id_proyecto);
 
 -- Agregar FK en historia_usuario
 ALTER TABLE historia_usuario
@@ -717,15 +720,15 @@ INSERT INTO perfil_usuario (id_usuario, descripcion_personal, experiencia, porta
 (9, 'Scrum Master del equipo de Banking.', '2 años como SM en entornos regulados (fintech).', NULL, 'privado');
 
 -- Reuniones del calendario (Sprint actual - Proyecto 1)
-INSERT INTO meeting (title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
-('Daily Standup - Lunes',      'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 3 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-('Daily Standup - Martes',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 2 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-('Daily Standup - Miércoles',  'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-('Daily Standup - Jueves',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-('Sprint Review',              'Revisión de incremento del Sprint 2',        'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 10 DAY), 'sprint_review',  '14:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-review'),
-('Sprint Retrospective',       'Retrospectiva del Sprint 2',                 'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 11 DAY), 'retrospectiva',  '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-retro'),
-('Refinamiento de Backlog',    'Refinar historias para el Sprint 3',         'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 5 DAY),  'refinamiento',   '10:00', '2 horas','Sala Virtual B', 'https://meet.google.com/xyz-refine'),
-('Sprint Planning - Sprint 3', 'Planificación del próximo sprint',           'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 12 DAY), 'sprint_planning','09:00', '2 horas','Sala Principal', 'https://meet.google.com/xyz-plan');
+INSERT INTO meeting (id_proyecto, title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
+(1, 'Daily Standup - Lunes',      'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 3 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Daily Standup - Martes',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 2 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Daily Standup - Miércoles',  'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Daily Standup - Jueves',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Sprint Review',              'Revisión de incremento del Sprint 2',        'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 10 DAY), 'sprint_review',  '14:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-review'),
+(1, 'Sprint Retrospective',       'Retrospectiva del Sprint 2',                 'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 11 DAY), 'retrospectiva',  '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-retro'),
+(1, 'Refinamiento de Backlog',    'Refinar historias para el Sprint 3',         'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 5 DAY),  'refinamiento',   '10:00', '2 horas','Sala Virtual B', 'https://meet.google.com/xyz-refine'),
+(1, 'Sprint Planning - Sprint 3', 'Planificación del próximo sprint',           'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 12 DAY), 'sprint_planning','09:00', '2 horas','Sala Principal', 'https://meet.google.com/xyz-plan');
 
 -- Etiquetas asignadas a tareas
 INSERT INTO tarea_etiqueta (id_tarea, id_etiqueta) VALUES
@@ -887,12 +890,15 @@ INSERT INTO historial_tarea (id_tarea, id_usuario, estado_anterior, estado_nuevo
 -- ============================================================
 -- REUNIONES (MEETINGS)
 -- ============================================================
-INSERT INTO meeting (title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
-('Sprint Planning 2', 'Planificación del Sprint 2', '2', 'programada', DATE_ADD(NOW(), INTERVAL 1 DAY), 'planning', '09:00', '120', 'Sala A', 'https://meet.google.com/abc-defg-hij'),
-('Daily Standup', 'Reunión diaria de sincronización', '2', 'programada', DATE_ADD(NOW(), INTERVAL 2 DAY), 'daily', '09:00', '15', 'Sala B', 'https://meet.google.com/xyz-uvw-rst'),
-('Sprint Review', 'Revisión de lo avanzado en Sprint 2', '2', 'programada', DATE_ADD(NOW(), INTERVAL 13 DAY), 'review', '15:00', '60', 'Sala Principal', 'https://meet.google.com/123-456-789'),
-('Retrospectiva Sprint 1', 'Retrospectiva del Sprint 1', '1', 'completada', DATE_SUB(NOW(), INTERVAL 1 DAY), 'retro', '16:00', '60', 'Sala C', 'https://meet.google.com/qwe-asd-zxc'),
-('Refinamiento de Backlog', 'Refinar historias para Sprint 3', '2', 'programada', DATE_ADD(NOW(), INTERVAL 5 DAY), 'refinement', '14:00', '60', 'Sala D', 'https://meet.google.com/rty-fgh-vbn');
+INSERT INTO meeting (id_proyecto, title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
+(1, 'Daily Standup', 'Reunión diaria de sincronización del equipo', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Sprint Planning', 'Planificación del Sprint 3', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 3 DAY), 'planning', '10:00', '2 horas', 'Sala Principal', 'https://meet.google.com/xyz-uvw-rst'),
+(1, 'Sprint Review', 'Revisión de lo avanzado en Sprint 2', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 12 DAY), 'review', '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/123-456-789'),
+(1, 'Retrospectiva Sprint 1', 'Retrospectiva del Sprint 1 completado', 'Sprint 1 - Foundations', 'completada', DATE_SUB(NOW(), INTERVAL 1 DAY), 'retro', '16:00', '1 hora', 'Sala C', 'https://meet.google.com/qwe-asd-zxc'),
+(1, 'Refinamiento de Backlog', 'Refinar historias para el Sprint 3', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 5 DAY), 'refinement', '14:00', '1 hora', 'Sala D', 'https://meet.google.com/rty-fgh-vbn'),
+(1, 'Daily Standup - Miércoles', 'Sync diario del equipo', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 4 DAY), 'daily', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(2, 'Planning E-commerce', 'Planificación inicial del proyecto E-commerce', 'Sprint 1 - Catálogo Base', 'programada', DATE_ADD(NOW(), INTERVAL 2 DAY), 'planning', '11:00', '2 horas', 'Sala B', 'https://meet.google.com/ecom-plan-001'),
+(2, 'Kickoff E-commerce', 'Reunión de arranque del proyecto', 'Sprint 1 - Catálogo Base', 'programada', DATE_ADD(NOW(), INTERVAL 6 DAY), 'review', '10:00', '1 hora', 'Sala B', 'https://meet.google.com/ecom-kick-002');
 
 -- ============================================================
 -- NOTIFICACIONES (todos los tipos, incluyendo los nuevos)
