@@ -165,6 +165,8 @@ CREATE TABLE notificacion (
     id_solicitud        INT DEFAULT NULL,
     id_meeting          INT DEFAULT NULL,
     id_proyecto         INT DEFAULT NULL,
+    id_tarea            INT DEFAULT NULL,
+    id_sprint           INT DEFAULT NULL,
     accion              VARCHAR(50) DEFAULT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud) ON DELETE CASCADE
@@ -175,6 +177,8 @@ CREATE INDEX idx_notificacion_usuario ON notificacion(id_usuario);
 CREATE INDEX idx_notificacion_leida ON notificacion(leida);
 CREATE INDEX idx_notificacion_meeting ON notificacion(id_meeting);
 CREATE INDEX idx_notificacion_proyecto ON notificacion(id_proyecto);
+CREATE INDEX idx_notificacion_tarea ON notificacion(id_tarea);
+CREATE INDEX idx_notificacion_sprint ON notificacion(id_sprint);
 
 -- Índices en proyecto
 CREATE INDEX idx_proyecto_estado ON proyecto(estado);
@@ -321,9 +325,11 @@ CREATE TABLE meeting (
     title VARCHAR(200) NOT NULL,
     description TEXT,
     sprint VARCHAR(100) NOT NULL,
+    id_sprint INT DEFAULT NULL,
     status VARCHAR(100) DEFAULT 'programada',
     date DATETIME NOT NULL,
     type VARCHAR(100),
+    priority VARCHAR(20) DEFAULT 'estandar',
     startTime VARCHAR(20),
     duration VARCHAR(50),
     room VARCHAR(100),
@@ -388,9 +394,11 @@ CREATE TABLE tarea (
     fecha_inicio        DATETIME,
     fecha_fin_est       DATETIME,
     fecha_fin_real      DATETIME,
+    id_usuario_responsable INT,
     fecha_creacion      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_modificacion  DATETIME ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_historia) REFERENCES historia_usuario(id_historia) ON DELETE CASCADE
+    FOREIGN KEY (id_historia) REFERENCES historia_usuario(id_historia) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario_responsable) REFERENCES usuario(id_usuario) ON DELETE SET NULL
 );
 
 -- Índices en tarea
@@ -547,6 +555,28 @@ INSERT INTO etiqueta (nombre, color) VALUES
 ('Testing',         '#27AE60'),
 ('Documentación',   '#9B59B6');
 
+-- Habilidades
+INSERT INTO habilidad (nombre, categoria) VALUES
+('JavaScript',   'Desarrollador'),
+('MySQL',        'Desarrollador'),
+('React',        'Desarrollador'),
+('Node.js',      'Desarrollador'),
+('Express',      'Desarrollador'),
+('Figma',        'Diseñador'),
+('Scrum',        'Gestión'),
+('Python',       'Desarrollador');
+
+-- Habilidades de usuarios
+INSERT INTO usuario_habilidad (id_usuario, id_habilidad, nivel) VALUES
+(1, 7, 'Avanzado'),     -- Mariana: Scrum
+(2, 7, 'Avanzado'),     -- Sofía: Scrum
+(3, 1, 'Intermedio'),   -- Jefferson: JavaScript
+(3, 2, 'Intermedio'),   -- Jefferson: MySQL
+(3, 4, 'Básico'),       -- Jefferson: Node.js
+(4, 1, 'Avanzado'),     -- Johan: JavaScript
+(4, 4, 'Avanzado'),     -- Johan: Node.js
+(4, 5, 'Intermedio');   -- Johan: Express
+
 -- ============================================================
 -- PROYECTO 1: Scrum Track Development (Estado: Activo)
 -- ============================================================
@@ -702,6 +732,11 @@ INSERT INTO comentario_tarea (id_tarea, id_usuario, comentario, fecha) VALUES
 (11, 3, 'Me sumo a implementar la persistencia de estado al mover tarjetas.', NOW()),
 (11, 5, 'Podemos usar WebSockets para actualizar en tiempo real entre usuarios.', NOW());
 
+-- Relación Sprint ↔ Historia (Proyecto 1)
+INSERT INTO sprint_historia (id_sprint, id_historia) VALUES
+(1, 1), (1, 2), (1, 3), (1, 4),
+(2, 5), (2, 6), (2, 7), (2, 8);
+
 -- Relación Sprint ↔ Épica (Proyecto 1 solamente)
 INSERT INTO sprint_epica (id_sprint, id_epica) VALUES
 (1, 1), (1, 2),     -- Sprint 1 del Proy 1: Épicas de Usuarios y Proyectos
@@ -718,17 +753,6 @@ INSERT INTO perfil_usuario (id_usuario, descripcion_personal, experiencia, porta
 (7, 'Scrum Master junior con ganas de aprender.', '1 año como SM. Estudiante de Ingeniería de Software.', NULL, 'solo_equipo'),
 (8, 'Product Owner especializada en productos financieros digitales.', '7 años en banca digital. Certificada en PMP y SAFe.', 'https://linkedin.com/in/irene-po', 'publico'),
 (9, 'Scrum Master del equipo de Banking.', '2 años como SM en entornos regulados (fintech).', NULL, 'privado');
-
--- Reuniones del calendario (Sprint actual - Proyecto 1)
-INSERT INTO meeting (id_proyecto, title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
-(1, 'Daily Standup - Lunes',      'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 3 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-(1, 'Daily Standup - Martes',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 2 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-(1, 'Daily Standup - Miércoles',  'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-(1, 'Daily Standup - Jueves',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily',           '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-(1, 'Sprint Review',              'Revisión de incremento del Sprint 2',        'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 10 DAY), 'sprint_review',  '14:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-review'),
-(1, 'Sprint Retrospective',       'Retrospectiva del Sprint 2',                 'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 11 DAY), 'retrospectiva',  '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-retro'),
-(1, 'Refinamiento de Backlog',    'Refinar historias para el Sprint 3',         'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 5 DAY),  'refinamiento',   '10:00', '2 horas','Sala Virtual B', 'https://meet.google.com/xyz-refine'),
-(1, 'Sprint Planning - Sprint 3', 'Planificación del próximo sprint',           'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 12 DAY), 'sprint_planning','09:00', '2 horas','Sala Principal', 'https://meet.google.com/xyz-plan');
 
 -- Etiquetas asignadas a tareas
 INSERT INTO tarea_etiqueta (id_tarea, id_etiqueta) VALUES
@@ -890,47 +914,54 @@ INSERT INTO historial_tarea (id_tarea, id_usuario, estado_anterior, estado_nuevo
 -- ============================================================
 -- REUNIONES (MEETINGS)
 -- ============================================================
-INSERT INTO meeting (id_proyecto, title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
-(1, 'Daily Standup', 'Reunión diaria de sincronización del equipo', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-(1, 'Sprint Planning', 'Planificación del Sprint 3', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 3 DAY), 'planning', '10:00', '2 horas', 'Sala Principal', 'https://meet.google.com/xyz-uvw-rst'),
-(1, 'Sprint Review', 'Revisión de lo avanzado en Sprint 2', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 12 DAY), 'review', '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/123-456-789'),
-(1, 'Retrospectiva Sprint 1', 'Retrospectiva del Sprint 1 completado', 'Sprint 1 - Foundations', 'completada', DATE_SUB(NOW(), INTERVAL 1 DAY), 'retro', '16:00', '1 hora', 'Sala C', 'https://meet.google.com/qwe-asd-zxc'),
-(1, 'Refinamiento de Backlog', 'Refinar historias para el Sprint 3', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 5 DAY), 'refinement', '14:00', '1 hora', 'Sala D', 'https://meet.google.com/rty-fgh-vbn'),
-(1, 'Daily Standup - Miércoles', 'Sync diario del equipo', 'Sprint 2 - Sprints & Kanban', 'programada', DATE_ADD(NOW(), INTERVAL 4 DAY), 'daily', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
-(2, 'Planning E-commerce', 'Planificación inicial del proyecto E-commerce', 'Sprint 1 - Catálogo Base', 'programada', DATE_ADD(NOW(), INTERVAL 2 DAY), 'planning', '11:00', '2 horas', 'Sala B', 'https://meet.google.com/ecom-plan-001'),
-(2, 'Kickoff E-commerce', 'Reunión de arranque del proyecto', 'Sprint 1 - Catálogo Base', 'programada', DATE_ADD(NOW(), INTERVAL 6 DAY), 'review', '10:00', '1 hora', 'Sala B', 'https://meet.google.com/ecom-kick-002');
+INSERT INTO meeting (id_proyecto, title, description, sprint, status, date, type, priority, startTime, duration, room, link) VALUES
+(1, 'Daily Standup - Lunes',      'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 3 DAY), 'daily',           'estandar', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Daily Standup - Martes',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 2 DAY), 'daily',           'estandar', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Daily Standup - Miércoles',  'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'completada',  DATE_SUB(NOW(), INTERVAL 1 DAY), 'daily',           'estandar', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Daily Standup - Jueves',     'Reunión diaria del equipo',                  'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 1 DAY), 'daily',           'estandar', '09:00', '15 min', 'Sala Virtual A', 'https://meet.google.com/abc-defg-hij'),
+(1, 'Sprint Review',              'Revisión de incremento del Sprint 2',        'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 10 DAY), 'sprint_review',  'alta', '14:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-review'),
+(1, 'Sprint Retrospective',       'Retrospectiva del Sprint 2',                 'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 11 DAY), 'retrospectiva',  'estandar', '15:00', '1 hora', 'Sala Principal', 'https://meet.google.com/xyz-retro'),
+(1, 'Refinamiento de Backlog',    'Refinar historias para el Sprint 3',         'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 5 DAY),  'refinamiento',   'estandar', '10:00', '2 horas','Sala Virtual B', 'https://meet.google.com/xyz-refine'),
+(1, 'Sprint Planning - Sprint 3', 'Planificación del próximo sprint',           'Sprint 2 - Sprints & Kanban', 'programada',  DATE_ADD(NOW(), INTERVAL 12 DAY), 'sprint_planning','alta', '09:00', '2 horas','Sala Principal', 'https://meet.google.com/xyz-plan'),
+(2, 'Planning E-commerce', 'Planificación inicial del proyecto E-commerce', 'Sprint 1 - Catálogo Base', 'programada', DATE_ADD(NOW(), INTERVAL 2 DAY), 'planning', 'alta', '11:00', '2 horas', 'Sala B', 'https://meet.google.com/ecom-plan-001'),
+(2, 'Kickoff E-commerce', 'Reunión de arranque del proyecto', 'Sprint 1 - Catálogo Base', 'programada', DATE_ADD(NOW(), INTERVAL 6 DAY), 'review', 'estandar', '10:00', '1 hora', 'Sala B', 'https://meet.google.com/ecom-kick-002');
+
+-- Solicitudes de ingreso a proyecto
+INSERT INTO solicitud (id_proyecto, id_usuario, mensaje_opcional, estado) VALUES
+(1, 5, 'Me interesa unirme a este proyecto Scrum como Developer', 'Pendiente'),
+(1, 6, 'Quiero participar en el desarrollo de la app Scrum', 'Pendiente');
 
 -- ============================================================
 -- NOTIFICACIONES (todos los tipos, incluyendo los nuevos)
 -- ============================================================
-INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, leida, fecha_creacion) VALUES
+INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, leida, fecha_creacion, id_proyecto, id_tarea, id_sprint) VALUES
 
 -- Notificaciones de asignación de tareas (nuevas)
-(3, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Botón iniciar sprint logic" en el proyecto "Scrum Track Development"',           0, DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(4, 'tarea_asignada',    'Tarea asignada como responsable','Has sido asignado como responsable de la tarea "UI Crear Sprint" en el proyecto "Scrum Track Development"',   0, DATE_SUB(NOW(), INTERVAL 3 DAY)),
-(5, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Filtros del tablero" en el proyecto "Scrum Track Development"',                  0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(4, 'tarea_asignada',    'Tarea asignada como responsable','Has sido asignado como responsable de la tarea "Columnas Drag and Drop" en el proyecto "Scrum Track Development"', 0, DATE_SUB(NOW(), INTERVAL 3 DAY)),
-(3, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Columnas Drag and Drop" como colaborador en el proyecto "Scrum Track Development"',  1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
-(5, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Columnas Drag and Drop" como colaborador en el proyecto "Scrum Track Development"',  1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(3, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Botón iniciar sprint logic" en el proyecto "Scrum Track Development"',           0, DATE_SUB(NOW(), INTERVAL 2 DAY), 1, 10, 2),
+(4, 'tarea_asignada',    'Tarea asignada como responsable','Has sido asignado como responsable de la tarea "UI Crear Sprint" en el proyecto "Scrum Track Development"',   0, DATE_SUB(NOW(), INTERVAL 3 DAY), 1, 8, 2),
+(5, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Filtros del tablero" en el proyecto "Scrum Track Development"',                  0, DATE_SUB(NOW(), INTERVAL 1 DAY), 1, 15, 2),
+(4, 'tarea_asignada',    'Tarea asignada como responsable','Has sido asignado como responsable de la tarea "Columnas Drag and Drop" en el proyecto "Scrum Track Development"', 0, DATE_SUB(NOW(), INTERVAL 3 DAY), 1, 11, 2),
+(3, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Columnas Drag and Drop" como colaborador en el proyecto "Scrum Track Development"',  1, DATE_SUB(NOW(), INTERVAL 3 DAY), 1, 11, 2),
+(5, 'tarea_asignada',    'Tarea asignada',                'Has sido asignado a la tarea "Columnas Drag and Drop" como colaborador en el proyecto "Scrum Track Development"',  1, DATE_SUB(NOW(), INTERVAL 3 DAY), 1, 11, 2),
 
 -- Notificaciones de sistema e informativas (existentes mejoradas)
-(1, 'informativa',       'Sprint completado',             'El Sprint 1 - Foundations del proyecto "Scrum Track Development" ha sido completado exitosamente.',           1, DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(2, 'informativa',       'Sprint completado',             'El Sprint 1 - Foundations ha finalizado. Velocidad real: 20 puntos.',                                        1, DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(1, 'informativa',       'Estado cambiado',               'La historia "Login de usuario" ha sido marcada como terminada por David Developer 1.',                       1, DATE_SUB(NOW(), INTERVAL 10 DAY)),
-(1, 'informativa',       'Todas las tareas completadas',  'Todas las tareas de la historia "Crear proyecto nuevo" han sido completadas.',                               1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(1, 'informativa',       'Sprint completado',             'El Sprint 1 - Foundations del proyecto "Scrum Track Development" ha sido completado exitosamente.',           1, DATE_SUB(NOW(), INTERVAL 1 DAY), 1, NULL, NULL),
+(2, 'informativa',       'Sprint completado',             'El Sprint 1 - Foundations ha finalizado. Velocidad real: 20 puntos.',                                        1, DATE_SUB(NOW(), INTERVAL 1 DAY), 1, NULL, NULL),
+(1, 'informativa',       'Estado cambiado',               'La historia "Login de usuario" ha sido marcada como terminada por David Developer 1.',                       1, DATE_SUB(NOW(), INTERVAL 10 DAY), 1, NULL, NULL),
+(1, 'informativa',       'Todas las tareas completadas',  'Todas las tareas de la historia "Crear proyecto nuevo" han sido completadas.',                               1, DATE_SUB(NOW(), INTERVAL 3 DAY), 1, NULL, NULL),
 
 -- Notificaciones urgentes y recordatorios
-(6, 'urgente',           'Planeación de Sprint',          'Recuerda que debes iniciar el Sprint 1 - Catálogo Base del proyecto E-commerce Platform.',                   0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(2, 'recordatorio',      'Daily Standup',                 'La reunión Daily Standup está programada para mañana a las 9:00 AM.',                                        0, NOW()),
-(1, 'recordatorio',      'Refinamiento de Backlog',       'Tienes un Refinamiento de Backlog programado en 5 días. Prepara las historias del Sprint 3.',                0, NOW()),
+(6, 'urgente',           'Planeación de Sprint',          'Recuerda que debes iniciar el Sprint 1 - Catálogo Base del proyecto E-commerce Platform.',                   0, DATE_SUB(NOW(), INTERVAL 1 DAY), 2, NULL, NULL),
+(2, 'recordatorio',      'Daily Standup',                 'La reunión Daily Standup está programada para mañana a las 9:00 AM.',                                        0, NOW(), 1, NULL, NULL),
+(1, 'recordatorio',      'Refinamiento de Backlog',       'Tienes un Refinamiento de Backlog programado en 5 días. Prepara las historias del Sprint 3.',                0, NOW(), 1, NULL, NULL),
 
 -- Notificación de proyecto completado
-(8, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" ha finalizado con éxito. Todas las épicas y sprints fueron completados.',    1, DATE_SUB(NOW(), INTERVAL 14 DAY)),
-(9, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" ha sido marcado como completado por Irene PO Banking.',                     1, DATE_SUB(NOW(), INTERVAL 14 DAY)),
-(5, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" en el que participaste ha sido completado exitosamente.',                    1, DATE_SUB(NOW(), INTERVAL 14 DAY)),
+(8, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" ha finalizado con éxito. Todas las épicas y sprints fueron completados.',    1, DATE_SUB(NOW(), INTERVAL 14 DAY), 3, NULL, NULL),
+(9, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" ha sido marcado como completado por Irene PO Banking.',                     1, DATE_SUB(NOW(), INTERVAL 14 DAY), 3, NULL, NULL),
+(5, 'informativa',       'Proyecto Completado',           'El proyecto "Mobile Banking App" en el que participaste ha sido completado exitosamente.',                    1, DATE_SUB(NOW(), INTERVAL 14 DAY), 3, NULL, NULL),
 
 -- Notificación de reunión
-(3, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(4, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
-(5, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY));
+(3, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY), 1, NULL, NULL),
+(4, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY), 1, NULL, NULL),
+(5, 'reunion_creada',    'Nueva reunión programada',      'Se ha creado la reunión "Sprint Review" para el Sprint 2 - Sprints & Kanban.',                               0, DATE_SUB(NOW(), INTERVAL 1 DAY), 1, NULL, NULL);
 

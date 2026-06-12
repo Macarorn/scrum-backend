@@ -65,16 +65,15 @@ const normalizeMeetingPayload = (body) => {
   const title = String(body.title || "").trim();
   const description = String(body.description || "").trim();
   const sprint = String(body.sprint || "").trim();
-  const status = String(body.status || "").trim();
+  const id_sprint = body.id_sprint != null ? Number(body.id_sprint) : null;
+  const status = String(body.status || "programada").trim();
   const type = String(body.type || "").trim();
-  const priority = String(body.priority || body.prioridad || "media").trim().toLowerCase();
+  const priority = String(body.priority || body.prioridad || "estandar").trim().toLowerCase();
   const room = String(body.room || "").trim();
   const link = String(body.link || "").trim();
   const date = parseMeetingDate(body.date);
   const startTime = String(body.startTime || "").trim();
   const duration = body.duration ? Number(body.duration) : null;
-  // Campo opcional para seleccionar miembros específicos a notificar (preparado para futuro)
-  // Si está presente, solo notifica a esos IDs de usuario. Si no está, notifica a todos los miembros del proyecto.
   const miembros_a_notificar = body.miembros_a_notificar && Array.isArray(body.miembros_a_notificar)
     ? body.miembros_a_notificar.map(id => Number(id)).filter(id => !Number.isNaN(id))
     : null;
@@ -99,13 +98,14 @@ const normalizeMeetingPayload = (body) => {
     title,
     description,
     sprint,
-    status,
+    id_sprint: !Number.isNaN(id_sprint) ? id_sprint : null,
+    status: status || "programada",
     type,
-    priority: VALID_PRIORITIES.has(priority) ? priority : "media",
+    priority: VALID_PRIORITIES.has(priority) ? priority : "estandar",
     room,
     link,
     date: startDate,
-    duration: duration || null,
+    duration: !Number.isNaN(duration) ? duration : null,
     startTime: startTime || null,
     miembros_a_notificar,
   };
@@ -234,15 +234,44 @@ export const createMeeting = async (req, res) => {
       });
     }
 
+    if (payload.title.length > 200) {
+      return res.status(400).json({ success: false, message: "El título no puede exceder 200 caracteres." });
+    }
+    if (payload.sprint.length > 100) {
+      return res.status(400).json({ success: false, message: "El nombre del sprint no puede exceder 100 caracteres." });
+    }
+    if (payload.status.length > 100) {
+      return res.status(400).json({ success: false, message: "El status no puede exceder 100 caracteres." });
+    }
+    if (payload.type.length > 100) {
+      return res.status(400).json({ success: false, message: "El tipo de reunión no puede exceder 100 caracteres." });
+    }
+    if (payload.room.length > 100) {
+      return res.status(400).json({ success: false, message: "La sala no puede exceder 100 caracteres." });
+    }
+    if (payload.link.length > 255) {
+      return res.status(400).json({ success: false, message: "El enlace no puede exceder 255 caracteres." });
+    }
+    if (payload.priority.length > 20) {
+      return res.status(400).json({ success: false, message: "La prioridad no puede exceder 20 caracteres." });
+    }
+    if (payload.duration !== null && (payload.duration < 0 || payload.duration > 1440)) {
+      return res.status(400).json({ success: false, message: "La duración debe estar entre 0 y 1440 minutos." });
+    }
+    if (payload.startTime && !/^\d{2}:\d{2}$/.test(payload.startTime)) {
+      return res.status(400).json({ success: false, message: "El formato de hora de inicio es inválido (use HH:mm)." });
+    }
+
     const [result] = await pool.query(
       `INSERT INTO meeting
-        (id_proyecto, title, description, sprint, status, date, type, priority, startTime, duration, room, link)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id_proyecto, title, description, sprint, id_sprint, status, date, type, priority, startTime, duration, room, link)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id_proyecto,
         payload.title,
         payload.description,
         payload.sprint,
+        payload.id_sprint,
         payload.status,
         payload.date,
         payload.type,
@@ -268,7 +297,7 @@ export const createMeeting = async (req, res) => {
         payload.date,
         payload.startTime,
         'creada',
-        req.user?.id || req.user?.id_usuario,
+        req.user?.id_usuario,
         payload.miembros_a_notificar,
         result.insertId
       );
@@ -330,7 +359,7 @@ export const updateMeeting = async (req, res) => {
         updatedMeeting.date,
         updatedMeeting.startTime,
         'actualizada',
-        req.user?.id || req.user?.id_usuario,
+        req.user?.id_usuario,
         payload.miembros_a_notificar,
         id
       );
@@ -372,7 +401,7 @@ export const deleteMeeting = async (req, res) => {
         meetingToDelete.date,
         meetingToDelete.startTime,
         'eliminada',
-        req.user?.id || req.user?.id_usuario,
+        req.user?.id_usuario,
         null // Al eliminar no se usa miembros específicos, se notifica a todos
       );
     }
