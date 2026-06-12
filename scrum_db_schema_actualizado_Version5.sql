@@ -50,6 +50,16 @@ CREATE TABLE rol_permiso (
     FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso) ON DELETE CASCADE
 );
 
+-- Legal Terms Versions (added here so it can be referenced by usuario and user_consents)
+CREATE TABLE legal_terms_versions (
+    id_term INT AUTO_INCREMENT PRIMARY KEY,
+    version VARCHAR(50) NOT NULL UNIQUE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Usuarios de la plataforma
 CREATE TABLE usuario (
     id_usuario      INT AUTO_INCREMENT PRIMARY KEY,
@@ -59,8 +69,28 @@ CREATE TABLE usuario (
     telefono        VARCHAR(20),
     ciudad          VARCHAR(100),
     activo          TINYINT(1) NOT NULL DEFAULT 1,
+    consent_granted TINYINT(1) NOT NULL DEFAULT 0,
+    consent_at      DATETIME NULL DEFAULT NULL,
+    consent_version VARCHAR(50) NULL DEFAULT NULL,
     fecha_registro  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
+    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (consent_version) REFERENCES legal_terms_versions(version) ON DELETE SET NULL
+);
+
+-- User Consents Log
+CREATE TABLE user_consents (
+    id_consent INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NULL,
+    consent_version VARCHAR(50) NULL,
+    accepted TINYINT(1) NOT NULL DEFAULT 0,
+    consent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(100),
+    user_agent VARCHAR(512),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_consents_usuario (id_usuario),
+    INDEX idx_user_consents_version (consent_version),
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (consent_version) REFERENCES legal_terms_versions(version) ON DELETE SET NULL
 );
 
 -- Índices en usuario
