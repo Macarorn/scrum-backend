@@ -153,7 +153,7 @@ CREATE TABLE solicitud (
 CREATE TABLE notificacion (
     id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario          INT NOT NULL,
-    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio','reunion_creada','reunion_actualizada','reunion_eliminada') NOT NULL DEFAULT 'informativa',
+    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio','reunion_creada','reunion_actualizada','reunion_eliminada','tarea_asignada','tarea_desasignada','tarea_reasignada','tarea_actualizada') NOT NULL DEFAULT 'informativa',
     titulo              VARCHAR(200) NOT NULL,
     mensaje             TEXT,
     leida               TINYINT(1) NOT NULL DEFAULT 0,
