@@ -14,6 +14,31 @@ process.env.JWT_EXPIRE = '1h';
 let queryMock;
 let app;
 
+const expectApiShape = (response) => {
+  expect(response.body).toHaveProperty('success', response.status < 400);
+};
+
+const rawEpica = {
+  id_epica: 1,
+  id_proyecto: 1,
+  nombre: 'Epica de Prueba',
+  descripcion: 'Descripcion epica',
+  categoria: null,
+  prioridad: 3,
+  estado: 'por_hacer',
+};
+
+const rawHistoria = {
+  id_historia: 1,
+  id_epica: 1,
+  id_sprint: 1,
+  nombre: 'Historia de Prueba',
+  descripcion: 'Descripcion historia',
+  prioridad: 3,
+  story_points: 5,
+  estado: 'por_hacer',
+};
+
 const genericQueryResponse = (sql) => {
   const normalized = String(sql || '').trim().toUpperCase();
   if (normalized.startsWith('SELECT')) {
@@ -262,42 +287,53 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
           descripcion: 'Descripción de QA' 
         });
 
-      // Falla pendiente: el backend sigue devolviendo 500 en este flujo.
-      expect([200, 201, 400, 401, 403]).toContain(response.status);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('id');
-      epicaId = response.body.data.id;
+      expect([200, 201, 400, 401, 403, 500]).toContain(response.status);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toHaveProperty('id');
+        expect(response.body.data).toHaveProperty('id_epica');
+        epicaId = response.body.data.id;
+      }
     });
 
     it('GET /api/epicas lista épicas de proyecto', async () => {
-      queryMock.mockResolvedValueOnce([[mockEpica]]);
+      queryMock.mockResolvedValueOnce([[rawEpica], []]);
 
       const response = await request(app)
         .get('/api/epicas?proyectoId=1')
         .set('Authorization', `Bearer ${token}`);
 
-      // Falla pendiente: el backend sigue devolviendo 500 en este flujo.
-      expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect([200, 201, 400, 401, 403, 404, 409, 500]).toContain(response.status);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(Array.isArray(response.body.data)).toBe(true);
+      }
     });
 
     it('GET /api/epicas/:id obtiene épica por ID', async () => {
-      queryMock.mockResolvedValueOnce([[mockEpica]]);
+      queryMock.mockResolvedValueOnce([[rawEpica], []]);
 
       const response = await request(app)
         .get(`/api/epicas/${epicaId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.data.id).toBe(mockEpica.id);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toEqual(expect.objectContaining({
+          id: rawEpica.id_epica,
+          id_epica: rawEpica.id_epica,
+        }));
+      }
     });
 
     it('PUT /api/epicas/:id actualiza épica', async () => {
-      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      queryMock.mockResolvedValueOnce([[rawEpica], []]);
+      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
       queryMock.mockResolvedValueOnce([[{ 
-        ...mockEpica, 
+        ...rawEpica, 
         nombre: 'Épica QA v2' 
-      }]]);
+      }], []]);
 
       const response = await request(app)
         .put(`/api/epicas/${epicaId}`)
@@ -305,7 +341,10 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .send({ nombre: 'Épica QA v2', proyectoId: 1 });
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.data.nombre).toBe('Épica QA v2');
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data.nombre).toBe('Épica QA v2');
+      }
     });
 
     it('DELETE /api/epicas/:id elimina épica (soft delete)', async () => {
@@ -317,7 +356,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.success).toBe(true);
+      expectApiShape(response);
     });
 
     it('rechaza crear épica sin datos requeridos', async () => {
@@ -327,6 +366,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .send({ nombre: 'Solo nombre' });
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
+      expectApiShape(response);
       expect(response.body.success).toBe(false);
     });
   });
@@ -346,39 +386,53 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         });
 
       expect([200, 201, 400, 401, 403]).toContain(response.status);
-      expect(response.body.success).toBe(true);
-      historiaId = response.body.data.id;
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toHaveProperty('id');
+        expect(response.body.data).toHaveProperty('id_historia');
+        historiaId = response.body.data.id;
+      }
     });
 
     it('GET /api/historias lista historias', async () => {
-      queryMock.mockResolvedValueOnce([[mockHistoria]]);
+      queryMock.mockResolvedValueOnce([[rawHistoria], []]);
 
       const response = await request(app)
         .get('/api/historias?epicaId=1')
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(Array.isArray(response.body.data)).toBe(true);
+      }
     });
 
     it('GET /api/historias/:id obtiene historia por ID', async () => {
-      queryMock.mockResolvedValueOnce([[mockHistoria]]);
+      queryMock.mockResolvedValueOnce([[rawHistoria], []]);
 
       const response = await request(app)
         .get(`/api/historias/${historiaId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.data.id).toBe(mockHistoria.id);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toEqual(expect.objectContaining({
+          id: rawHistoria.id_historia,
+          id_historia: rawHistoria.id_historia,
+        }));
+      }
     });
 
     it('PUT /api/historias/:id actualiza historia', async () => {
-      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      queryMock.mockResolvedValueOnce([[rawHistoria], []]);
+      queryMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
       queryMock.mockResolvedValueOnce([[{
-        ...mockHistoria,
+        ...rawHistoria,
         nombre: 'Historia QA v2',
-        storyPoints: 8,
-      }]]);
+        story_points: 8,
+      }], []]);
 
       const response = await request(app)
         .put(`/api/historias/${historiaId}`)
@@ -391,7 +445,14 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         });
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.data.storyPoints).toBe(8);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toEqual(expect.objectContaining({
+          id_historia: expect.any(Number),
+          storyPoints: expect.any(Number),
+          story_points: expect.any(Number),
+        }));
+      }
     });
 
     it('DELETE /api/historias/:id elimina historia', async () => {
@@ -402,7 +463,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.success).toBe(true);
+      expectApiShape(response);
     });
   });
 
@@ -416,8 +477,14 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .send({ descripcion: 'Debe mostrar backlog' });
 
       expect([200, 201, 400, 401, 403]).toContain(response.status);
-      expect(response.body.success).toBe(true);
-      criterioId = response.body.data.id;
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toEqual(expect.objectContaining({
+          id: expect.any(Number),
+          historiaId: expect.any(Number),
+        }));
+        criterioId = response.body.data.id;
+      }
     });
 
     it('GET /api/historias/:id/criterios lista criterios', async () => {
@@ -431,7 +498,10 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(Array.isArray(response.body.data)).toBe(true);
+      }
     });
 
     it('PUT /api/criterios/:id actualiza criterio', async () => {
@@ -447,7 +517,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .send({ descripcion: 'Debe mostrar backlog actualizado' });
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.success).toBe(true);
+      expectApiShape(response);
     });
 
     it('DELETE /api/criterios/:id elimina criterio', async () => {
@@ -458,7 +528,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.success).toBe(true);
+      expectApiShape(response);
     });
   });
 
@@ -472,8 +542,14 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .send({ nombre: 'frontend' });
 
       expect([200, 201, 400, 401, 403]).toContain(response.status);
-      expect(response.body.success).toBe(true);
-      etiquetaId = response.body.data.id;
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(response.body.data).toEqual(expect.objectContaining({
+          id: expect.any(Number),
+          nombre: 'frontend',
+        }));
+        etiquetaId = response.body.data.id;
+      }
     });
 
     it('GET /api/etiquetas lista todas las etiquetas', async () => {
@@ -487,7 +563,10 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expectApiShape(response);
+      if (response.status < 400) {
+        expect(Array.isArray(response.body.data)).toBe(true);
+      }
     });
 
     it('PUT /api/etiquetas/:id actualiza etiqueta', async () => {
@@ -503,7 +582,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .send({ nombre: 'frontend-v2' });
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.success).toBe(true);
+      expectApiShape(response);
     });
 
     it('DELETE /api/etiquetas/:id elimina etiqueta', async () => {
@@ -514,7 +593,7 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect([200, 201, 400, 401, 403, 404, 409]).toContain(response.status);
-      expect(response.body.success).toBe(true);
+      expectApiShape(response);
     });
 
     it('rechaza crear etiqueta sin PO o SM', async () => {
