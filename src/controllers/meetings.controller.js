@@ -44,66 +44,6 @@ const getDateMetadata = (value, priority) => {
   };
 };
 
-const ensureMeetingTable = async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS meeting (
-      id_meeting INT AUTO_INCREMENT PRIMARY KEY,
-      id_proyecto INT NULL,
-      title VARCHAR(200) NOT NULL,
-      description TEXT,
-      sprint VARCHAR(100) NOT NULL,
-      status VARCHAR(100) DEFAULT 'programada',
-      date DATETIME NOT NULL,
-      type VARCHAR(100),
-      priority VARCHAR(20) DEFAULT 'media',
-      startTime VARCHAR(20),
-      duration VARCHAR(50),
-      room VARCHAR(100),
-      link VARCHAR(255),
-      fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE
-    )
-  `);
-
-  const [columns] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'priority'");
-  if (columns.length === 0) {
-    await pool.query("ALTER TABLE meeting ADD COLUMN priority VARCHAR(20) DEFAULT 'media' AFTER type");
-  }
-
-  const [projectColumns] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'id_proyecto'");
-  if (projectColumns.length === 0) {
-    await pool.query("ALTER TABLE meeting ADD COLUMN id_proyecto INT NULL AFTER id_meeting");
-  }
-
-  const [indexes] = await pool.query("SHOW INDEX FROM meeting WHERE Key_name = 'idx_project_meeting'");
-  if (indexes.length === 0) {
-    try {
-      await pool.query("ALTER TABLE meeting ADD INDEX idx_project_meeting (id_proyecto)");
-    } catch (err) {
-      console.warn("No se pudo añadir índice idx_project_meeting:", err.message || err);
-    }
-  }
-
-  const [fk] = await pool.query(
-    `SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = 'meeting'
-       AND COLUMN_NAME = 'id_proyecto'
-       AND REFERENCED_TABLE_NAME = 'proyecto'`,
-  );
-  if (fk.length === 0) {
-    try {
-      await pool.query(
-        `ALTER TABLE meeting
-         ADD CONSTRAINT fk_meeting_proyecto FOREIGN KEY (id_proyecto)
-         REFERENCES proyecto(id_proyecto) ON DELETE CASCADE`,
-      );
-    } catch (err) {
-      console.warn("No se pudo añadir FK fk_meeting_proyecto:", err.message || err);
-    }
-  }
-};
 
 const parseMeetingDate = (value) => {
   if (!value) return null;
@@ -246,7 +186,7 @@ const notifyMeetingChange = async (id_proyecto, titulo, nombreProyecto, fecha, h
 
 export const createMeeting = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const payload = normalizeMeetingPayload(req.body);
     const idProyectoRaw = payload.id_proyecto ?? req.query.id_proyecto ?? req.query.proyectoId;
     const id_proyecto = Number(idProyectoRaw);
@@ -346,7 +286,7 @@ export const createMeeting = async (req, res) => {
 
 export const updateMeeting = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: "El ID de la reunión es obligatorio." });
@@ -405,7 +345,7 @@ export const updateMeeting = async (req, res) => {
 
 export const deleteMeeting = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: "El ID de la reunión es obligatorio." });
@@ -446,7 +386,7 @@ export const deleteMeeting = async (req, res) => {
 
 export const getMeetings = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const { sprint, from, to, q, id_proyecto } = req.query;
     const conditions = [];
     const values = [];
@@ -496,7 +436,7 @@ export const getMeetings = async (req, res) => {
 
 export const getMeetingsByProject = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const projectId = Number(req.params.idProyecto);
 
     if (!Number.isInteger(projectId) || projectId <= 0) {

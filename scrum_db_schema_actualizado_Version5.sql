@@ -315,6 +315,7 @@ CREATE INDEX idx_sprint_estado ON sprint(estado);
 -- Reuniones del sprint
 CREATE TABLE meeting (
     id_meeting INT AUTO_INCREMENT PRIMARY KEY,
+    id_proyecto INT NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     sprint VARCHAR(100) NOT NULL,
@@ -326,11 +327,13 @@ CREATE TABLE meeting (
     room VARCHAR(100),
     link VARCHAR(255),
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
+    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_meeting_sprint ON meeting(sprint);
 CREATE INDEX idx_meeting_date ON meeting(date);
+CREATE INDEX idx_meeting_proyecto ON meeting(id_proyecto);
 
 -- Agregar FK en historia_usuario
 ALTER TABLE historia_usuario
