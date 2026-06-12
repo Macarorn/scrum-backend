@@ -45,17 +45,17 @@ INSERT INTO rol_permiso VALUES
 (5,1),(5,6);                    -- Stakeholder
 
 -- Usuarios (123456 es la contraseña encriptada)
--- $2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa = 123456
+-- $2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6 = 123456
 INSERT INTO usuario (id_usuario, email, password, nombre, telefono, ciudad) VALUES
-(1, 'po1@demo.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Ana Product Owner',   '3000000001', 'Bogotá'),
-(2, 'sm1@demo.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Carlos Scrum Master', '3000000002', 'Medellín'),
-(3, 'dev1@demo.com',    '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'David Developer 1',   '3000000003', 'Cali'),
-(4, 'dev2@demo.com',    '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Elena Developer 2',   '3000000004', 'Bogotá'),
-(5, 'dev3@demo.com',    '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Felipe Developer 3',  '3000000005', 'Barranquilla'),
-(6, 'po2@demo.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Gloria PO Ecommerce', '3000000006', 'Bogotá'),
-(7, 'sm2@demo.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Hugo SM Ecommerce',   '3000000007', 'Medellín'),
-(8, 'po3@demo.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Irene PO Banking',    '3000000008', 'Cali'),
-(9, 'sm3@demo.com',     '$2a$10$SrJgihtLEYaZVXZUGfSeLeQafUnqhPem6UhbdKNsLjiN9PdFH7VIa', 'Jorge SM Banking',    '3000000009', 'Bogotá');
+(1, 'po1@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Ana Product Owner',   '3000000001', 'Bogotá'),
+(2, 'sm1@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Carlos Scrum Master', '3000000002', 'Medellín'),
+(3, 'dev1@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'David Developer 1',   '3000000003', 'Cali'),
+(4, 'dev2@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Elena Developer 2',   '3000000004', 'Bogotá'),
+(5, 'dev3@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Felipe Developer 3',  '3000000005', 'Barranquilla'),
+(6, 'po2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Gloria PO Ecommerce', '3000000006', 'Bogotá'),
+(7, 'sm2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Hugo SM Ecommerce',   '3000000007', 'Medellín'),
+(8, 'po3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Irene PO Banking',    '3000000008', 'Cali'),
+(9, 'sm3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Jorge SM Banking',    '3000000009', 'Bogotá');
 
 -- Roles globales a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
