@@ -28,7 +28,6 @@ import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import documentosRoutes from "./routes/documentos.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
-import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
 
 dotenv.config();
@@ -55,7 +54,6 @@ const corsOrigin =
       };
 
 await bootstrapStore();
-await initializeLegalStore();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -180,30 +178,7 @@ if (config.server.nodeEnv !== "test") {
         try { await pool.query(`CREATE INDEX idx_evt_token ON email_verification_token(token)`); } catch (e) {}
         try { await pool.query(`CREATE INDEX idx_evt_usuario ON email_verification_token(id_usuario)`); } catch (e) {}
 
-        // legal_version
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS legal_version (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              version VARCHAR(20) NOT NULL UNIQUE,
-              terms_text TEXT NOT NULL,
-              is_active TINYINT(1) DEFAULT 1,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
 
-        // user_consent_log
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS user_consent_log (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              id_usuario INT NOT NULL,
-              consent_version VARCHAR(20) NOT NULL,
-              accepted TINYINT(1) NOT NULL,
-              ip_address VARCHAR(45),
-              user_agent TEXT,
-              consent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
-          )
-        `);
 
         // documento_proyecto
         await pool.query(`

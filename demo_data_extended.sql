@@ -50,6 +50,16 @@ CREATE TABLE rol_permiso (
     FOREIGN KEY (id_permiso) REFERENCES permiso(id_permiso) ON DELETE CASCADE
 );
 
+-- Legal Terms Versions
+CREATE TABLE legal_terms_versions (
+    id_term INT AUTO_INCREMENT PRIMARY KEY,
+    version VARCHAR(50) NOT NULL UNIQUE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Usuarios de la plataforma
 CREATE TABLE usuario (
     id_usuario      INT AUTO_INCREMENT PRIMARY KEY,
@@ -64,7 +74,24 @@ CREATE TABLE usuario (
     consent_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
     consent_version VARCHAR(50) DEFAULT 'v1.0',
     fecha_registro  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP
+    fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (consent_version) REFERENCES legal_terms_versions(version) ON DELETE SET NULL
+);
+
+-- User Consents Log
+CREATE TABLE user_consents (
+    id_consent INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NULL,
+    consent_version VARCHAR(50) NULL,
+    accepted TINYINT(1) NOT NULL DEFAULT 0,
+    consent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(100),
+    user_agent VARCHAR(512),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_consents_usuario (id_usuario),
+    INDEX idx_user_consents_version (consent_version),
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE SET NULL,
+    FOREIGN KEY (consent_version) REFERENCES legal_terms_versions(version) ON DELETE SET NULL
 );
 
 -- Índices en usuario
@@ -515,22 +542,26 @@ INSERT INTO rol_permiso VALUES
 (4,1),(4,4),                    -- Designer
 (5,1),(5,6);                    -- Stakeholder
 
+-- Legal Terms Version
+INSERT INTO legal_terms_versions (version, title, content, is_active) VALUES
+('v1.0', 'Términos y Condiciones', 'SCRUM APP\nSistema de Gestión de Proyectos Ágiles\n\nTÉRMINOS Y CONDICIONES\n...', 1);
+
 -- Usuarios (123456 es la contraseña encriptada)
 -- $2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6 = 123456
-INSERT INTO usuario (id_usuario, email, password, nombre, telefono, ciudad) VALUES
-(1, 'po1@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Ana Product Owner',   '3000000001', 'Bogotá'),
-(2, 'sm1@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Carlos Scrum Master', '3000000002', 'Medellín'),
-(3, 'dev1@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'David Developer 1',   '3000000003', 'Cali'),
-(4, 'dev2@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Elena Developer 2',   '3000000004', 'Bogotá'),
-(5, 'dev3@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Felipe Developer 3',  '3000000005', 'Barranquilla'),
-(6, 'po2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Gloria PO Ecommerce', '3000000006', 'Bogotá'),
-(7, 'sm2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Hugo SM Ecommerce',   '3000000007', 'Medellín'),
-(8, 'po3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Irene PO Banking',    '3000000008', 'Cali'),
-(9, 'sm3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Jorge SM Banking',    '3000000009', 'Bogotá'),
-(10, 'sofia@gmail.com', '$2a$10$QuHh1.Nl7qyyqVg5.y6R..Z8EEYkCYU/9YqkKCsGka0MlGScUqLHe', 'Sofia Product Owner', '3000000010', 'Bogotá'),
-(11, 'mariana@gmail.com', '$2a$10$96N9jsvGIZlWxhinTZumJO9jl.5uudnJO01QmF3nZU8u.LTCFJ9BO', 'Mariana Scrum Master', '3000000011', 'Medellín'),
-(12, 'jefferson@gmail.com', '$2a$10$RsqLxpNphe.5ldtzvA93BepI67bq4qU9Y0UuRSsXJVoUoaW.0lBaO', 'Jefferson Developer', '3000000012', 'Cali'),
-(13, 'johan@gmail.com', '$2a$10$5i1oqepFjY5tdBXdNXSrbuR1ww7kNqtq4cU4EO6401XPpiM1eH9mi', 'Johan Developer', '3000000013', 'Bogotá');
+INSERT INTO usuario (id_usuario, email, password, nombre, telefono, ciudad, consent_granted, consent_version, consent_at) VALUES
+(1, 'po1@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Ana Product Owner',   '3000000001', 'Bogotá', 1, 'v1.0', NOW()),
+(2, 'sm1@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Carlos Scrum Master', '3000000002', 'Medellín', 1, 'v1.0', NOW()),
+(3, 'dev1@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'David Developer 1',   '3000000003', 'Cali', 1, 'v1.0', NOW()),
+(4, 'dev2@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Elena Developer 2',   '3000000004', 'Bogotá', 1, 'v1.0', NOW()),
+(5, 'dev3@demo.com',    '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Felipe Developer 3',  '3000000005', 'Barranquilla', 1, 'v1.0', NOW()),
+(6, 'po2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Gloria PO Ecommerce', '3000000006', 'Bogotá', 1, 'v1.0', NOW()),
+(7, 'sm2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Hugo SM Ecommerce',   '3000000007', 'Medellín', 1, 'v1.0', NOW()),
+(8, 'po3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Irene PO Banking',    '3000000008', 'Cali', 1, 'v1.0', NOW()),
+(9, 'sm3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Jorge SM Banking',    '3000000009', 'Bogotá', 1, 'v1.0', NOW()),
+(10, 'sofia@gmail.com', '$2a$10$QuHh1.Nl7qyyqVg5.y6R..Z8EEYkCYU/9YqkKCsGka0MlGScUqLHe', 'Sofia Product Owner', '3000000010', 'Bogotá', 1, 'v1.0', NOW()),
+(11, 'mariana@gmail.com', '$2a$10$96N9jsvGIZlWxhinTZumJO9jl.5uudnJO01QmF3nZU8u.LTCFJ9BO', 'Mariana Scrum Master', '3000000011', 'Medellín', 1, 'v1.0', NOW()),
+(12, 'jefferson@gmail.com', '$2a$10$RsqLxpNphe.5ldtzvA93BepI67bq4qU9Y0UuRSsXJVoUoaW.0lBaO', 'Jefferson Developer', '3000000012', 'Cali', 1, 'v1.0', NOW()),
+(13, 'johan@gmail.com', '$2a$10$5i1oqepFjY5tdBXdNXSrbuR1ww7kNqtq4cU4EO6401XPpiM1eH9mi', 'Johan Developer', '3000000013', 'Bogotá', 1, 'v1.0', NOW());
 
 -- Roles globales a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
