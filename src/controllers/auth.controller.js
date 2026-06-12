@@ -89,19 +89,8 @@ export const register = async (req, res, next) => {
       consentAt: new Date(),
     });
 
-    const token = crypto.randomUUID();
-    const expiraEn = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-    await pool.query(
-      "INSERT INTO email_verification_token (id_usuario, token, expira_en) VALUES (?, ?, ?)",
-      [user.id_usuario, token, expiraEn],
-    );
-
-    // Intentar enviar el correo, pero no fallar el registro si falla el SMTP
-    try {
-      await sendVerificationEmail(email, nombre, token);
-    } catch (emailError) {
-      console.error("Error al enviar el correo de verificación:", emailError);
-    }
+    // Se removió el envío de correo de verificación a petición del usuario.
+    // Los usuarios ahora pueden registrarse libremente sin confirmar email.
 
     return sendSuccess(res, user, "Usuario registrado correctamente", 201);
   } catch (error) {
@@ -144,14 +133,7 @@ export const login = async (req, res, next) => {
       );
     }
 
-    if (!user.is_verified) {
-      return next(
-        buildError("Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.", {
-          statusCode: 403,
-          error: "EMAIL_NOT_VERIFIED",
-        }),
-      );
-    }
+    // Verificación de email desactivada para permitir acceso libre.
 
     const permisos = user.permisos?.map((permiso) => permiso.nombre) || [];
     const accessToken = generateToken(
