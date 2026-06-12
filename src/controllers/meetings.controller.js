@@ -391,9 +391,20 @@ export const getMeetings = async (req, res) => {
     const conditions = [];
     const values = [];
 
+    const userId = req.user?.id_usuario;
+    const useAuth = process.env.USE_AUTH === "true";
+
     if (id_proyecto) {
       conditions.push("id_proyecto = ?");
       values.push(id_proyecto);
+    } else if (useAuth && userId) {
+      conditions.push(`id_proyecto IN (
+        SELECT p.id_proyecto FROM proyecto p
+        LEFT JOIN equipo_proyecto ep ON p.id_proyecto = ep.id_proyecto
+        LEFT JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto AND uep.activo = 1
+        WHERE p.creado_por = ? OR uep.id_usuario = ?
+      )`);
+      values.push(userId, userId);
     }
 
     if (sprint) {
