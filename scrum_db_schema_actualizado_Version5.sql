@@ -6,7 +6,7 @@
 --   2. Backlog de Producto
 --   3. Sprints
 --   4. Tablón de Tareas (Kanban / Scrum Board)
--- Versión: 2.1 (optimizada con índices y mejoras)
+-- Versión: 5.0 (añadidos id_tarea e id_sprint en notificacion)
 -- ============================================================
 
 DROP DATABASE IF EXISTS scrum_db;
@@ -160,6 +160,8 @@ CREATE TABLE notificacion (
     id_solicitud        INT DEFAULT NULL,
     id_meeting          INT DEFAULT NULL,
     id_proyecto         INT DEFAULT NULL,
+    id_tarea            INT DEFAULT NULL,
+    id_sprint           INT DEFAULT NULL,
     accion              VARCHAR(50) DEFAULT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud) ON DELETE CASCADE
