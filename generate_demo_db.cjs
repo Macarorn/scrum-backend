@@ -55,11 +55,16 @@ INSERT INTO usuario (id_usuario, email, password, nombre, telefono, ciudad) VALU
 (6, 'po2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Gloria PO Ecommerce', '3000000006', 'Bogotá'),
 (7, 'sm2@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Hugo SM Ecommerce',   '3000000007', 'Medellín'),
 (8, 'po3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Irene PO Banking',    '3000000008', 'Cali'),
-(9, 'sm3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Jorge SM Banking',    '3000000009', 'Bogotá');
+(9, 'sm3@demo.com',     '$2a$10$.w6B0nM/2JfzqxpguOAr0Opw4D7Y0CPnr9fryEcYc4nVJNPhjUUR6', 'Jorge SM Banking',    '3000000009', 'Bogotá'),
+(10, 'sofia@gmail.com', '$2a$10$QuHh1.Nl7qyyqVg5.y6R..Z8EEYkCYU/9YqkKCsGka0MlGScUqLHe', 'Sofia Product Owner', '3000000010', 'Bogotá'),
+(11, 'mariana@gmail.com', '$2a$10$96N9jsvGIZlWxhinTZumJO9jl.5uudnJO01QmF3nZU8u.LTCFJ9BO', 'Mariana Scrum Master', '3000000011', 'Medellín'),
+(12, 'jefferson@gmail.com', '$2a$10$RsqLxpNphe.5ldtzvA93BepI67bq4qU9Y0UuRSsXJVoUoaW.0lBaO', 'Jefferson Developer', '3000000012', 'Cali'),
+(13, 'johan@gmail.com', '$2a$10$5i1oqepFjY5tdBXdNXSrbuR1ww7kNqtq4cU4EO6401XPpiM1eH9mi', 'Johan Developer', '3000000013', 'Bogotá');
 
 -- Roles globales a usuarios
 INSERT INTO usuario_rol (id_usuario, id_rol) VALUES
-(1, 1), (2, 2), (3, 3), (4, 3), (5, 3), (6, 1), (7, 2), (8, 1), (9, 2);
+(1, 1), (2, 2), (3, 3), (4, 3), (5, 3), (6, 1), (7, 2), (8, 1), (9, 2),
+(10, 1), (11, 2), (12, 3), (13, 3);
 
 -- Etiquetas del tablero
 INSERT INTO etiqueta (nombre, color) VALUES
@@ -75,13 +80,14 @@ INSERT INTO etiqueta (nombre, color) VALUES
 -- PROYECTO 1: Scrum Track Development (Estado: Activo)
 -- ============================================================
 INSERT INTO proyecto (id_proyecto, nombre, descripcion, tipo, estado, codigo_proyecto, team_size, creado_por) VALUES
-(1, 'Scrum Track Development', 'Desarrollo de la plataforma principal de gestión ágil', 'Desarrollo de software', 'activo', 'SCRUMDEV', 5, 1);
+(1, 'Scrum Track Development', 'Desarrollo de la plataforma principal de gestión ágil', 'Desarrollo de software', 'activo', 'SCRUMDEV', 9, 1);
 
 INSERT INTO equipo_proyecto (id_equipo_proyecto, id_proyecto, nombre, descripcion) VALUES
 (1, 1, 'Equipo ScrumTrack', 'Equipo de desarrollo principal');
 
 INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol) VALUES
-(1, 1, 1), (2, 1, 2), (3, 1, 3), (4, 1, 3), (5, 1, 3);
+(1, 1, 1), (2, 1, 2), (3, 1, 3), (4, 1, 3), (5, 1, 3),
+(10, 1, 1), (11, 1, 2), (12, 1, 3), (13, 1, 3);
 
 -- Epicas
 INSERT INTO epica (id_epica, id_proyecto, nombre, descripcion, estado) VALUES
@@ -225,6 +231,16 @@ INSERT INTO tarea_usuario (id_tarea, id_usuario, es_responsable) VALUES
 (24, 5, 1), (25, 5, 1), (26, 5, 1), (27, 5, 1), (28, 5, 1), (29, 5, 1),
 (30, 5, 1), (31, 5, 1), (32, 5, 1), (33, 5, 1), (34, 5, 1), (35, 5, 1);
 
+
+-- ============================================================
+-- REUNIONES
+-- ============================================================
+INSERT INTO meeting (title, description, sprint, status, date, type, startTime, duration, room, link) VALUES
+('Sprint Planning 2', 'Planificación del Sprint 2', '2', 'programada', DATE_ADD(NOW(), INTERVAL 1 DAY), 'planning', '09:00', '120', 'Sala A', 'https://meet.google.com/abc-defg-hij'),
+('Daily Standup', 'Reunión diaria de sincronización', '2', 'programada', DATE_ADD(NOW(), INTERVAL 2 DAY), 'daily', '09:00', '15', 'Sala B', 'https://meet.google.com/xyz-uvw-rst'),
+('Sprint Review', 'Revisión de lo avanzado en Sprint 2', '2', 'programada', DATE_ADD(NOW(), INTERVAL 13 DAY), 'review', '15:00', '60', 'Sala Principal', 'https://meet.google.com/123-456-789'),
+('Retrospectiva Sprint 1', 'Retrospectiva del Sprint 1', '1', 'completada', DATE_SUB(NOW(), INTERVAL 1 DAY), 'retro', '16:00', '60', 'Sala C', 'https://meet.google.com/qwe-asd-zxc'),
+('Refinamiento de Backlog', 'Refinar historias para Sprint 3', '2', 'programada', DATE_ADD(NOW(), INTERVAL 5 DAY), 'refinement', '14:00', '60', 'Sala D', 'https://meet.google.com/rty-fgh-vbn');
 
 -- ============================================================
 -- NOTIFICACIONES
