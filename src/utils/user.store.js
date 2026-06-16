@@ -98,8 +98,8 @@ const loadUsers = async () => {
 
 const sanitizeUser = (user) => {
   if (!user) return null;
-  const { passwordHash, ...safeUser } = user;
-  return safeUser;
+  const { passwordHash, password, ...safeUser } = user;
+  return JSON.parse(JSON.stringify(safeUser));
 };
 
 const getRoleById = async (idRol) => {
@@ -253,7 +253,7 @@ export const findUserWithSecretByEmail = async (email) => {
     WHERE ur.id_usuario = ?
   `, [user.id_usuario]);
 
-  user.permisos = permisosRows;
+  user.permisos = permisosRows.map((permiso) => permiso.nombre);
   user.passwordHash = user.password; // Renombrar para consistencia
   return user;
 };
@@ -284,7 +284,7 @@ export const findUserWithSecretById = async (id) => {
     WHERE ur.id_usuario = ?
   `, [user.id_usuario]);
 
-  user.permisos = permisosRows;
+  user.permisos = permisosRows.map((permiso) => permiso.nombre);
   user.passwordHash = user.password;
   return user;
 };
