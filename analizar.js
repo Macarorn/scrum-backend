@@ -3,7 +3,7 @@ import { createInterface } from 'readline';
 import pool from './src/utils/database.js';
 
 // ─── Configuración ───
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "AQ.Ab8RN6J5JJCALJPQtEKlZGVu8hnbMXViO_r314WiRmQPBhsN3w" });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const ID_PROYECTO = 1; // Cambia este número si quieres analizar otro proyecto
 
 // ─── Obtener métricas reales de la BD ───
