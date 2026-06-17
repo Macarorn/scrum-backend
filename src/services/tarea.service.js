@@ -370,7 +370,7 @@ export async function listarTareasPorHistoria(idHistoria, estado) {
   const tareasConAsignados = await Promise.all(
     rows.map(async (row) => {
       const [asignados] = await pool.query(
-        `SELECT u.id_usuario, u.nombre
+        `SELECT tu.id_usuario, tu.es_responsable, u.nombre
          FROM tarea_usuario tu
          JOIN usuario u ON tu.id_usuario = u.id_usuario
          WHERE tu.id_tarea = ?`,
@@ -426,7 +426,7 @@ export async function listarTareasPorSprint(idSprint, estado) {
   const tareasConAsignados = await Promise.all(
     rows.map(async (row) => {
       const [asignados] = await pool.query(
-        `SELECT u.id_usuario, u.nombre
+        `SELECT tu.id_usuario, tu.es_responsable, u.nombre
          FROM tarea_usuario tu
          JOIN usuario u ON tu.id_usuario = u.id_usuario
          WHERE tu.id_tarea = ?`,
@@ -514,14 +514,14 @@ export async function crearTarea(data, userId) {
     throw error;
   }
 
-  // NO asignar automáticamente al creador - solo asignar si se proporciona responsableId
-  // if (Number.isInteger(responsableId) && responsableId > 0) {
-  //   await pool.query(
-  //     `INSERT IGNORE INTO tarea_usuario (id_tarea, id_usuario, es_responsable)
-  //      VALUES (?, ?, 1)`,
-  //     [result.insertId, responsableId],
-  //   );
-  // }
+  // Asignar al responsable en tarea_usuario si se proporciona
+  if (Number.isInteger(responsableId) && responsableId > 0) {
+    await pool.query(
+      `INSERT IGNORE INTO tarea_usuario (id_tarea, id_usuario, es_responsable)
+       VALUES (?, ?, 1)`,
+      [result.insertId, responsableId],
+    );
+  }
 
   const sprintAsignadoKanban = await asegurarHistoriaEnSprintParaKanban(
     idHistoria,
@@ -537,27 +537,33 @@ export async function crearTarea(data, userId) {
   // Enviar notificación al responsable si se asignó uno al crear la tarea
   if (responsableId) {
     try {
+      console.log(`[DEBUG] Creando notificación para responsable ${responsableId} de tarea ${result.insertId}`);
       const tareaCreada = await obtenerFilaTarea(result.insertId);
       
       // Obtener información del proyecto
       const [proyectoRows] = await pool.query(
-        `SELECT p.id_proyecto, p.nombre 
+        `SELECT p.id_proyecto, p.nombre, h.id_sprint
          FROM proyecto p
-         JOIN historia_usuario h ON h.id_proyecto = p.id_proyecto
+         JOIN epica e ON e.id_proyecto = p.id_proyecto
+         JOIN historia_usuario h ON h.id_epica = e.id_epica
          WHERE h.id_historia = ?`,
         [idHistoria]
       );
       const proyecto = proyectoRows[0];
 
-      await notificacionesService.crearNotificacion({
+      const notificacionId = await notificacionesService.crearNotificacion({
         id_usuario: Number(responsableId),
         tipo: 'tarea_asignada',
-        titulo: 'Tarea asignada',
-        mensaje: `Has sido asignado a la tarea "${data.nombre}"${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
+        titulo: 'Tarea asignada como responsable',
+        mensaje: `Has sido asignado como responsable de la tarea "${data.nombre}"${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
         id_proyecto: proyecto?.id_proyecto || null,
+        id_tarea: result.insertId,
+        id_sprint: proyecto?.id_sprint || null,
       });
+      console.log(`[DEBUG] Notificación creada con ID: ${notificacionId}`);
     } catch (notifError) {
-      console.warn("No se pudo enviar notificación de asignación al crear tarea:", notifError.message);
+      console.error("No se pudo enviar notificación de asignación al crear tarea:", notifError);
+      console.error("Stack trace:", notifError.stack);
     }
   }
 
@@ -652,14 +658,56 @@ export async function actualizarTareaPorId(id, data, userId) {
     data.estado !== undefined ? data.estado : actual.estado,
   );
 
+  // Enviar notificación de actualización al responsable y asignados (excepto al que actualizó)
+  try {
+    // Obtener información del proyecto
+    const [proyectoRows] = await pool.query(
+      `SELECT p.id_proyecto, p.nombre, h.id_sprint
+       FROM proyecto p
+       JOIN epica e ON e.id_proyecto = p.id_proyecto
+       JOIN historia_usuario h ON h.id_epica = e.id_epica
+       WHERE h.id_historia = ?`,
+      [actual.id_historia]
+    );
+    const proyecto = proyectoRows[0];
+
+    // Obtener usuarios asignados a la tarea
+    const [asignadosRows] = await pool.query(
+      `SELECT id_usuario, es_responsable FROM tarea_usuario WHERE id_tarea = ?`,
+      [Number(id)]
+    );
+
+    // Enviar notificación a cada usuario asignado (excepto al que actualizó)
+    for (const asignado of asignadosRows) {
+      if (Number(asignado.id_usuario) !== Number(userId)) {
+        try {
+          await notificacionesService.crearNotificacion({
+            id_usuario: Number(asignado.id_usuario),
+            tipo: 'tarea_actualizada',
+            titulo: asignado.es_responsable ? 'Tarea actualizada (responsable)' : 'Tarea actualizada',
+            mensaje: `La tarea "${actual.nombre}" ha sido actualizada${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
+            id_proyecto: proyecto?.id_proyecto || null,
+            id_tarea: Number(id),
+            id_sprint: proyecto?.id_sprint || null,
+          });
+        } catch (notifError) {
+          console.warn(`No se pudo enviar notificación de actualización al usuario ${asignado.id_usuario}:`, notifError.message);
+        }
+      }
+    }
+  } catch (notifError) {
+    console.warn("No se pudo enviar notificación de actualización:", notifError.message);
+  }
+
   // Enviar notificaciones si cambió el responsable
   if (nuevoResponsableId !== null && nuevoResponsableId !== responsableActual) {
     try {
       // Obtener información del proyecto
       const [proyectoRows] = await pool.query(
-        `SELECT p.id_proyecto, p.nombre 
+        `SELECT p.id_proyecto, p.nombre, h.id_sprint
          FROM proyecto p
-         JOIN historia_usuario h ON h.id_proyecto = p.id_proyecto
+         JOIN epica e ON e.id_proyecto = p.id_proyecto
+         JOIN historia_usuario h ON h.id_epica = e.id_epica
          WHERE h.id_historia = ?`,
         [actual.id_historia]
       );
@@ -679,6 +727,8 @@ export async function actualizarTareaPorId(id, data, userId) {
           titulo: 'Tarea reasignada',
           mensaje: `La tarea "${actual.nombre}" te ha sido asignada${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
           id_proyecto: proyecto?.id_proyecto || null,
+          id_tarea: Number(id),
+          id_sprint: proyecto?.id_sprint || null,
         });
       }
 
@@ -690,6 +740,8 @@ export async function actualizarTareaPorId(id, data, userId) {
           titulo: 'Tarea reasignada',
           mensaje: `La tarea "${actual.nombre}" te ha sido reasignada a otro usuario${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
           id_proyecto: proyecto?.id_proyecto || null,
+          id_tarea: Number(id),
+          id_sprint: proyecto?.id_sprint || null,
         });
       }
     } catch (notifError) {
@@ -701,12 +753,57 @@ export async function actualizarTareaPorId(id, data, userId) {
 }
 
 export async function eliminarTareaPorId(id, userId) {
+  // Obtener información de la tarea antes de eliminarla
+  const tarea = await obtenerFilaTarea(id);
+  if (!tarea) {
+    throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
+  }
+
+  // Obtener usuarios asignados a la tarea
+  const [asignadosRows] = await pool.query(
+    `SELECT id_usuario, es_responsable FROM tarea_usuario WHERE id_tarea = ?`,
+    [Number(id)]
+  );
+
+  // Obtener información del proyecto
+  const [proyectoRows] = await pool.query(
+    `SELECT p.id_proyecto, p.nombre, h.id_sprint
+     FROM proyecto p
+     JOIN epica e ON e.id_proyecto = p.id_proyecto
+     JOIN historia_usuario h ON h.id_epica = e.id_epica
+     WHERE h.id_historia = ?`,
+    [tarea.id_historia]
+  );
+  const proyecto = proyectoRows[0];
+
+  // Eliminar la tarea
   const [result] = await pool.query(`DELETE FROM tarea WHERE id_tarea = ?`, [
     Number(id),
   ]);
 
   if (result.affectedRows === 0) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
+  }
+
+  // Enviar notificaciones a los usuarios asignados (excepto al que eliminó la tarea)
+  for (const asignado of asignadosRows) {
+    if (Number(asignado.id_usuario) !== Number(userId)) {
+      try {
+        await notificacionesService.crearNotificacion({
+          id_usuario: Number(asignado.id_usuario),
+          tipo: 'tarea_desasignada',
+          titulo: asignado.es_responsable ? 'Tarea eliminada (responsable)' : 'Tarea eliminada',
+          mensaje: asignado.es_responsable
+            ? `La tarea "${tarea.nombre}" de la que eras responsable ha sido eliminada${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`
+            : `La tarea "${tarea.nombre}" a la que estabas asignado ha sido eliminada${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
+          id_proyecto: proyecto?.id_proyecto || null,
+          id_tarea: Number(id),
+          id_sprint: proyecto?.id_sprint || null,
+        });
+      } catch (notifError) {
+        console.warn(`No se pudo enviar notificación de eliminación al usuario ${asignado.id_usuario}:`, notifError.message);
+      }
+    }
   }
 
   return { id_tarea: Number(id), eliminado: true };
@@ -778,7 +875,7 @@ export async function registrarTiempoReal(id, tiempo, userId) {
   return await obtenerTareaPorId(id);
 }
 
-export async function asignarUsuarioTarea(id, userId, actorId) {
+export async function asignarUsuarioTarea(id, userId, actorId, esResponsable = 0) {
   const tarea = await obtenerFilaTarea(id);
   if (!tarea) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
@@ -786,8 +883,8 @@ export async function asignarUsuarioTarea(id, userId, actorId) {
 
   const [result] = await pool.query(
     `INSERT IGNORE INTO tarea_usuario (id_tarea, id_usuario, es_responsable)
-     VALUES (?, ?, 0)`,
-    [Number(id), Number(userId)],
+     VALUES (?, ?, ?)`,
+    [Number(id), Number(userId), esResponsable ? 1 : 0],
   );
 
   if (result.affectedRows === 0) {
@@ -797,7 +894,7 @@ export async function asignarUsuarioTarea(id, userId, actorId) {
   await registrarAuditoriaHistorial(
     id,
     Number(actorId) || 1,
-    `Usuario ${Number(userId)} asignado`,
+    `Usuario ${Number(userId)} asignado${esResponsable ? ' como responsable' : ''}`,
   );
 
   // Enviar notificación al usuario asignado
@@ -813,9 +910,10 @@ export async function asignarUsuarioTarea(id, userId, actorId) {
 
     // Obtener información del proyecto
     const [proyectoRows] = await pool.query(
-      `SELECT p.id_proyecto, p.nombre 
+      `SELECT p.id_proyecto, p.nombre, h.id_sprint
        FROM proyecto p
-       JOIN historia_usuario h ON h.id_proyecto = p.id_proyecto
+       JOIN epica e ON e.id_proyecto = p.id_proyecto
+       JOIN historia_usuario h ON h.id_epica = e.id_epica
        WHERE h.id_historia = ?`,
       [tarea.id_historia]
     );
@@ -825,9 +923,13 @@ export async function asignarUsuarioTarea(id, userId, actorId) {
     const notificacionId = await notificacionesService.crearNotificacion({
       id_usuario: Number(userId),
       tipo: 'tarea_asignada',
-      titulo: 'Tarea asignada',
-      mensaje: `Has sido asignado a la tarea "${tarea.nombre}"${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
+      titulo: esResponsable ? 'Tarea asignada como responsable' : 'Tarea asignada',
+      mensaje: esResponsable 
+        ? `Has sido asignado como responsable de la tarea "${tarea.nombre}"${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`
+        : `Has sido asignado a la tarea "${tarea.nombre}"${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
       id_proyecto: proyecto?.id_proyecto || null,
+      id_tarea: Number(id),
+      id_sprint: proyecto?.id_sprint || null,
     });
     console.log(`[DEBUG] Notificación creada con ID: ${notificacionId}`);
   } catch (notifError) {
@@ -855,6 +957,31 @@ export async function desasignarUsuarioTarea(id, userId, actorId) {
     Number(actorId) || 1,
     `Usuario ${Number(userId)} desasignado`,
   );
+
+  // Enviar notificación al usuario desasignado
+  try {
+    const [proyectoRows] = await pool.query(
+      `SELECT p.id_proyecto, p.nombre, h.id_sprint
+       FROM proyecto p
+       JOIN epica e ON e.id_proyecto = p.id_proyecto
+       JOIN historia_usuario h ON h.id_epica = e.id_epica
+       WHERE h.id_historia = ?`,
+      [tarea.id_historia]
+    );
+    const proyecto = proyectoRows[0];
+
+    await notificacionesService.crearNotificacion({
+      id_usuario: Number(userId),
+      tipo: 'tarea_desasignada',
+      titulo: 'Tarea desasignada',
+      mensaje: `Has sido desasignado de la tarea "${tarea.nombre}"${proyecto ? ` en el proyecto "${proyecto.nombre}"` : ''}`,
+      id_proyecto: proyecto?.id_proyecto || null,
+      id_tarea: Number(id),
+      id_sprint: proyecto?.id_sprint || null,
+    });
+  } catch (notifError) {
+    console.warn("No se pudo enviar notificación de desasignación:", notifError.message);
+  }
 
   return await obtenerTareaPorId(id);
 }

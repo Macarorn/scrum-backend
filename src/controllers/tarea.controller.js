@@ -195,6 +195,7 @@ export const asignarUsuarioTarea = async (req, res, next) => {
       req.params.id,
       req.body.id_usuario ?? req.body.userId,
       userIdFromReq(req),
+      req.body.es_responsable ?? req.body.esResponsable ?? 0,
     );
     res.status(200).json({
       success: true,

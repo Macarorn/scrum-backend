@@ -6,7 +6,7 @@
 --   2. Backlog de Producto
 --   3. Sprints
 --   4. Tablón de Tareas (Kanban / Scrum Board)
--- Versión: 2.1 (optimizada con índices y mejoras)
+-- Versión: 5.0 (añadidos id_tarea e id_sprint en notificacion)
 -- ============================================================
 
 DROP DATABASE IF EXISTS scrum_db;
@@ -152,7 +152,7 @@ CREATE TABLE solicitud (
 CREATE TABLE notificacion (
     id_notificacion     INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario          INT NOT NULL,
-    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio','reunion_creada','reunion_actualizada','reunion_eliminada') NOT NULL DEFAULT 'informativa',
+    tipo                ENUM('sistema','urgente','prioritaria','mensajeria','informativa','recordatorio','reunion_creada','reunion_actualizada','reunion_eliminada','tarea_asignada','tarea_desasignada','tarea_reasignada','tarea_actualizada') NOT NULL DEFAULT 'informativa',
     titulo              VARCHAR(200) NOT NULL,
     mensaje             TEXT,
     leida               TINYINT(1) NOT NULL DEFAULT 0,
@@ -160,6 +160,8 @@ CREATE TABLE notificacion (
     id_solicitud        INT DEFAULT NULL,
     id_meeting          INT DEFAULT NULL,
     id_proyecto         INT DEFAULT NULL,
+    id_tarea            INT DEFAULT NULL,
+    id_sprint           INT DEFAULT NULL,
     accion              VARCHAR(50) DEFAULT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud) ON DELETE CASCADE
@@ -315,9 +317,11 @@ CREATE TABLE meeting (
     title VARCHAR(200) NOT NULL,
     description TEXT,
     sprint VARCHAR(100) NOT NULL,
+    id_sprint INT DEFAULT NULL,
     status VARCHAR(100) DEFAULT 'programada',
     date DATETIME NOT NULL,
     type VARCHAR(100),
+    priority VARCHAR(20) DEFAULT 'estandar',
     startTime VARCHAR(20),
     duration VARCHAR(50),
     room VARCHAR(100),
