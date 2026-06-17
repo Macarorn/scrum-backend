@@ -27,6 +27,7 @@ import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import documentosRoutes from "./routes/documentos.routes.js";
+import powerbiRoutes from "./routes/powerbi.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
 
@@ -113,6 +114,7 @@ app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/legal", legalRoutes);
+app.use("/api/powerbi", powerbiRoutes);
 
 import pool from "./utils/database.js";
 app.get("/api/fix-encoding", async (req, res) => {
@@ -236,7 +238,7 @@ if (config.server.nodeEnv !== "test") {
         await addCol('is_verified', 'TINYINT(1) DEFAULT 0');
         await addCol('consent_granted', 'TINYINT(1) DEFAULT 0');
         await addCol('consent_at', 'DATETIME NULL');
-        await addCol('consent_version', 'VARCHAR(20) DEFAULT \\\'v1.0\\\'');
+        await addCol('consent_version', "VARCHAR(20) DEFAULT 'v1.0'");
 
         // Auto-verify ALL existing unverified users.
         // The verify-email frontend page was previously missing, so no user

@@ -20,7 +20,7 @@ npm install
 
 ```bash
 cp .env.example .env
-# Editar .env con tus valores
+# Editar .env con tus valores (incluyendo POWERBI_API_KEY)
 ```
 
 3. **Crear base de datos**
@@ -198,6 +198,18 @@ Gestión del Product Backlog y definición de requerimientos detallados.
 `DELETE /api/historias/:id` - Elimina una historia del backlog - Product Owner, Scrum Master, Usuario 
 `GET /api/historias/:id/criterios` - Lista los criterios de una historia especifica - Usuario Autenticado 
 `POST /api/historias/:id/criterios` - Crea un criterio vinculado a una historia - Product Owner, Scrum Master, Usuario 
+
+
+### Integración con Power BI
+
+Endpoints dedicados para la exportación de datos hacia Microsoft Power BI u otras herramientas de Business Intelligence. Todos los endpoints requieren que se pase el parámetro `apiKey` en la URL o en el header `x-api-key`, el cual debe coincidir con la variable `POWERBI_API_KEY` de tu archivo `.env`.
+
+`GET /api/powerbi/proyectos` - Lista completa de proyectos.
+`GET /api/powerbi/sprints` - Lista completa de sprints.
+`GET /api/powerbi/epicas` - Lista completa de épicas.
+`GET /api/powerbi/historias` - Lista completa de historias de usuario.
+`GET /api/powerbi/tareas` - Lista completa de tareas y sus tiempos reales/estimados.
+`GET /api/powerbi/usuarios` - Lista completa de usuarios para cruzar información.
 
 
 ## Endpoints Principales
