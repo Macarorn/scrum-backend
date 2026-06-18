@@ -1,4 +1,5 @@
 import pool from "../utils/database.js";
+import { obtenerProyecto } from "../services/proyectos.service.js";
 import notificacionesService from "../services/notificaciones.service.js";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -43,39 +44,6 @@ const getDateMetadata = (value, priority) => {
   };
 };
 
-const ensureMeetingTable = async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS meeting (
-      id_meeting INT AUTO_INCREMENT PRIMARY KEY,
-      id_proyecto INT,
-      title VARCHAR(200) NOT NULL,
-      description TEXT,
-      sprint VARCHAR(100) NOT NULL,
-      status VARCHAR(100) DEFAULT 'programada',
-      date DATETIME NOT NULL,
-      type VARCHAR(100),
-      priority VARCHAR(20) DEFAULT 'media',
-      startTime VARCHAR(20),
-      duration VARCHAR(50),
-      room VARCHAR(100),
-      link VARCHAR(255),
-      fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      fecha_actualizacion DATETIME ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE
-    )
-  `);
-
-  const [columns] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'id_proyecto'");
-  if (columns.length === 0) {
-    await pool.query("ALTER TABLE meeting ADD COLUMN id_proyecto INT AFTER id_meeting");
-    await pool.query("ALTER TABLE meeting ADD FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE");
-  }
-
-  const [priorityCol] = await pool.query("SHOW COLUMNS FROM meeting LIKE 'priority'");
-  if (priorityCol.length === 0) {
-    await pool.query("ALTER TABLE meeting ADD COLUMN priority VARCHAR(20) DEFAULT 'media' AFTER type");
-  }
-};
 
 const parseMeetingDate = (value) => {
   if (!value) return null;
@@ -92,7 +60,8 @@ const parseMeetingDate = (value) => {
 };
 
 const normalizeMeetingPayload = (body) => {
-  const id_proyecto = body.id_proyecto ? Number(body.id_proyecto) : null;
+  const idProyectoRaw = body.id_proyecto ?? body.proyectoId;
+  const id_proyecto = idProyectoRaw ? Number(idProyectoRaw) : null;
   const title = String(body.title || "").trim();
   const description = String(body.description || "").trim();
   const sprint = String(body.sprint || "").trim();
@@ -217,8 +186,46 @@ const notifyMeetingChange = async (id_proyecto, titulo, nombreProyecto, fecha, h
 
 export const createMeeting = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const payload = normalizeMeetingPayload(req.body);
+    const idProyectoRaw = payload.id_proyecto ?? req.query.id_proyecto ?? req.query.proyectoId;
+    const id_proyecto = Number(idProyectoRaw);
+    const useAuth = process.env.USE_AUTH === "true";
+    const userId = req.user?.id_usuario;
+
+    if (!Number.isInteger(id_proyecto) || id_proyecto <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El id_proyecto es obligatorio y debe ser un número válido.",
+      });
+    }
+
+    let proyecto;
+    try {
+      proyecto = await obtenerProyecto(id_proyecto);
+    } catch (err) {
+      return res.status(400).json({ success: false, message: "Proyecto no encontrado." });
+    }
+
+    if (useAuth && !userId) {
+      return res.status(401).json({ success: false, message: "Usuario no autenticado." });
+    }
+
+    if (useAuth) {
+      const [memberRows] = await pool.query(
+        `SELECT 1 FROM usuario_equipo_proyecto uep
+         JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+         WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1 LIMIT 1`,
+        [id_proyecto, userId],
+      );
+
+      if (memberRows.length === 0) {
+        const creatorId = proyecto?.creado_por ?? proyecto?.created_by ?? proyecto?.owner_id ?? null;
+        if (!creatorId || Number(creatorId) !== Number(userId)) {
+          return res.status(403).json({ success: false, message: "No perteneces al proyecto especificado." });
+        }
+      }
+    }
 
     if (!payload.title || !payload.date || !isValidDate(payload.date)) {
       return res.status(400).json({
@@ -260,7 +267,7 @@ export const createMeeting = async (req, res) => {
         (id_proyecto, title, description, sprint, id_sprint, status, date, type, priority, startTime, duration, room, link)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        payload.id_proyecto,
+        id_proyecto,
         payload.title,
         payload.description,
         payload.sprint,
@@ -308,7 +315,7 @@ export const createMeeting = async (req, res) => {
 
 export const updateMeeting = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: "El ID de la reunión es obligatorio." });
@@ -367,7 +374,7 @@ export const updateMeeting = async (req, res) => {
 
 export const deleteMeeting = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: "El ID de la reunión es obligatorio." });
@@ -408,14 +415,25 @@ export const deleteMeeting = async (req, res) => {
 
 export const getMeetings = async (req, res) => {
   try {
-    await ensureMeetingTable();
+
     const { sprint, from, to, q, id_proyecto } = req.query;
     const conditions = [];
     const values = [];
 
+    const userId = req.user?.id_usuario;
+    const useAuth = process.env.USE_AUTH === "true";
+
     if (id_proyecto) {
       conditions.push("id_proyecto = ?");
       values.push(id_proyecto);
+    } else if (useAuth && userId) {
+      conditions.push(`id_proyecto IN (
+        SELECT p.id_proyecto FROM proyecto p
+        LEFT JOIN equipo_proyecto ep ON p.id_proyecto = ep.id_proyecto
+        LEFT JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto AND uep.activo = 1
+        WHERE p.creado_por = ? OR uep.id_usuario = ?
+      )`);
+      values.push(userId, userId);
     }
 
     if (sprint) {
@@ -454,4 +472,44 @@ export const getMeetings = async (req, res) => {
     console.error("Error getMeetings:", error);
     return res.status(500).json({ success: false, message: "Error al obtener las reuniones." });
   }
+};
+
+export const getMeetingsByProject = async (req, res) => {
+  try {
+
+    const projectId = Number(req.params.idProyecto);
+
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      return res.status(400).json({ success: false, message: "idProyecto inválido." });
+    }
+
+    const { from, to } = req.query;
+    const conditions = ["id_proyecto = ?"];
+    const values = [projectId];
+
+    if (from) {
+      const fromDate = new Date(from);
+      if (isValidDate(fromDate)) {
+        conditions.push("date >= ?");
+        values.push(fromDate);
+      }
+    }
+
+    if (to) {
+      const toDate = new Date(to);
+      if (isValidDate(toDate)) {
+        conditions.push("date <= ?");
+        values.push(toDate);
+      }
+    }
+
+    const [meetings] = await pool.query(
+      `SELECT * FROM meeting WHERE ${conditions.join(" AND ")} ORDER BY date ASC`,
+      values,
+    );
+    return res.json({ success: true, data: meetings.map(withMeetingAliases) });
+  } catch (error) {
+    console.error("Error getMeetingsByProject:", error);
+    return res.status(500).json({ success: false, message: "Error al obtener reuniones por proyecto." });
+e  }
 };

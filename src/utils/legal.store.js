@@ -112,76 +112,7 @@ privacidad@scrumapp.edu
 
 Scrum App — v1.0 Mayo 2026`;
 
-const ensureColumnExists = async (table, column, definition) => {
-  const [existing] = await pool.query(
-    `SHOW COLUMNS FROM \`${table}\` LIKE ?`,
-    [column],
-  );
 
-  if (existing.length === 0) {
-    await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN ${definition}`);
-  }
-};
-
-export const initializeLegalStore = async () => {
-  await ensureColumnExists(
-    "usuario",
-    "consent_granted",
-    "consent_granted TINYINT(1) NOT NULL DEFAULT 0",
-  );
-  await ensureColumnExists(
-    "usuario",
-    "consent_at",
-    "consent_at DATETIME NULL DEFAULT NULL",
-  );
-  await ensureColumnExists(
-    "usuario",
-    "consent_version",
-    "consent_version VARCHAR(50) NULL DEFAULT NULL",
-  );
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS legal_terms_versions (
-      id_term INT AUTO_INCREMENT PRIMARY KEY,
-      version VARCHAR(50) NOT NULL UNIQUE,
-      title VARCHAR(255) NOT NULL,
-      content TEXT NOT NULL,
-      is_active TINYINT(1) NOT NULL DEFAULT 0,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS user_consents (
-      id_consent INT AUTO_INCREMENT PRIMARY KEY,
-      id_usuario INT NULL,
-      consent_version VARCHAR(50) NULL,
-      accepted TINYINT(1) NOT NULL DEFAULT 0,
-      consent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      ip_address VARCHAR(100),
-      user_agent VARCHAR(512),
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_user_consents_usuario (id_usuario),
-      INDEX idx_user_consents_version (consent_version),
-      FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE SET NULL,
-      FOREIGN KEY (consent_version) REFERENCES legal_terms_versions(version) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-  `);
-
-  const [rows] = await pool.query(
-    "SELECT 1 FROM legal_terms_versions WHERE version = ? LIMIT 1",
-    ["v1.0"],
-  );
-
-  if (rows.length === 0) {
-    await insertLegalTermsVersion({
-      version: "v1.0",
-      title: "Términos y Condiciones",
-      content: defaultTermsContent,
-      is_active: 1,
-    });
-  }
-};
 
 export const insertLegalTermsVersion = async ({
   version,

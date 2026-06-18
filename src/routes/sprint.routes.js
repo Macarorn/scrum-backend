@@ -3,9 +3,14 @@ const router = express.Router();
 
 import * as controller from '../controllers/sprint.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
-import { checkPermission } from '../middleware/authorization.middleware.js';
+import { checkPermission, requireProjectMember } from '../middleware/authorization.middleware.js';
 
 router.get('/', authMiddleware, controller.getSprints);
+router.get('/project/:idProyecto', authMiddleware, requireProjectMember(), (req, res, next) => {
+	// pasar idProyecto como query para la función existente
+	req.query.id_proyecto = req.params.idProyecto;
+	return controller.getSprints(req, res, next);
+});
 router.post('/', authMiddleware, checkPermission('gestionar_sprints'), controller.createSprint);
 router.get('/:id', authMiddleware, controller.getSprintById);
 router.put('/:id', authMiddleware, checkPermission('gestionar_sprints'), controller.updateSprint);

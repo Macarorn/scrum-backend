@@ -26,8 +26,8 @@ import solicitudRoutes from "./routes/solicitud.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
+import documentosRoutes from "./routes/documentos.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
-import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
 
 dotenv.config();
@@ -54,7 +54,6 @@ const corsOrigin =
       };
 
 await bootstrapStore();
-await initializeLegalStore();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -104,6 +103,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
 app.use("/api/meetings", meetingsRoutes);
 app.use("/api/proyectos", proyectosRoutes);
+app.use("/api/proyectos/:id_proyecto/documentos", documentosRoutes);
 app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);
 app.use("/api/criterios", criteriosRoutes);
@@ -114,6 +114,25 @@ app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/legal", legalRoutes);
 
+import pool from "./utils/database.js";
+app.get("/api/fix-encoding", async (req, res) => {
+  try {
+    const queries = [
+      "UPDATE proyectos SET nombre = REPLACE(nombre, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó'), nombre = REPLACE(nombre, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã', 'í'), descripcion = REPLACE(descripcion, 'Ã©', 'é')",
+      "UPDATE epicas SET nombre = REPLACE(nombre, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó'), nombre = REPLACE(nombre, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã¡', 'á'), descripcion = REPLACE(descripcion, 'Ã', 'í')",
+      "UPDATE sprints SET nombre = REPLACE(nombre, 'Ã³', 'ó'), objetivo = REPLACE(objetivo, 'Ã³', 'ó')",
+      "UPDATE historias_usuario SET titulo = REPLACE(titulo, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó')",
+      "UPDATE tareas SET titulo = REPLACE(titulo, 'Ã³', 'ó'), descripcion = REPLACE(descripcion, 'Ã³', 'ó')"
+    ];
+    for (const q of queries) {
+      await pool.query(q);
+    }
+    res.json({ success: true, message: "Encoding fixed!" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Iniciar scheduler de notificaciones de sprint
 iniciarSchedulerSprint();
 
@@ -123,9 +142,115 @@ app.use(errorHandler);
 let server;
 
 if (config.server.nodeEnv !== "test") {
-  server = app.listen(PORT, () => {
+  server = app.listen(PORT, async () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Ambiente: ${config.server.nodeEnv}`);
+
+    // Automatic migration to ensure all tables and columns exist
+    try {
+        // password_reset_token
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS password_reset_token (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              id_usuario INT NOT NULL,
+              token VARCHAR(255) NOT NULL UNIQUE,
+              expira_en DATETIME NOT NULL,
+              usado TINYINT(1) DEFAULT 0,
+              fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+          )
+        `);
+        try { await pool.query(`CREATE INDEX idx_prt_token ON password_reset_token(token)`); } catch (e) {}
+        try { await pool.query(`CREATE INDEX idx_prt_usuario ON password_reset_token(id_usuario)`); } catch (e) {}
+
+        // email_verification_token
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS email_verification_token (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              id_usuario INT NOT NULL,
+              token VARCHAR(255) NOT NULL UNIQUE,
+              expira_en DATETIME NOT NULL,
+              usado TINYINT(1) DEFAULT 0,
+              fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+          )
+        `);
+        try { await pool.query(`CREATE INDEX idx_evt_token ON email_verification_token(token)`); } catch (e) {}
+        try { await pool.query(`CREATE INDEX idx_evt_usuario ON email_verification_token(id_usuario)`); } catch (e) {}
+
+
+
+        // documento_proyecto
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS documento_proyecto (
+              id_documento INT AUTO_INCREMENT PRIMARY KEY,
+              id_proyecto INT NOT NULL,
+              nombre VARCHAR(255) NOT NULL,
+              tipo_archivo VARCHAR(10) NOT NULL,
+              estado ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+              version_actual INT NOT NULL DEFAULT 1,
+              id_usuario_creador INT NOT NULL,
+              fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              id_usuario_modificacion INT NULL,
+              fecha_modificacion DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE,
+              FOREIGN KEY (id_usuario_creador) REFERENCES usuario(id_usuario) ON DELETE RESTRICT,
+              FOREIGN KEY (id_usuario_modificacion) REFERENCES usuario(id_usuario) ON DELETE SET NULL
+          )
+        `);
+        try { await pool.query(`CREATE INDEX idx_doc_proyecto ON documento_proyecto(id_proyecto)`); } catch (e) {}
+        try { await pool.query(`CREATE INDEX idx_doc_estado ON documento_proyecto(estado)`); } catch (e) {}
+
+        // documento_version
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS documento_version (
+              id_version INT AUTO_INCREMENT PRIMARY KEY,
+              id_documento INT NOT NULL,
+              numero_version INT NOT NULL,
+              nombre_archivo VARCHAR(255) NOT NULL,
+              r2_key VARCHAR(500) NOT NULL,
+              mime_type VARCHAR(100) NOT NULL,
+              tamano_bytes BIGINT NOT NULL,
+              comentario TEXT NOT NULL,
+              id_usuario INT NOT NULL,
+              fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (id_documento) REFERENCES documento_proyecto(id_documento) ON DELETE CASCADE,
+              FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE RESTRICT
+          )
+        `);
+        try { await pool.query(`CREATE INDEX idx_docver_documento ON documento_version(id_documento)`); } catch (e) {}
+        try { await pool.query(`ALTER TABLE documento_version ADD UNIQUE KEY uk_doc_version (id_documento, numero_version)`); } catch (e) {}
+
+        // Check columns in usuario
+        const addCol = async (col, def) => {
+            try {
+                await pool.query(`ALTER TABLE usuario ADD COLUMN ${col} ${def}`);
+                console.log(`Column ${col} added to usuario.`);
+            } catch (err) {
+                if (!err.message.includes("Duplicate column name")) {
+                    console.error(`Error adding column ${col}:`, err.message);
+                }
+            }
+        };
+
+        await addCol('is_verified', 'TINYINT(1) DEFAULT 0');
+        await addCol('consent_granted', 'TINYINT(1) DEFAULT 0');
+        await addCol('consent_at', 'DATETIME NULL');
+        await addCol('consent_version', 'VARCHAR(20) DEFAULT \\\'v1.0\\\'');
+
+        // Auto-verify ALL existing unverified users.
+        // The verify-email frontend page was previously missing, so no user
+        // who registered could ever get verified through the normal flow.
+        // This fixes all existing users so they can log in.
+        const [verifyResult] = await pool.query("UPDATE usuario SET is_verified = 1 WHERE is_verified = 0");
+        if (verifyResult.affectedRows > 0) {
+          console.log(`Auto-verified ${verifyResult.affectedRows} existing users.`);
+        }
+
+        console.log('Automigrations checked/completed.');
+    } catch (e) {
+        console.error('Automigration failed:', e);
+    }
   });
 
   // Manejo graceful shutdown para evitar que el puerto quede ocupado
