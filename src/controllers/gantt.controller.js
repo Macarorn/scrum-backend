@@ -46,7 +46,7 @@ export const getGanttData = async (req, res) => {
 
     // Obtener conteo de tareas por sprint y estado
     const [tareasCountRows] = await pool.query(
-      `SELECT t.id_sprint,
+      `SELECT hu.id_sprint,
               COUNT(*) as total,
               SUM(CASE WHEN t.estado = 'done' THEN 1 ELSE 0 END) as completadas,
               SUM(CASE WHEN t.estado = 'in_progress' THEN 1 ELSE 0 END) as en_progreso,
@@ -54,8 +54,8 @@ export const getGanttData = async (req, res) => {
        FROM tarea t
        JOIN historia_usuario hu ON t.id_historia = hu.id_historia
        JOIN epica e ON hu.id_epica = e.id_epica
-       WHERE e.id_proyecto = ? AND t.id_sprint IS NOT NULL
-       GROUP BY t.id_sprint`,
+       WHERE e.id_proyecto = ? AND hu.id_sprint IS NOT NULL
+       GROUP BY hu.id_sprint`,
       [id]
     );
 
