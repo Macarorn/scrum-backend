@@ -12,6 +12,18 @@ export const requireRole = (allowedRoles) => {
       });
     }
 
+    // Coordinador: acceso de solo lectura a TODOS los proyectos
+    if (req.user?.rol_plataforma === "coordinador") {
+      if (req.method === "GET") {
+        return next();
+      }
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Los coordinadores solo tienen acceso de lectura",
+      });
+    }
+
     // Obtener el ID del proyecto de la solicitud
     let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
 

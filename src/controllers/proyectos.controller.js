@@ -26,10 +26,24 @@ export const listarTodosProyectos = async (req, res, next) => {
   }
 };
 
+export const listarProyectosPorFicha = async (req, res, next) => {
+  try {
+    const { ficha } = req.params;
+    const data = await proyectosService.listarProyectosPorFicha(ficha);
+    res.status(200).json({ success: true, data, message: "Proyectos filtrados por ficha" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const unirseAProyecto = async (req, res, next) => {
   try {
     const userId = req.user.id_usuario;
-    const data = await proyectosService.unirseAProyecto(userId, req.params.id);
+    // Instructor Líder puede unirse con cualquier rol
+    const idRol = req.user?.rol_plataforma === "instructor_lider" && req.body.id_rol
+      ? req.body.id_rol
+      : undefined;
+    const data = await proyectosService.unirseAProyecto(userId, req.params.id, idRol);
 
     // Notificar a los demás miembros del proyecto sobre el nuevo miembro
     const usuarioActual = req.user;
@@ -233,9 +247,10 @@ export const crearProyecto = async (req, res, next) => {
     const payload = {
       ...req.body,
       creado_por: req.user.id_usuario,
+      rol_plataforma_creador: req.user.rol_plataforma,
     };
 
-    const data = await proyectosService.crearProyecto(payload);
+    const data = await proyectosService.crearProyecto(payload, req.user);
     res.status(201).json({ success: true, data, message: "Proyecto creado" });
   } catch (error) {
     next(error);

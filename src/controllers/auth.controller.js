@@ -133,6 +133,7 @@ export const login = async (req, res, next) => {
       user.email,
       user.rol_principal,
       permisos,
+      user.rol_plataforma,
     );
     const refreshToken = generateRefreshToken(user.id_usuario);
     await storeRefreshToken(refreshToken);
@@ -223,6 +224,7 @@ export const refreshToken = async (req, res, next) => {
       email,
       role,
       user.permisos?.map((permiso) => permiso.nombre) || [],
+      user.rol_plataforma,
     );
 
     return sendSuccess(res, { accessToken }, "Token refrescado correctamente");
