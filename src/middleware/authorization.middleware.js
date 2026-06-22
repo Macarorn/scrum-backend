@@ -162,6 +162,11 @@ export const checkPermission = (permission) => {
         });
       }
 
+      // Coordinador: acceso de solo lectura (GET)
+      if (req.user?.rol_plataforma === "coordinador" && req.method === "GET") {
+        return next();
+      }
+
       // Obtener el ID del proyecto de la solicitud
       let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
 
