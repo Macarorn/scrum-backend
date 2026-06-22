@@ -75,6 +75,7 @@ export const register = async (req, res, next) => {
       ciudad,
       consent_granted: true,
       consent_version: legalVersion.version,
+      rol_plataforma: req.body.rol_plataforma || null,
     });
 
     await insertUserConsent({

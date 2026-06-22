@@ -192,6 +192,7 @@ export const createUser = async ({
   id_rol = 2,
   consent_granted = false,
   consent_version = "v1.0",
+  rol_plataforma = null,
 }) => {
   // Verificar si el email ya existe
   const [existing] = await pool.query("SELECT id_usuario FROM usuario WHERE email = ?", [email.toLowerCase()]);
@@ -209,10 +210,10 @@ export const createUser = async ({
   // Calcular fecha actual para consent_at
   const consentAt = consent_granted ? new Date() : null;
 
-  // Insertar usuario con campos de consentimiento
+  // Insertar usuario con campos de consentimiento y rol_plataforma
   const [result] = await pool.query(
-    "INSERT INTO usuario (email, password, nombre, telefono, ciudad, consent_granted, consent_at, consent_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    [email.toLowerCase(), passwordHash, nombre, telefono, ciudad, consent_granted ? 1 : 0, consentAt, consent_version]
+    "INSERT INTO usuario (email, password, nombre, telefono, ciudad, consent_granted, consent_at, consent_version, rol_plataforma) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [email.toLowerCase(), passwordHash, nombre, telefono, ciudad, consent_granted ? 1 : 0, consentAt, consent_version, rol_plataforma]
   );
 
   const userId = result.insertId;
