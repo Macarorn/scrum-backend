@@ -98,8 +98,8 @@ export const crearProyecto = async (data) => {
   const codigoProyecto = await generarCodigoUnicoProyecto(pool);
 
   const [result] = await pool.query(
-    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, creado_por)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, team_size, creado_por)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.nombre,
       data.descripcion || null,
@@ -108,6 +108,7 @@ export const crearProyecto = async (data) => {
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
       codigoProyecto,
+      data.team_size || 1,
       data.creado_por || 1, // Asumir usuario 1 si no se pasa
     ],
   );
@@ -615,7 +616,7 @@ export const eliminarMiembroProyecto = async (proyectoId, usuarioId) => {
 
 export const actualizarProyecto = async (id, data) => {
   const [result] = await pool.query(
-    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, fecha_actualizacion = NOW()
+    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, team_size = ?, fecha_actualizacion = NOW()
      WHERE id_proyecto = ?`,
     [
       data.nombre || null,
@@ -624,6 +625,7 @@ export const actualizarProyecto = async (id, data) => {
       data.estado || null,
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
+      data.team_size || 1,
       id,
     ],
   );
@@ -829,4 +831,74 @@ export const transferirProductOwner = async (
     console.error("Error al transferir Product Owner:", error);
     throw error;
   }
+};
+
+export const obtenerEstadisticasDashboard = async (userId) => {
+  // 1. Obtener los proyectos activos del usuario
+  const [proyectos] = await pool.query(
+    `SELECT DISTINCT p.id_proyecto, p.nombre, p.descripcion, p.estado
+     FROM proyecto p
+     LEFT JOIN equipo_proyecto ep ON p.id_proyecto = ep.id_proyecto
+     LEFT JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto AND uep.id_usuario = ?
+     WHERE p.creado_por = ? OR uep.id_usuario = ?`,
+    [userId, userId, userId]
+  );
+
+  let totalHistoriasGlobal = 0;
+  let completadasGlobal = 0;
+
+  const proyectosConProgreso = await Promise.all(
+    proyectos.map(async (p) => {
+      // Contar historias totales y completadas de este proyecto
+      const [historias] = await pool.query(
+        `SELECT COUNT(*) as total, 
+                SUM(CASE WHEN h.estado = 'terminado' THEN 1 ELSE 0 END) as completadas
+         FROM historia_usuario h
+         JOIN epica e ON h.id_epica = e.id_epica
+         WHERE e.id_proyecto = ? AND h.estado <> 'eliminado'`,
+        [p.id_proyecto]
+      );
+      
+      const total = historias[0].total || 0;
+      const completadas = Number(historias[0].completadas) || 0;
+      
+      totalHistoriasGlobal += total;
+      completadasGlobal += completadas;
+      
+      const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
+      
+      return {
+        ...p,
+        progreso
+      };
+    })
+  );
+
+  const progresoGlobal = totalHistoriasGlobal > 0 
+    ? Math.round((completadasGlobal / totalHistoriasGlobal) * 100) 
+    : 0;
+
+  // Productividad: porcentaje de tareas asignadas al usuario que están terminadas
+  const [tareasUsuario] = await pool.query(
+    `SELECT COUNT(*) as total,
+            SUM(CASE WHEN t.estado = 'terminado' THEN 1 ELSE 0 END) as completadas
+     FROM tarea t
+     JOIN tarea_usuario tu ON t.id_tarea = tu.id_tarea
+     WHERE tu.id_usuario = ?`,
+    [userId]
+  );
+  
+  const totalTareas = tareasUsuario[0].total || 0;
+  const tareasCompletadas = Number(tareasUsuario[0].completadas) || 0;
+  
+  // Si no tiene tareas asignadas, usamos el progreso global como indicador de ritmo
+  const productividad = totalTareas > 0 
+    ? Math.round((tareasCompletadas / totalTareas) * 100) 
+    : progresoGlobal;
+
+  return {
+    productividad,
+    progresoGlobal,
+    proyectos: proyectosConProgreso
+  };
 };
