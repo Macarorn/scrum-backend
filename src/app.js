@@ -71,7 +71,10 @@ const limiter = rateLimit({
   windowMs: config.rateLimit.window * 60 * 1000,
   max: config.rateLimit.max,
   message: "Demasiadas solicitudes, intenta más tarde",
-  skip: (req) => req.originalUrl?.startsWith("/api/legal"),
+  skip: (req) => 
+    process.env.NODE_ENV === "development" || 
+    process.env.NODE_ENV === "test" || 
+    req.originalUrl?.startsWith("/api/legal"),
 });
 app.use("/api/", limiter);
 

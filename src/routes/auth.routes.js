@@ -8,6 +8,7 @@ const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 50,
+  skip: (req) => process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test",
   message: {
     success: false,
     error: "TOO_MANY_REQUESTS",
