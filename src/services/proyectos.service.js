@@ -180,7 +180,7 @@ const getEquipoProyectoId = async (id_proyecto) => {
 export const obtenerProyecto = async (id) => {
   const [rows] = await pool.query(
     `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email,
-            (SELECT COUNT(*) FROM usuario_equipo_proyecto uep WHERE uep.id_proyecto = p.id_proyecto AND uep.activo = TRUE) AS miembros_count
+            (SELECT COUNT(*) FROM usuario_equipo_proyecto uep JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto WHERE ep.id_proyecto = p.id_proyecto AND uep.activo = TRUE) AS miembros_count
      FROM proyecto p
      JOIN usuario u ON p.creado_por = u.id_usuario
      WHERE p.id_proyecto = ?`,
