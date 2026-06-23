@@ -580,14 +580,14 @@ INSERT INTO etiqueta (nombre, color) VALUES
 -- ============================================================
 
 -- Proyecto existente (creado por Sofía)
-INSERT INTO proyecto (nombre, descripcion, tipo, estado, codigo_proyecto, creado_por) VALUES
-('App Scrum', 'Sistema de gestión de proyectos con metodología Scrum para equipos ágiles', 'Desarrollo de software', 'activo', 'SCRUM001', 2);
+INSERT INTO proyecto (nombre, descripcion, tipo, estado, codigo_proyecto, creado_por, fecha_inicio, fecha_fin_est) VALUES
+('App Scrum', 'Sistema de gestión de proyectos con metodología Scrum para equipos ágiles', 'Desarrollo de software', 'activo', 'SCRUM001', 2, '2026-01-15', '2026-12-20');
 
 -- NUEVO: Proyecto creado por el Instructor Líder (con número de ficha)
-INSERT INTO proyecto (nombre, descripcion, tipo, estado, codigo_proyecto, numero_ficha, creado_por) VALUES
-('Proyecto Web Ficha 12345', 'Desarrollo de aplicación web para gestión de inventarios del SENA', 'Desarrollo de software', 'activo', 'FICH001', '12345', 7),
-('Proyecto Móvil Ficha 12345', 'Aplicación móvil para seguimiento de aprendices del SENA', 'Desarrollo de software', 'activo', 'FICH002', '12345', 7),
-('Proyecto IoT Ficha 67890', 'Sistema IoT para monitoreo de laboratorios del SENA', 'Internet de las Cosas', 'activo', 'FICH003', '67890', 7);
+INSERT INTO proyecto (nombre, descripcion, tipo, estado, codigo_proyecto, numero_ficha, creado_por, fecha_inicio, fecha_fin_est) VALUES
+('Proyecto Web Ficha 12345', 'Desarrollo de aplicación web para gestión de inventarios del SENA', 'Desarrollo de software', 'activo', 'FICH001', '12345', 7, '2026-03-01', '2026-09-30'),
+('Proyecto Móvil Ficha 12345', 'Aplicación móvil para seguimiento de aprendices del SENA', 'Desarrollo de software', 'activo', 'FICH002', '12345', 7, '2026-04-01', '2026-10-31'),
+('Proyecto IoT Ficha 67890', 'Sistema IoT para monitoreo de laboratorios del SENA', 'Internet de las Cosas', 'activo', 'FICH003', '67890', 7, '2026-05-15', '2026-11-30');
 
 -- ============================================================
 -- EQUIPOS DE PROYECTO
