@@ -1,3 +1,7 @@
+# ============================================
+# ARCHIVO EXCLUSIVO PARA DESARROLLO LOCAL
+# Para producción en AWS, usa el Task Definition en aws/task-definition.json
+# ============================================
 services:
   # ============================================
   # Base de datos MySQL

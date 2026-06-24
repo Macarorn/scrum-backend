@@ -1,0 +1,76 @@
+{
+  "family": "scrum-backend-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::TU_CUENTA:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::TU_CUENTA:role/scrumBackendTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "scrum-backend-container",
+      "image": "TU_CUENTA.dkr.ecr.us-east-1.amazonaws.com/scrum-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "DB_HOST",
+          "value": "tu-instancia.xxxxxx.us-east-1.rds.amazonaws.com"
+        },
+        {
+          "name": "DB_USER",
+          "value": "admin"
+        },
+        {
+          "name": "DB_PORT",
+          "value": "3306"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "scrum_db"
+        },
+        {
+          "name": "CORS_ORIGIN",
+          "value": "https://tu-dominio-frontend.com"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:ssm:us-east-1:TU_CUENTA:parameter/scrum/db_password"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:ssm:us-east-1:TU_CUENTA:parameter/scrum/jwt_secret"
+        },
+        {
+          "name": "JWT_REFRESH_SECRET",
+          "valueFrom": "arn:aws:ssm:us-east-1:TU_CUENTA:parameter/scrum/jwt_refresh_secret"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/scrum-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
