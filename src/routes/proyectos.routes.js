@@ -1,6 +1,7 @@
 import express from "express";
 import * as proyectosController from "../controllers/proyectos.controller.js";
 import * as ganttController from "../controllers/gantt.controller.js";
+import * as exportController from "../controllers/export.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizationMiddleware } from "../middleware/authorization.middleware.js";
 
@@ -70,6 +71,14 @@ router.post(
 
 // GET /api/proyectos/:id/gantt - Obtener datos para diagrama de Gantt
 router.get("/:id/gantt", authMiddleware, ganttController.getGanttData);
+
+// GET /api/proyectos/:id/export - Exportar proyecto a Excel
+router.get(
+  "/:id/export",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master"]),
+  exportController.exportarProyectoExcel
+);
 
 // GET /api/proyectos/:id - Obtener proyecto
 router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
