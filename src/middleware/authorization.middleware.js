@@ -27,17 +27,9 @@ export const requireRole = (allowedRoles) => {
     // Obtener el ID del proyecto de la solicitud
     let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
 
-    console.log("=== requireRole DEBUG ===");
-    console.log("userId:", userId);
-    console.log("Initial projectId:", projectId);
-    console.log("req.baseUrl:", req.baseUrl);
-    console.log("req.params:", req.params);
-    console.log("req.body:", req.body);
-
     // Si la ruta pertenece a proyectos, usar directamente el parámetro :id como id de proyecto
     if (!projectId && req.params.id && req.baseUrl?.includes("/proyectos")) {
       projectId = req.params.id;
-      console.log("ProjectId from project route param id:", projectId);
     }
 
     // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del criterio de aceptación
@@ -368,15 +360,6 @@ export const checkPermission = (permission) => {
       const _prRes = await pool.query(query, [projectId, userId]);
       const projectRoles = Array.isArray(_prRes) ? (Array.isArray(_prRes[0]) ? _prRes[0] : _prRes) : [];
 
-
-      // Debug: Get all roles for this user across all projects
-      const [allRoles] = await pool.query(
-        `SELECT ep.id_proyecto, r.nombre_rol FROM usuario_equipo_proyecto uep
-         JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-         JOIN rol r ON uep.id_rol = r.id_rol
-         WHERE uep.id_usuario = ? AND uep.activo = 1`,
-        [userId]
-      );
 
       if (projectRoles.length === 0) {
         return res.status(403).json({
