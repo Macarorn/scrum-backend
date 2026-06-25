@@ -293,6 +293,7 @@ function createTareasQueryMock() {
         estimacionDias,
         tiempoReal,
         ordenColumna,
+        idUsuarioResponsable,
         idTarea,
       ] = params;
 
@@ -312,6 +313,7 @@ function createTareasQueryMock() {
         estimacion_dias: estimacionDias,
         tiempo_real: tiempoReal,
         orden_columna: ordenColumna,
+        id_usuario_responsable: idUsuarioResponsable,
       };
       return result({ affectedRows: 1 });
     }
