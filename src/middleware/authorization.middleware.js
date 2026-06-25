@@ -70,13 +70,15 @@ export const requireRole = (allowedRoles) => {
 
     if (projectId) {
       // Verificar el rol del usuario en el proyecto específico
-      const [projectRoles] = await pool.query(
+      const _prResult = await pool.query(
         `SELECT r.nombre_rol FROM usuario_equipo_proyecto uep
          JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
          JOIN rol r ON uep.id_rol = r.id_rol
          WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1`,
         [projectId, userId]
       );
+
+      const projectRoles = Array.isArray(_prResult) ? (Array.isArray(_prResult[0]) ? _prResult[0] : _prResult) : [];
 
 
       if (projectRoles.length === 0) {
@@ -363,7 +365,8 @@ export const checkPermission = (permission) => {
          JOIN rol r ON uep.id_rol = r.id_rol
          WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1`;
 
-      const [projectRoles] = await pool.query(query, [projectId, userId]);
+      const _prRes = await pool.query(query, [projectId, userId]);
+      const projectRoles = Array.isArray(_prRes) ? (Array.isArray(_prRes[0]) ? _prRes[0] : _prRes) : [];
 
 
       // Debug: Get all roles for this user across all projects
@@ -386,9 +389,10 @@ export const checkPermission = (permission) => {
       const projectRoleNames = projectRoles.map(r => r.nombre_rol);
 
       // Product Owner y Scrum Master tienen todos los permisos en el proyecto (case-insensitive)
-      const hasAdminRole = projectRoleNames.some(role =>
-        role.toLowerCase() === 'product owner' || role.toLowerCase() === 'scrum master'
-      );
+      const hasAdminRole = projectRoleNames.some(role => {
+        const r = typeof role === 'string' ? role.toLowerCase() : '';
+        return r === 'product owner' || r === 'scrum master';
+      });
 
 
       if (hasAdminRole) {
