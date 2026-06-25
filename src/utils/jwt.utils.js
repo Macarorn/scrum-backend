@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 
-export const generateToken = (idUsuario, email, rol, permisos = []) => {
+export const generateToken = (idUsuario, email, rol, permisos = [], rol_plataforma = null) => {
   return jwt.sign(
-    { id_usuario: idUsuario, email, rol, permisos },
+    { id_usuario: idUsuario, email, rol, permisos, rol_plataforma },
     config.jwt.secret,
     {
       expiresIn: config.jwt.expire,
