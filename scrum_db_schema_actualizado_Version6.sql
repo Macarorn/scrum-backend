@@ -753,12 +753,14 @@ INSERT INTO comentario_tarea (id_tarea, id_usuario, comentario) VALUES
 -- SOLICITUDES DE INGRESO A PROYECTO
 -- ============================================================
 
-INSERT INTO solicitud (id_proyecto, id_usuario, mensaje_opcional, estado) VALUES
-(1, 5, 'Me interesa unirme a este proyecto Scrum como Developer', 'Pendiente'),
-(1, 6, 'Quiero participar en el desarrollo de la app Scrum', 'Pendiente'),
--- NUEVA: Solicitud de un aprendiz para unirse al proyecto del Instructor Líder
-(2, 3, 'Quiero participar en el proyecto de inventarios como Developer', 'Pendiente'),
-(2, 4, 'Me gustaría colaborar en el desarrollo web del SENA', 'Pendiente');
+INSERT INTO solicitud (id_proyecto, id_usuario, id_usuario_creador, mensaje_opcional, estado) VALUES
+(1, 5, 5, 'Me interesa unirme a este proyecto Scrum como Developer', 'Pendiente'),
+(1, 6, 6, 'Quiero participar en el desarrollo de la app Scrum', 'Pendiente'),
+(2, 3, 3, 'Quiero participar en el proyecto de inventarios como Developer', 'Pendiente'),
+(2, 4, 4, 'Me gustaría colaborar en el desarrollo web del SENA', 'Pendiente'),
+-- Solicitudes para el proyecto del Instructor Líder
+(2, 5, 5, 'Quiero aportar al proyecto web del SENA como Developer', 'Pendiente'),
+(2, 6, 6, 'Me interesa el desarrollo web con React y Node.js', 'Pendiente');
 
 -- ============================================================
 -- NOTIFICACIONES DE PRUEBA
@@ -767,10 +769,11 @@ INSERT INTO solicitud (id_proyecto, id_usuario, mensaje_opcional, estado) VALUES
 INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje) VALUES
 (3, 'informativa', 'Sprint 1 iniciado', 'El Sprint 1 ha sido creado. Revisa tus tareas asignadas en el tablero.'),
 (4, 'informativa', 'Sprint 1 iniciado', 'El Sprint 1 ha sido creado. Revisa tus tareas asignadas en el tablero.'),
-(1, 'prioritaria', 'Nuevo sprint creado', 'Se ha creado el Sprint 1 - Autenticación. Comienza en 2 días.'),
--- NUEVAS: Notificaciones para el Instructor Líder
-(7, 'prioritaria', 'Nueva solicitud de ingreso', 'Un usuario ha solicitado unirse al proyecto "Proyecto Web Ficha 12345"'),
-(7, 'prioritaria', 'Nueva solicitud de ingreso', 'Un usuario ha solicitado unirse al proyecto "Proyecto Web Ficha 12345"');
+(1, 'prioritaria', 'Nuevo sprint creado', 'Se ha creado el Sprint 1 - Autenticación. Comienza en 2 días.');
+
+INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud) VALUES
+(7, 'prioritaria', 'Nueva solicitud de ingreso', 'Carlos Mendes ha solicitado unirse al proyecto "Proyecto Web Ficha 12345"', 5),
+(7, 'prioritaria', 'Nueva solicitud de ingreso', 'Elena Sánchez ha solicitado unirse al proyecto "Proyecto Web Ficha 12345"', 6);
 
 -- ============================================================
 -- CONSULTAS DE VERIFICACIÓN
