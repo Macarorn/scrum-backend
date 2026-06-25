@@ -90,9 +90,10 @@ const notificacionesService = {
   async listarNotificaciones({ id_usuario }) {
     const [rows] = await pool.query(
        `SELECT n.*, 
-              u.nombre AS nombre_usuario_solicitante, 
-              COALESCE(p.nombre, pn.nombre) AS nombre_proyecto, 
-              s.estado AS estado_solicitud,
+               u.nombre AS nombre_usuario_solicitante, 
+               COALESCE(p.nombre, pn.nombre) AS nombre_proyecto, 
+               s.id_proyecto AS id_proyecto_solicitud,
+               s.estado AS estado_solicitud,
               CASE
                 WHEN s.mensaje_opcional LIKE 'Solicitante:%' THEN TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(s.mensaje_opcional, ';', 1), ':', -1))
                 ELSE NULL
