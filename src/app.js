@@ -115,7 +115,7 @@ app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/legal", legalRoutes);
-app.use("/api/documentos", documentosRoutes);
+app.use("/api/proyectos/:id_proyecto/documentos", documentosRoutes);
 
 // Iniciar scheduler de notificaciones de sprint
 iniciarSchedulerSprint();
