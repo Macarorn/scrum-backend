@@ -33,7 +33,7 @@ export const listarProyectos = async (userId) => {
 
 export const listarTodosProyectos = async (userId) => {
   const [rows] = await pool.query(
-    `SELECT p.*,
+    `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email,
       EXISTS (
         SELECT 1 FROM equipo_proyecto ep
         JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto
@@ -41,13 +41,25 @@ export const listarTodosProyectos = async (userId) => {
           AND uep.id_usuario = ?
           AND uep.activo = 1
       ) AS es_miembro
-    FROM proyecto p`,
+    FROM proyecto p
+    JOIN usuario u ON p.creado_por = u.id_usuario`,
     [userId],
   );
   return rows.map(withCalendarDateAliases);
 };
 
-export const unirseAProyecto = async (userId, proyectoId) => {
+export const listarProyectosPorFicha = async (ficha) => {
+  const [rows] = await pool.query(
+    `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email
+     FROM proyecto p
+     JOIN usuario u ON p.creado_por = u.id_usuario
+     WHERE p.numero_ficha = ?`,
+    [ficha],
+  );
+  return rows.map(withCalendarDateAliases);
+};
+
+export const unirseAProyecto = async (userId, proyectoId, idRol = 3) => {
   const [proyectoRows] = await pool.query(
     "SELECT * FROM proyecto WHERE id_proyecto = ?",
     [proyectoId],
@@ -87,19 +99,30 @@ export const unirseAProyecto = async (userId, proyectoId) => {
 
   await pool.query(
     "INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol) VALUES (?, ?, ?)",
-    [userId, idEquipoProyecto, 3],
+    [userId, idEquipoProyecto, idRol],
   );
 
   return withCalendarDateAliases(proyectoRows[0]);
 };
 
-export const crearProyecto = async (data) => {
+export const crearProyecto = async (data, usuarioActual = null) => {
+  // Si el creador es Instructor Líder, numero_ficha es obligatorio
+  const esInstructorLider = usuarioActual?.rol_plataforma === "instructor_lider"
+    || data.rol_plataforma_creador === "instructor_lider";
+
+  if (esInstructorLider && !data.numero_ficha) {
+    const error = new Error("El número de ficha es obligatorio para proyectos creados por un Instructor Líder");
+    error.statusCode = 400;
+    error.error = "FICHA_REQUIRED";
+    throw error;
+  }
+
   // Generar código único para el proyecto
   const codigoProyecto = await generarCodigoUnicoProyecto(pool);
 
   const [result] = await pool.query(
-    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, creado_por)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, creado_por, numero_ficha)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.nombre,
       data.descripcion || null,
@@ -108,7 +131,8 @@ export const crearProyecto = async (data) => {
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
       codigoProyecto,
-      data.creado_por || 1, // Asumir usuario 1 si no se pasa
+      data.creado_por || 1,
+      data.numero_ficha || null,
     ],
   );
   const proyectoId = result.insertId;
@@ -155,7 +179,11 @@ const getEquipoProyectoId = async (id_proyecto) => {
 
 export const obtenerProyecto = async (id) => {
   const [rows] = await pool.query(
-    "SELECT * FROM proyecto WHERE id_proyecto = ?",
+    `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email,
+            (SELECT COUNT(*) FROM usuario_equipo_proyecto uep JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto WHERE ep.id_proyecto = p.id_proyecto AND uep.activo = TRUE) AS miembros_count
+     FROM proyecto p
+     JOIN usuario u ON p.creado_por = u.id_usuario
+     WHERE p.id_proyecto = ?`,
     [id],
   );
   if (rows.length === 0) {
@@ -615,7 +643,7 @@ export const eliminarMiembroProyecto = async (proyectoId, usuarioId) => {
 
 export const actualizarProyecto = async (id, data) => {
   const [result] = await pool.query(
-    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, fecha_actualizacion = NOW()
+    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, numero_ficha = ?, fecha_actualizacion = NOW()
      WHERE id_proyecto = ?`,
     [
       data.nombre || null,
@@ -624,6 +652,7 @@ export const actualizarProyecto = async (id, data) => {
       data.estado || null,
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
+      data.numero_ficha || null,
       id,
     ],
   );

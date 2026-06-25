@@ -12,20 +12,24 @@ export const requireRole = (allowedRoles) => {
       });
     }
 
+    // Coordinador: acceso de solo lectura a TODOS los proyectos
+    if (req.user?.rol_plataforma === "coordinador") {
+      if (req.method === "GET") {
+        return next();
+      }
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Los coordinadores solo tienen acceso de lectura",
+      });
+    }
+
     // Obtener el ID del proyecto de la solicitud
     let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
-
-    console.log("=== requireRole DEBUG ===");
-    console.log("userId:", userId);
-    console.log("Initial projectId:", projectId);
-    console.log("req.baseUrl:", req.baseUrl);
-    console.log("req.params:", req.params);
-    console.log("req.body:", req.body);
 
     // Si la ruta pertenece a proyectos, usar directamente el parámetro :id como id de proyecto
     if (!projectId && req.params.id && req.baseUrl?.includes("/proyectos")) {
       projectId = req.params.id;
-      console.log("ProjectId from project route param id:", projectId);
     }
 
     // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del criterio de aceptación
@@ -58,13 +62,15 @@ export const requireRole = (allowedRoles) => {
 
     if (projectId) {
       // Verificar el rol del usuario en el proyecto específico
-      const [projectRoles] = await pool.query(
+      const _prResult = await pool.query(
         `SELECT r.nombre_rol FROM usuario_equipo_proyecto uep
          JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
          JOIN rol r ON uep.id_rol = r.id_rol
          WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1`,
         [projectId, userId]
       );
+
+      const projectRoles = Array.isArray(_prResult) ? (Array.isArray(_prResult[0]) ? _prResult[0] : _prResult) : [];
 
 
       if (projectRoles.length === 0) {
@@ -148,6 +154,11 @@ export const checkPermission = (permission) => {
           error: "UNAUTHORIZED",
           message: "Usuario no autenticado",
         });
+      }
+
+      // Coordinador: acceso de solo lectura (GET)
+      if (req.user?.rol_plataforma === "coordinador" && req.method === "GET") {
+        return next();
       }
 
       // Obtener el ID del proyecto de la solicitud
@@ -346,17 +357,9 @@ export const checkPermission = (permission) => {
          JOIN rol r ON uep.id_rol = r.id_rol
          WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1`;
 
-      const [projectRoles] = await pool.query(query, [projectId, userId]);
+      const _prRes = await pool.query(query, [projectId, userId]);
+      const projectRoles = Array.isArray(_prRes) ? (Array.isArray(_prRes[0]) ? _prRes[0] : _prRes) : [];
 
-
-      // Debug: Get all roles for this user across all projects
-      const [allRoles] = await pool.query(
-        `SELECT ep.id_proyecto, r.nombre_rol FROM usuario_equipo_proyecto uep
-         JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-         JOIN rol r ON uep.id_rol = r.id_rol
-         WHERE uep.id_usuario = ? AND uep.activo = 1`,
-        [userId]
-      );
 
       if (projectRoles.length === 0) {
         return res.status(403).json({
@@ -369,9 +372,10 @@ export const checkPermission = (permission) => {
       const projectRoleNames = projectRoles.map(r => r.nombre_rol);
 
       // Product Owner y Scrum Master tienen todos los permisos en el proyecto (case-insensitive)
-      const hasAdminRole = projectRoleNames.some(role =>
-        role.toLowerCase() === 'product owner' || role.toLowerCase() === 'scrum master'
-      );
+      const hasAdminRole = projectRoleNames.some(role => {
+        const r = typeof role === 'string' ? role.toLowerCase() : '';
+        return r === 'product owner' || r === 'scrum master';
+      });
 
 
       if (hasAdminRole) {

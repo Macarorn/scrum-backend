@@ -10,9 +10,8 @@ function normalizarIdHistoria(data) {
 }
 
 function normalizarIdResponsable(data) {
-  return Number(
-    data.id_usuario_responsable ?? data.responsableId ?? data.id_usuario ?? null,
-  );
+  const id = data.id_usuario_responsable ?? data.responsableId ?? data.id_usuario;
+  return id != null ? Number(id) : null;
 }
 
 function normalizarIdSprint(data) {
