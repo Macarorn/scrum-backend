@@ -1,0 +1,200 @@
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:188:    + FullyQualifiedErrorId : NativeCommandError
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:190:[22m[39mError checking permission: TypeError: projectRoles.map is not a 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:248:[22m[39mError checking permission: TypeError: projectRoles.map is not a 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:276:[22m[39mError: Error: Versi+¦n de t+®rminos inv+ílida
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:277:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:284:  error: [32m'INVALID_CONSENT_VERSION'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:490:[22m[39mError: Error: Debes aceptar los t+®rminos y condiciones
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:491:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:514:  error: [32m'CONSENT_REQUIRED'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:535:[22m[39mError: Error: Debes aceptar los t+®rminos y condiciones
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:536:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:559:  error: [32m'CONSENT_REQUIRED'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:610:[22m[39mError checking permission: TypeError: projectRoles.map is not a 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:624:[22m[39mError: Error: Versi+¦n de t+®rminos inv+ílida
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:625:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:632:  error: [32m'INVALID_CONSENT_VERSION'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:642:[22m[39mError: Error: Datos de registro inv+ílidos
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:643:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:666:  error: [32m'VALIDATION_ERROR'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:712:[22m[39mError: Error: Illegal arguments: string, undefined
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:769:[22m[39mError verificando c+¦digo existente: TypeError: connection.execute 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:809:[22m[39mError checking permission: TypeError: projectRoles.map is not a 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:831:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:843:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:885:[22m[39mError: Error: Illegal arguments: string, undefined
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:904:[22m[39mError: Error: Debes aceptar los t+®rminos y condiciones
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:905:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:928:  error: [32m'CONSENT_REQUIRED'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1032:[22m[39mError: Error: Refresh token inv+ílido
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1033:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1040:  error: [32m'INVALID_REFRESH_TOKEN'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1047:[22m[39mError verificando c+¦digo existente: TypeError: connection.execute 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1076:[22m[39mError: Error: Debes aceptar los t+®rminos y condiciones
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1077:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1100:  error: [32m'CONSENT_REQUIRED'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1107:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1121:[22m[39mError: Error: Datos de registro inv+ílidos
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1122:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1145:  error: [32m'VALIDATION_ERROR'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1152:[22m[39mError: Error: Refresh token inv+ílido
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1153:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1160:  error: [32m'INVALID_REFRESH_TOKEN'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1255:[22m[39mError: Error: Datos de registro inv+ílidos
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1256:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1329:  error: [32m'VALIDATION_ERROR'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1339:[22m[39mError: Error: No existe una versi+¦n activa de t+®rminos
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1340:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1347:  error: [32m'TERMS_NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1447:[22m[39mError: Error: Datos de registro inv+ílidos
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1448:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1545:  error: [32m'VALIDATION_ERROR'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1552:[22m[39mError: {
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1554:  error: [32m'NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1561:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1718:[22m[39mError: Error: Usuario no encontrado
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1719:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1726:  error: [32m'USER_NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:1733:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2105:[22m[39mError: {
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2108:  error: [32m'NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2115:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2129:[22m[39mError: Error: Usuario no encontrado
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2130:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2137:  error: [32m'USER_NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2144:[22m[39mError: {
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2147:  error: [32m'NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2154:[22m[39mError: {
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2156:  error: [32m'NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2255:[22m[39mError: Error: Datos inv+ílidos
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2256:    at buildError [90m(C:\Users\Johan Stiven\ScrumTrack\scrum-backend\[39msrc
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2280:  error: [32m'VALIDATION_ERROR'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2287:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2367:[22m[39mError: {
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2370:  error: [32m'NOT_FOUND'[39m,
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2486:[22m[39mError: TypeError: Cannot read properties of undefined (reading 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2569:[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m[1m[41m Failed Tests 96 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2572:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2575:[31m[1mAssertionError[22m: expected 400 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2597:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2600:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2622:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2625:[31m[1mAssertionError[22m: expected 500 to be 401 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2646:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2649:[31m[1mAssertionError[22m: expected 500 to be 401 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2670:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2673:[31m[1mAssertionError[22m: expected 401 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2696:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2699:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2723:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2726:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2751:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2754:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2779:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2782:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2805:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2808:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2833:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2836:[31m[1mAssertionError[22m: expected 403 to be 404 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2859:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2862:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2884:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2887:[31m[1mAssertionError[22m: expected 403 to be 404 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2909:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2912:[31m[1mAssertionError[22m: expected 1 to be 3 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2935:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2938:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2963:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2966:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2989:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:2992:[31m[1mAssertionError[22m: expected 403 to be 404 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3015:[41m[1m FAIL [22m[49m tests/integration/auth-users.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3018:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3041:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3044:[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3066:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3069:[31m[1mAssertionError[22m: expected undefined to be 1 // Object.is 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3091:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3094:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3118:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3121:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3144:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3147:[31m[1mAssertionError[22m: expected 403 to be 400 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3169:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3172:[31m[1mAssertionError[22m: expected 403 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3194:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3197:[31m[1mAssertionError[22m: expected undefined to be 1 // Object.is 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3219:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3222:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3243:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3246:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3269:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3272:[31m[1mAssertionError[22m: expected 403 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3295:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3298:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3320:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3323:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3346:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3349:[31m[1mAssertionError[22m: expected 403 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3372:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3375:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3397:[41m[1m FAIL [22m[49m tests/integration/backlog.test.js[2m > [22mBacklog 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3400:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3423:[41m[1m FAIL [22m[49m tests/integration/legal-consent.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3427:[31m[1mAssertionError[22m: expected 400 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3449:[41m[1m FAIL [22m[49m tests/integration/legal-consent.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3453:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3478:[41m[1m FAIL [22m[49m tests/integration/legal-consent.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3482:[31m[1mAssertionError[22m: expected 400 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3503:[41m[1m FAIL [22m[49m tests/integration/legal-consent.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3507:[31m[1mAssertionError[22m: expected 400 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3528:[41m[1m FAIL [22m[49m tests/integration/notificaciones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3532:[31m[1mTypeError[22m: Cannot read properties of null (reading 'leida')[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3547:[41m[1m FAIL [22m[49m tests/integration/notificaciones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3551:[31m[1mAssertionError[22m: expected 200 to be 404 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3575:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3578:[31m[1mAssertionError[22m: expected 500 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3600:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3603:[31m[1mAssertionError[22m: expected 500 to be 400 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3625:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3628:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3650:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3653:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3676:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3679:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3704:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3707:[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3730:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3734:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3757:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3761:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3783:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3787:[31m[1mError[22m: Test timed out in 10000ms.
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3805:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3809:[31m[1mAssertionError[22m: expected 403 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3831:[41m[1m FAIL [22m[49m tests/integration/proyectos.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3835:[31m[1mError[22m: Test timed out in 10000ms.
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3852:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3855:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3880:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3883:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3906:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3909:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3933:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3936:[31m[1mAssertionError[22m: expected 404 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3958:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3961:[31m[1mAssertionError[22m: expected 404 to be 201 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3982:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:3985:[31m[1mAssertionError[22m: expected 404 to be 403 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4006:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4009:[31m[1mAssertionError[22m: expected 404 to be 400 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4030:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4033:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4057:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4060:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4081:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4084:[31m[1mAssertionError[22m: expected 404 to be 403 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4105:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4108:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4131:[41m[1m FAIL [22m[49m tests/integration/reuniones.test.js[2m > 
+C:\Users\Johan Stiven\ScrumTrack\scrum-backend\full_test_output.txt:4134:[31m[1mAssertionError[22m: expected 404 to be 200 // Object.is equality[39m
