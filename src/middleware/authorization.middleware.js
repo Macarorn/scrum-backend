@@ -12,14 +12,25 @@ export const requireRole = (allowedRoles) => {
       });
     }
 
+    // Coordinador: acceso de solo lectura a TODOS los proyectos
+    if (req.user?.rol_plataforma === "coordinador") {
+      if (req.method === "GET") {
+        return next();
+      }
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Los coordinadores solo tienen acceso de lectura",
+      });
+    }
+
     // Obtener el ID del proyecto de la solicitud
     let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
 
-    console.log("=== requireRole DEBUG ===");
-    console.log("userId:", userId);
-    console.log("Initial projectId:", projectId);
-    console.log("req.params:", req.params);
-    console.log("req.body:", req.body);
+    // Si la ruta pertenece a proyectos, usar directamente el parámetro :id como id de proyecto
+    if (!projectId && req.params.id && req.baseUrl?.includes("/proyectos")) {
+      projectId = req.params.id;
+    }
 
     // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del criterio de aceptación
     if (!projectId && req.params.id) {
@@ -28,22 +39,18 @@ export const requireRole = (allowedRoles) => {
           `SELECT id_historia FROM criterio_aceptacion WHERE id_criterio = ?`,
           [req.params.id]
         );
-        console.log("Criterio query result:", criterio);
         if (criterio.length > 0) {
           const [historia] = await pool.query(
             `SELECT id_epica FROM historia_usuario WHERE id_historia = ?`,
             [criterio[0].id_historia]
           );
-          console.log("Historia query result:", historia);
           if (historia.length > 0) {
             const [epica] = await pool.query(
               `SELECT id_proyecto FROM epica WHERE id_epica = ?`,
               [historia[0].id_epica]
             );
-            console.log("Epica query result:", epica);
             if (epica.length > 0) {
               projectId = epica[0].id_proyecto;
-              console.log("ProjectId from criterio:", projectId);
             }
           }
         }
@@ -52,11 +59,10 @@ export const requireRole = (allowedRoles) => {
       }
     }
 
-    console.log("Final projectId:", projectId);
 
     if (projectId) {
       // Verificar el rol del usuario en el proyecto específico
-      const [projectRoles] = await pool.query(
+      const _prResult = await pool.query(
         `SELECT r.nombre_rol FROM usuario_equipo_proyecto uep
          JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
          JOIN rol r ON uep.id_rol = r.id_rol
@@ -64,10 +70,10 @@ export const requireRole = (allowedRoles) => {
         [projectId, userId]
       );
 
-      console.log("Project roles query result:", projectRoles);
+      const projectRoles = Array.isArray(_prResult) ? (Array.isArray(_prResult[0]) ? _prResult[0] : _prResult) : [];
+
 
       if (projectRoles.length === 0) {
-        console.log("BLOCKING: User has no roles in project");
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -76,10 +82,8 @@ export const requireRole = (allowedRoles) => {
       }
 
       const projectRoleNames = projectRoles.map(r => r.nombre_rol);
-      console.log("Project role names:", projectRoleNames);
 
       if (!projectRoleNames.some(role => allowedRoles.includes(role))) {
-        console.log("BLOCKING: User role not in allowed roles");
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -91,7 +95,6 @@ export const requireRole = (allowedRoles) => {
         });
       }
 
-      console.log("ALLOWING: User has required role");
       return next();
     }
 
@@ -153,14 +156,14 @@ export const checkPermission = (permission) => {
         });
       }
 
+      // Coordinador: acceso de solo lectura (GET)
+      if (req.user?.rol_plataforma === "coordinador" && req.method === "GET") {
+        return next();
+      }
+
       // Obtener el ID del proyecto de la solicitud
       let projectId = req.params.id_proyecto || req.body.id_proyecto || req.body.proyectoId || req.query.id_proyecto || req.query.proyectoId;
 
-      console.log("=== checkPermission DEBUG ===");
-      console.log("userId:", userId);
-      console.log("Initial projectId:", projectId);
-      console.log("req.params:", req.params);
-      console.log("req.body:", req.body);
 
       // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del sprint (desde params)
       if (!projectId && req.params.id) {
@@ -169,10 +172,8 @@ export const checkPermission = (permission) => {
             `SELECT id_sprint, id_proyecto, nombre FROM sprint WHERE id_sprint = ?`,
             [req.params.id]
           );
-          console.log("Sprint query result (from params.id):", sprint);
           if (sprint.length > 0) {
             projectId = sprint[0].id_proyecto;
-            console.log("ProjectId from sprint (params.id):", projectId, "sprint name:", sprint[0].nombre);
           }
         } catch (error) {
           console.error("Error al obtener proyecto desde sprint (params.id):", error);
@@ -186,16 +187,13 @@ export const checkPermission = (permission) => {
             `SELECT id_historia, id_epica FROM historia_usuario WHERE id_historia = ?`,
             [req.params.id]
           );
-          console.log("Historia query result (from params.id):", historia);
           if (historia.length > 0) {
             const [epica] = await pool.query(
               `SELECT id_epica, id_proyecto, nombre FROM epica WHERE id_epica = ?`,
               [historia[0].id_epica]
             );
-            console.log("Epica query result (from historia):", epica);
             if (epica.length > 0) {
               projectId = epica[0].id_proyecto;
-              console.log("ProjectId from historia (params.id):", projectId, "epica name:", epica[0].nombre);
             }
           }
         } catch (error) {
@@ -210,16 +208,13 @@ export const checkPermission = (permission) => {
             `SELECT id_historia, id_epica FROM historia_usuario WHERE id_historia = ?`,
             [req.body.id_historia]
           );
-          console.log("Historia query result (from body.id_historia):", historia);
           if (historia.length > 0) {
             const [epica] = await pool.query(
               `SELECT id_epica, id_proyecto, nombre FROM epica WHERE id_epica = ?`,
               [historia[0].id_epica]
             );
-            console.log("Epica query result (from historia):", epica);
             if (epica.length > 0) {
               projectId = epica[0].id_proyecto;
-              console.log("ProjectId from historia (body.id_historia):", projectId, "epica name:", epica[0].nombre);
             }
           }
         } catch (error) {
@@ -234,22 +229,18 @@ export const checkPermission = (permission) => {
             `SELECT id_tarea, id_historia FROM tarea WHERE id_tarea = ?`,
             [req.params.id]
           );
-          console.log("Tarea query result (from params.id):", tarea);
           if (tarea.length > 0) {
             const [historia] = await pool.query(
               `SELECT id_historia, id_epica FROM historia_usuario WHERE id_historia = ?`,
               [tarea[0].id_historia]
             );
-            console.log("Historia query result (from tarea):", historia);
             if (historia.length > 0) {
               const [epica] = await pool.query(
                 `SELECT id_epica, id_proyecto, nombre FROM epica WHERE id_epica = ?`,
                 [historia[0].id_epica]
               );
-              console.log("Epica query result (from historia):", epica);
               if (epica.length > 0) {
                 projectId = epica[0].id_proyecto;
-                console.log("ProjectId from tarea (params.id):", projectId, "epica name:", epica[0].nombre);
               }
             }
           }
@@ -265,10 +256,8 @@ export const checkPermission = (permission) => {
             `SELECT id_epica, id_proyecto, nombre FROM epica WHERE id_epica = ?`,
             [req.params.id]
           );
-          console.log("Epica query result (from params.id):", epica);
           if (epica.length > 0) {
             projectId = epica[0].id_proyecto;
-            console.log("ProjectId from epica (params.id):", projectId, "epica name:", epica[0].nombre);
           }
         } catch (error) {
           console.error("Error al obtener proyecto desde épica (params.id):", error);
@@ -282,10 +271,8 @@ export const checkPermission = (permission) => {
             `SELECT id_epica, id_proyecto, nombre FROM epica WHERE id_epica = ?`,
             [req.body.epicaId]
           );
-          console.log("Epica query result (from body.epicaId):", epica);
           if (epica.length > 0) {
             projectId = epica[0].id_proyecto;
-            console.log("ProjectId from epica (body.epicaId):", projectId, "epica name:", epica[0].nombre);
           }
         } catch (error) {
           console.error("Error al obtener proyecto desde épica (body.epicaId):", error);
@@ -299,7 +286,6 @@ export const checkPermission = (permission) => {
             `SELECT id_epica FROM historia_usuario WHERE id_historia = ?`,
             [req.params.id]
           );
-          console.log("Historia query result:", historia);
           if (historia.length > 0) {
             const [epica] = await pool.query(
               `SELECT id_proyecto FROM epica WHERE id_epica = ?`,
@@ -307,7 +293,6 @@ export const checkPermission = (permission) => {
             );
             if (epica.length > 0) {
               projectId = epica[0].id_proyecto;
-              console.log("ProjectId from historia:", projectId);
             }
           }
         } catch (error) {
@@ -322,20 +307,43 @@ export const checkPermission = (permission) => {
             `SELECT id_proyecto FROM sprint WHERE id_sprint = ?`,
             [req.params.id]
           );
-          console.log("Sprint query result:", sprint);
           if (sprint.length > 0) {
             projectId = sprint[0].id_proyecto;
-            console.log("ProjectId from sprint:", projectId);
           }
         } catch (error) {
           console.error("Error al obtener proyecto desde sprint:", error);
         }
       }
 
-      console.log("Final projectId:", projectId);
+      // Si no hay ID de proyecto, intentar obtenerlo desde la base de datos usando el ID del criterio de aceptación
+      if (!projectId && req.params.id) {
+        try {
+          const [criterio] = await pool.query(
+            `SELECT id_historia FROM criterio_aceptacion WHERE id_criterio = ?`,
+            [req.params.id]
+          );
+          if (criterio.length > 0) {
+            const [historia] = await pool.query(
+              `SELECT id_epica FROM historia_usuario WHERE id_historia = ?`,
+              [criterio[0].id_historia]
+            );
+            if (historia.length > 0) {
+              const [epica] = await pool.query(
+                `SELECT id_proyecto FROM epica WHERE id_epica = ?`,
+                [historia[0].id_epica]
+              );
+              if (epica.length > 0) {
+                projectId = epica[0].id_proyecto;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error al obtener proyecto desde criterio:", error);
+        }
+      }
+
 
       if (!projectId) {
-        console.log("BLOCKING: No projectId found");
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -348,24 +356,12 @@ export const checkPermission = (permission) => {
          JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
          JOIN rol r ON uep.id_rol = r.id_rol
          WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1`;
-      console.log("Project roles query:", query, "params:", [projectId, userId]);
 
-      const [projectRoles] = await pool.query(query, [projectId, userId]);
+      const _prRes = await pool.query(query, [projectId, userId]);
+      const projectRoles = Array.isArray(_prRes) ? (Array.isArray(_prRes[0]) ? _prRes[0] : _prRes) : [];
 
-      console.log("Project roles query result:", projectRoles);
-
-      // Debug: Get all roles for this user across all projects
-      const [allRoles] = await pool.query(
-        `SELECT ep.id_proyecto, r.nombre_rol FROM usuario_equipo_proyecto uep
-         JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-         JOIN rol r ON uep.id_rol = r.id_rol
-         WHERE uep.id_usuario = ? AND uep.activo = 1`,
-        [userId]
-      );
-      console.log("All roles for user across all projects:", allRoles);
 
       if (projectRoles.length === 0) {
-        console.log("BLOCKING: User has no roles in project");
         return res.status(403).json({
           success: false,
           error: "FORBIDDEN",
@@ -374,17 +370,15 @@ export const checkPermission = (permission) => {
       }
 
       const projectRoleNames = projectRoles.map(r => r.nombre_rol);
-      console.log("Project role names:", projectRoleNames);
 
       // Product Owner y Scrum Master tienen todos los permisos en el proyecto (case-insensitive)
-      const hasAdminRole = projectRoleNames.some(role =>
-        role.toLowerCase() === 'product owner' || role.toLowerCase() === 'scrum master'
-      );
+      const hasAdminRole = projectRoleNames.some(role => {
+        const r = typeof role === 'string' ? role.toLowerCase() : '';
+        return r === 'product owner' || r === 'scrum master';
+      });
 
-      console.log("Has admin role:", hasAdminRole);
 
       if (hasAdminRole) {
-        console.log("ALLOWING: User has admin role");
         return next();
       }
 

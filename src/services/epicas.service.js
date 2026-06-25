@@ -22,8 +22,9 @@ export const listarEpicas = async (proyectoId) => {
          FROM epica e ORDER BY e.id_epica DESC`;
   const params = proyectoId !== undefined ? [Number(proyectoId)] : [];
   const [rows] = await pool.query(query, params);
+  const epicas = Array.isArray(rows) ? rows : Array.from(rows ?? []);
 
-  return rows.map((row) => ({
+  return epicas.map((row) => ({
     id: row.id_epica,
     id_epica: row.id_epica,
     proyectoId: row.id_proyecto,
@@ -42,11 +43,11 @@ export const listarEpicas = async (proyectoId) => {
 
 export const crearEpica = async (data) => {
   // Get the count of epics in this project to generate a per-project identifier
-  const [countResult] = await pool.query(
+  const [countRows] = await pool.query(
     `SELECT COUNT(*) as count FROM epica WHERE id_proyecto = ?`,
     [Number(data.proyectoId)]
   );
-  const epicCount = countResult[0].count;
+  const epicCount = countRows[0]?.count ?? 0;
   const epicIdentifier = epicCount + 1;
 
   const [result] = await pool.query(

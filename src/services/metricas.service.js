@@ -38,8 +38,14 @@ export function limpiarCacheMetricas() {
 
 export function invalidarMetricasProyecto(idProyecto) {
   const projectId = Number(idProyecto);
-  if (Number.isFinite(projectId)) {
-    metricasCache.delete(projectId);
+  if (!Number.isFinite(projectId)) {
+    return;
+  }
+
+  for (const key of Array.from(metricasCache.keys())) {
+    if (String(key) === String(projectId) || String(key).startsWith(`${projectId}:`)) {
+      metricasCache.delete(key);
+    }
   }
 }
 
@@ -251,9 +257,28 @@ export function construirMetricasProyectoDto({
   };
 }
 
-async function calcularMetricasProyecto(projectId) {
-  console.log("[metricas][service] ID usado en SQL:", projectId);
+async function calcularMetricasProyecto(projectId, sprintId = null) {
+  console.log("[metricas][service] ID usado en SQL:", projectId, "Sprint:", sprintId);
 
+  const normalizedSprintId = Number(sprintId);
+  const hasSprint = Number.isFinite(normalizedSprintId) && normalizedSprintId > 0;
+  const sprintFilterClause = hasSprint
+    ? `AND (
+        h.id_sprint = ?
+        OR EXISTS (SELECT 1 FROM sprint_historia sh WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?)
+      )`
+    : "";
+  const sprintEpicFilterClause = hasSprint
+    ? `AND EXISTS (SELECT 1 FROM sprint_epica se WHERE se.id_epica = e.id_epica AND se.id_sprint = ?)`
+    : "";
+  const sprintTaskSubqueryClause = hasSprint
+    ? `AND (
+        h.id_sprint = ?
+        OR EXISTS (SELECT 1 FROM sprint_historia sh WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?)
+      )`
+    : "";
+
+  const taskParams = hasSprint ? [projectId, normalizedSprintId, normalizedSprintId] : [projectId];
   const [tareasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT t.id_tarea) AS total_tareas,
@@ -265,28 +290,30 @@ async function calcularMetricasProyecto(projectId) {
      INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
      INNER JOIN epica e ON e.id_epica = h.id_epica
      INNER JOIN proyecto p ON p.id_proyecto = e.id_proyecto
-     WHERE p.id_proyecto = ?`,
-    [projectId],
+     WHERE p.id_proyecto = ?${sprintFilterClause}`,
+    taskParams,
   );
 
+  const epicaParams = hasSprint ? [projectId, normalizedSprintId] : [projectId];
   const [epicasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT e.id_epica) AS total_epicas,
        COUNT(DISTINCT CASE WHEN e.estado = 'completada' THEN e.id_epica END) AS completadas,
        COUNT(DISTINCT CASE WHEN e.estado <> 'completada' THEN e.id_epica END) AS activas
      FROM epica e
-     WHERE e.id_proyecto = ?`,
-    [projectId],
+     WHERE e.id_proyecto = ?${sprintEpicFilterClause}`,
+    epicaParams,
   );
 
   const [epicasDetalleRows] = await pool.query(
     `SELECT e.id_epica, e.nombre, e.estado
      FROM epica e
-     WHERE e.id_proyecto = ?
+     WHERE e.id_proyecto = ?${sprintEpicFilterClause}
      ORDER BY e.id_epica DESC`,
-    [projectId],
+    epicaParams,
   );
 
+  const historiaParams = hasSprint ? [projectId, normalizedSprintId, normalizedSprintId] : [projectId];
   const [historiasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT h.id_historia) AS total_historias,
@@ -295,10 +322,11 @@ async function calcularMetricasProyecto(projectId) {
        COUNT(DISTINCT CASE WHEN h.estado = 'terminado' THEN h.id_historia END) AS terminado
      FROM historia_usuario h
      INNER JOIN epica e ON e.id_epica = h.id_epica
-     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado'`,
-    [projectId],
+     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado'${sprintFilterClause}`,
+    historiaParams,
   );
 
+  const usuarioParams = hasSprint ? [projectId, normalizedSprintId, normalizedSprintId, projectId] : [projectId, projectId];
   const [usuariosRows] = await pool.query(
     `SELECT
        u.id_usuario,
@@ -320,12 +348,12 @@ async function calcularMetricasProyecto(projectId) {
        INNER JOIN tarea t ON t.id_tarea = tu.id_tarea
        INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
        INNER JOIN epica e ON e.id_epica = h.id_epica
-       WHERE e.id_proyecto = ?
+       WHERE e.id_proyecto = ?${sprintTaskSubqueryClause}
      ) pt ON pt.id_usuario = u.id_usuario
      WHERE ep.id_proyecto = ? AND uep.activo = 1
      GROUP BY u.id_usuario, u.nombre, u.email, r.nombre_rol
      ORDER BY u.nombre ASC`,
-    [projectId, projectId],
+    usuarioParams,
   );
 
   return construirMetricasProyectoDto({
@@ -337,20 +365,48 @@ async function calcularMetricasProyecto(projectId) {
   });
 }
 
-export async function obtenerMetricasProyecto(idProyecto) {
+export function convertirMetricasACsv(metricas = {}) {
+  const rows = [
+    ["metric_key", "value"],
+    ["total_tareas", metricas.total_tareas ?? ""],
+    ["por_hacer", metricas.por_hacer ?? ""],
+    ["en_progreso", metricas.en_progreso ?? ""],
+    ["terminado", metricas.terminado ?? ""],
+    ["bloqueado", metricas.bloqueado ?? ""],
+    ["progreso", metricas.progreso ?? ""],
+    ["total_epicas", metricas.epicas?.total ?? ""],
+    ["epicas_completadas", metricas.epicas?.completadas ?? ""],
+    ["epicas_pendientes", metricas.epicas?.pendientes ?? ""],
+    ["total_historias", metricas.historias?.total ?? ""],
+  ];
+
+  return rows
+    .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+}
+
+export async function obtenerMetricasProyecto(idProyecto, idSprint = null) {
   const projectId = Number(idProyecto);
-  console.log("[metricas][service] Proyecto seleccionado:", idProyecto);
-  console.log("[metricas][service] ID recibido:", idProyecto);
+  const sprintId = Number(idSprint);
+  const cacheKey = Number.isFinite(projectId) && projectId > 0
+    ? `${projectId}:${Number.isFinite(sprintId) && sprintId > 0 ? sprintId : 0}`
+    : "default";
+
+  console.log("[metricas][service] Proyecto seleccionado:", idProyecto, "Sprint:", idSprint);
 
   if (!Number.isFinite(projectId) || projectId <= 0) {
     return construirMetricasProyectoDto();
   }
 
-  if (metricasCache.has(projectId)) {
-    return cloneMetricas(metricasCache.get(projectId));
+  if (metricasCache.has(cacheKey)) {
+    return cloneMetricas(metricasCache.get(cacheKey));
   }
 
-  const metricas = await calcularMetricasProyecto(projectId);
-  metricasCache.set(projectId, cloneMetricas(metricas));
-  return metricas;
+  const metricas = await calcularMetricasProyecto(projectId, sprintId);
+  metricasCache.set(cacheKey, cloneMetricas(metricas));
+  return {
+    ...metricas,
+    proyecto: projectId,
+    sprint: Number.isFinite(sprintId) && sprintId > 0 ? sprintId : null,
+  };
 }
