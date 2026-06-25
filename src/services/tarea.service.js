@@ -1,4 +1,8 @@
 import pool from "../utils/database.js";
+import {
+  invalidarMetricasPorHistoria,
+  invalidarMetricasPorTarea,
+} from "./metricas.service.js";
 
 function crearError(message, statusCode, error, details = undefined) {
   return { message, statusCode, error, details };
@@ -211,6 +215,37 @@ async function obtenerAsignados(idTarea) {
   }));
 }
 
+async function obtenerAsignadosPorTareas(idTareas) {
+  const ids = [...new Set(idTareas.map(Number).filter((id) => Number.isInteger(id) && id > 0))];
+  if (ids.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = ids.map(() => "?").join(", ");
+  const [rows] = await pool.query(
+    `SELECT tu.id_tarea, tu.id_usuario, tu.es_responsable, u.nombre
+     FROM tarea_usuario tu
+     LEFT JOIN usuario u ON u.id_usuario = tu.id_usuario
+     WHERE tu.id_tarea IN (${placeholders})
+     ORDER BY tu.id_tarea ASC, tu.es_responsable DESC, tu.id_usuario ASC`,
+    ids,
+  );
+
+  const asignadosPorTarea = new Map(ids.map((id) => [id, []]));
+  for (const row of rows) {
+    const idTarea = Number(row.id_tarea);
+    const asignados = asignadosPorTarea.get(idTarea) || [];
+    asignados.push({
+      id_usuario: row.id_usuario,
+      es_responsable: Boolean(row.es_responsable),
+      nombre: row.nombre || null,
+    });
+    asignadosPorTarea.set(idTarea, asignados);
+  }
+
+  return asignadosPorTarea;
+}
+
 async function obtenerEtiquetas(idTarea) {
   const [rows] = await pool.query(
     `SELECT id_etiqueta
@@ -268,6 +303,17 @@ async function mapearTareaCompleta(row) {
   };
 }
 
+async function mapearTareasConAsignados(rows) {
+  const asignadosPorTarea = await obtenerAsignadosPorTareas(
+    rows.map((row) => row.id_tarea),
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    asignados: asignadosPorTarea.get(Number(row.id_tarea)) || [],
+  }));
+}
+
 export async function listarTareasPorHistoria(idHistoria, estado) {
   const condiciones = [];
   const params = [];
@@ -292,7 +338,7 @@ export async function listarTareasPorHistoria(idHistoria, estado) {
     params,
   );
 
-  return rows.map((row) => ({ ...row }));
+  return await mapearTareasConAsignados(rows);
 }
 
 export async function listarTareasPorSprint(idSprint, estado) {
@@ -319,7 +365,7 @@ export async function listarTareasPorSprint(idSprint, estado) {
     params,
   );
 
-  return rows.map((row) => ({ ...row }));
+  return await mapearTareasConAsignados(rows);
 }
 
 export async function crearTarea(data, userId) {
@@ -412,6 +458,8 @@ export async function crearTarea(data, userId) {
   );
 
   const tareaCreada = await obtenerTareaPorId(result.insertId);
+  await invalidarMetricasPorHistoria(idHistoria);
+
   return {
     ...tareaCreada,
     id_sprint_resuelto: sprintAsignadoKanban,
@@ -497,16 +545,26 @@ export async function actualizarTareaPorId(id, data, userId) {
     data.estado !== undefined ? data.estado : actual.estado,
   );
 
+  await invalidarMetricasPorHistoria(actual.id_historia);
+  if (Number(siguienteHistoria) !== Number(actual.id_historia)) {
+    await invalidarMetricasPorHistoria(siguienteHistoria);
+  }
+
   return await obtenerTareaPorId(id);
 }
 
 export async function eliminarTareaPorId(id, userId) {
+  const actual = await obtenerFilaTarea(id);
   const [result] = await pool.query(`DELETE FROM tarea WHERE id_tarea = ?`, [
     Number(id),
   ]);
 
   if (result.affectedRows === 0) {
     throw crearError("Tarea no encontrada", 404, "NOT_FOUND");
+  }
+
+  if (actual?.id_historia) {
+    await invalidarMetricasPorHistoria(actual.id_historia);
   }
 
   return { id_tarea: Number(id), eliminado: true };
@@ -532,6 +590,8 @@ export async function cambiarEstadoTarea(id, nuevoEstado, userId) {
     actual.estado,
     nuevoEstado,
   );
+
+  await invalidarMetricasPorHistoria(actual.id_historia);
 
   return await obtenerTareaPorId(id);
 }
@@ -575,6 +635,8 @@ export async function registrarTiempoReal(id, tiempo, userId) {
     `Tiempo real actualizado a ${Number(tiempo)}`,
   );
 
+  await invalidarMetricasPorTarea(id);
+
   return await obtenerTareaPorId(id);
 }
 
@@ -598,6 +660,8 @@ export async function asignarUsuarioTarea(id, userId, actorId) {
     `Usuario ${Number(userId)} asignado`,
   );
 
+  await invalidarMetricasPorTarea(id);
+
   return await obtenerTareaPorId(id);
 }
 
@@ -618,6 +682,8 @@ export async function desasignarUsuarioTarea(id, userId, actorId) {
     Number(actorId) || 1,
     `Usuario ${Number(userId)} desasignado`,
   );
+
+  await invalidarMetricasPorTarea(id);
 
   return await obtenerTareaPorId(id);
 }

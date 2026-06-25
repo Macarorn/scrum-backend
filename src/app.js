@@ -26,6 +26,7 @@ import usersRoutes from "./routes/users.routes.js";
 import solicitudRoutes from "./routes/solicitud.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import meetingsRoutes from "./routes/meetings.routes.js";
+import metricasRoutes from "./routes/metricas.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
@@ -103,6 +104,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api", usersRoutes);
 app.use("/api/meetings", meetingsRoutes);
+app.use("/api/metricas", metricasRoutes);
+app.use("/api/v1/metricas", metricasRoutes);
 app.use("/api/proyectos", proyectosRoutes);
 app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);

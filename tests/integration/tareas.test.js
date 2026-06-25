@@ -45,6 +45,18 @@ describe("Tareas API CRUD", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
+    const tareaCreada = response.body.data.find((tarea) => tarea.id_tarea === tareaId);
+    expect(tareaCreada).toBeTruthy();
+    expect(Array.isArray(tareaCreada.asignados)).toBe(true);
+    expect(tareaCreada.asignados).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id_usuario: 10,
+          nombre: expect.any(String),
+          es_responsable: true,
+        }),
+      ]),
+    );
   });
 
   it("obtiene una tarea por id", async () => {
@@ -55,6 +67,7 @@ describe("Tareas API CRUD", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.data.id_tarea).toBe(tareaId);
+    expect(Array.isArray(response.body.data.asignados)).toBe(true);
   });
 
   it("actualiza una tarea", async () => {
@@ -91,7 +104,7 @@ describe("Tareas API CRUD", () => {
       .send({ tiempo_real: 6 });
 
     expect(tiempo.statusCode).toBe(200);
-    expect(tiempo.body.data.tiempo_real).toBe(6);
+    expect(Number(tiempo.body.data.tiempo_real)).toBe(6);
   });
 
   it("asigna usuarios, comentarios y etiquetas", async () => {
