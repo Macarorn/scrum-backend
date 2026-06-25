@@ -140,16 +140,35 @@ export const actualizarDocumento = async (idDocumento, file, comentario, userId)
 };
 
 export const desactivarDocumento = async (idDocumento, userId) => {
+  const [docs] = await pool.query(
+    "SELECT id_proyecto, id_usuario_creador FROM documento_proyecto WHERE id_documento = ?",
+    [idDocumento]
+  );
+
+  if (docs.length === 0) throw notFoundError();
+
+  const doc = docs[0];
+
+  if (doc.id_usuario_creador !== userId) {
+    const [roles] = await pool.query(
+      `SELECT r.nombre FROM equipo_proyecto ep
+       JOIN rol r ON ep.id_rol = r.id_rol
+       WHERE ep.id_proyecto = ? AND ep.id_usuario = ? AND ep.estado = 'activo'`,
+      [doc.id_proyecto, userId]
+    );
+
+    const userRole = roles.length > 0 ? roles[0].nombre : null;
+    if (!["Product Owner", "Scrum Master"].includes(userRole)) {
+      throw { statusCode: 403, error: "FORBIDDEN", message: "No tienes permiso para eliminar este documento." };
+    }
+  }
+
   const [result] = await pool.query(
     `UPDATE documento_proyecto 
      SET estado = 'inactivo', id_usuario_modificacion = ?
      WHERE id_documento = ?`,
     [userId, idDocumento]
   );
-
-  if (result.affectedRows === 0) {
-    throw notFoundError();
-  }
 
   return { success: true, message: "Documento desactivado correctamente" };
 };

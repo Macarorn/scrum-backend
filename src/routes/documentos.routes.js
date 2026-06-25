@@ -3,7 +3,6 @@ import * as documentosController from "../controllers/documentos.controller.js";
 import { uploadDocumento, handleUploadError } from "../middleware/upload.middleware.js";
 import {
   requireProjectMember,
-  requireRole,
 } from "../middleware/authorization.middleware.js";
 
 import { authMiddleware } from "../middleware/auth.middleware.js";
@@ -18,28 +17,25 @@ router.use(requireProjectMember());
 // Listar todos los documentos activos
 router.get("/", documentosController.listarDocumentos);
 
-// Subir un nuevo documento (Solo PO y SM)
+// Subir un nuevo documento (Cualquier miembro)
 router.post(
   "/",
-  requireRole(["Product Owner", "Scrum Master"]),
   uploadDocumento.single("file"),
   handleUploadError,
   documentosController.crearDocumento
 );
 
-// Subir nueva versión de un documento (Solo PO y SM)
+// Subir nueva versión de un documento (Cualquier miembro)
 router.put(
   "/:id_documento",
-  requireRole(["Product Owner", "Scrum Master"]),
   uploadDocumento.single("file"),
   handleUploadError,
   documentosController.actualizarDocumento
 );
 
-// Desactivar un documento (Solo PO y SM)
+// Desactivar un documento (Creador, PO o SM)
 router.patch(
   "/:id_documento/desactivar",
-  requireRole(["Product Owner", "Scrum Master"]),
   documentosController.desactivarDocumento
 );
 
