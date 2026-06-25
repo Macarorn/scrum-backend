@@ -60,7 +60,6 @@ describe('Sprints - Sprint Management API', () => {
   describe('POST /api/sprints - Crear Sprint', () => {
     it('crea nuevo sprint', async () => {
       queryMock.mockResolvedValueOnce([[{ count: 0 }], []]);
-      queryMock.mockResolvedValueOnce([{ insertId: 1 }, []]);
       queryMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
       queryMock.mockResolvedValueOnce([[{ nombre: 'Proyecto Test' }], []]);
       queryMock.mockResolvedValueOnce([[], []]);
@@ -174,7 +173,6 @@ describe('Sprints - Sprint Management API', () => {
   describe('POST /api/sprints - Crear Sprint', () => {
     it('crea nuevo sprint', async () => {
       queryMock.mockResolvedValueOnce([[{ count: 0 }], []]);
-      queryMock.mockResolvedValueOnce([{ insertId: 1 }, []]);
       queryMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
       queryMock.mockResolvedValueOnce([[{ nombre: 'Proyecto Test' }], []]);
       queryMock.mockResolvedValueOnce([[], []]);

@@ -329,7 +329,6 @@ describe('Backlog API - Épicas, Historias y Criterios', () => {
 
     it('PUT /api/epicas/:id actualiza épica', async () => {
       queryMock.mockResolvedValueOnce([[{ nombre_rol: 'Scrum Master' }], []]);
-      queryMock.mockResolvedValueOnce([[{ id_proyecto: 1, nombre_rol: 'Scrum Master' }], []]);
       queryMock.mockResolvedValueOnce([[rawEpica], []]);
       queryMock.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
       queryMock.mockResolvedValueOnce([[{ 
