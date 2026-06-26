@@ -38,14 +38,8 @@ export function limpiarCacheMetricas() {
 
 export function invalidarMetricasProyecto(idProyecto) {
   const projectId = Number(idProyecto);
-  if (!Number.isFinite(projectId)) {
-    return;
-  }
-
-  for (const key of Array.from(metricasCache.keys())) {
-    if (String(key) === String(projectId) || String(key).startsWith(`${projectId}:`)) {
-      metricasCache.delete(key);
-    }
+  if (Number.isFinite(projectId)) {
+    metricasCache.delete(projectId);
   }
 }
 
@@ -257,28 +251,21 @@ export function construirMetricasProyectoDto({
   };
 }
 
-async function calcularMetricasProyecto(projectId, sprintId = null) {
-  console.log("[metricas][service] ID usado en SQL:", projectId, "Sprint:", sprintId);
+async function calcularMetricasProyecto(projectId, idSprint = null) {
+  console.log("[metricas][service] ID usado en SQL:", projectId);
+  console.log("[metricas][service] Sprint usado en SQL:", idSprint);
 
-  const normalizedSprintId = Number(sprintId);
-  const hasSprint = Number.isFinite(normalizedSprintId) && normalizedSprintId > 0;
-  const sprintFilterClause = hasSprint
-    ? `AND (
-        h.id_sprint = ?
-        OR EXISTS (SELECT 1 FROM sprint_historia sh WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?)
-      )`
-    : "";
-  const sprintEpicFilterClause = hasSprint
-    ? `AND EXISTS (SELECT 1 FROM sprint_epica se WHERE se.id_epica = e.id_epica AND se.id_sprint = ?)`
-    : "";
-  const sprintTaskSubqueryClause = hasSprint
-    ? `AND (
-        h.id_sprint = ?
-        OR EXISTS (SELECT 1 FROM sprint_historia sh WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?)
-      )`
+  const sprintId = idSprint ? Number(idSprint) : null;
+  const usarSprint = Number.isFinite(sprintId) && sprintId > 0;
+
+  // Condición WHERE para sprint
+  const sprintWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
     : "";
 
-  const taskParams = hasSprint ? [projectId, normalizedSprintId, normalizedSprintId] : [projectId];
   const [tareasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT t.id_tarea) AS total_tareas,
@@ -290,30 +277,42 @@ async function calcularMetricasProyecto(projectId, sprintId = null) {
      INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
      INNER JOIN epica e ON e.id_epica = h.id_epica
      INNER JOIN proyecto p ON p.id_proyecto = e.id_proyecto
-     WHERE p.id_proyecto = ?${sprintFilterClause}`,
-    taskParams,
+     WHERE p.id_proyecto = ? ${sprintWhere}`,
+    usarSprint ? [projectId, sprintId, sprintId] : [projectId],
   );
 
-  const epicaParams = hasSprint ? [projectId, normalizedSprintId] : [projectId];
+  const epicasWhere = usarSprint
+    ? `AND EXISTS (
+         SELECT 1 FROM sprint_epica se 
+         WHERE se.id_epica = e.id_epica AND se.id_sprint = ?
+       )`
+    : "";
+
   const [epicasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT e.id_epica) AS total_epicas,
        COUNT(DISTINCT CASE WHEN e.estado = 'completada' THEN e.id_epica END) AS completadas,
-       COUNT(DISTINCT CASE WHEN e.estado <> 'completada' THEN e.id_epica END) AS activas
+       COUNT(DISTINCT CASE WHEN e.estado IN ('por_hacer', 'en_progreso') THEN e.id_epica END) AS activas
      FROM epica e
-     WHERE e.id_proyecto = ?${sprintEpicFilterClause}`,
-    epicaParams,
+     WHERE e.id_proyecto = ? ${epicasWhere}`,
+    usarSprint ? [projectId, sprintId] : [projectId],
   );
 
   const [epicasDetalleRows] = await pool.query(
     `SELECT e.id_epica, e.nombre, e.estado
      FROM epica e
-     WHERE e.id_proyecto = ?${sprintEpicFilterClause}
+     WHERE e.id_proyecto = ? ${epicasWhere}
      ORDER BY e.id_epica DESC`,
-    epicaParams,
+    usarSprint ? [projectId, sprintId] : [projectId],
   );
 
-  const historiaParams = hasSprint ? [projectId, normalizedSprintId, normalizedSprintId] : [projectId];
+  const historiasWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
+
   const [historiasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT h.id_historia) AS total_historias,
@@ -322,11 +321,17 @@ async function calcularMetricasProyecto(projectId, sprintId = null) {
        COUNT(DISTINCT CASE WHEN h.estado = 'terminado' THEN h.id_historia END) AS terminado
      FROM historia_usuario h
      INNER JOIN epica e ON e.id_epica = h.id_epica
-     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado'${sprintFilterClause}`,
-    historiaParams,
+     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado' ${historiasWhere}`,
+    usarSprint ? [projectId, sprintId, sprintId] : [projectId],
   );
 
-  const usuarioParams = hasSprint ? [projectId, normalizedSprintId, normalizedSprintId, projectId] : [projectId, projectId];
+  const tareasTareasWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
+
   const [usuariosRows] = await pool.query(
     `SELECT
        u.id_usuario,
@@ -348,12 +353,14 @@ async function calcularMetricasProyecto(projectId, sprintId = null) {
        INNER JOIN tarea t ON t.id_tarea = tu.id_tarea
        INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
        INNER JOIN epica e ON e.id_epica = h.id_epica
-       WHERE e.id_proyecto = ?${sprintTaskSubqueryClause}
+       WHERE e.id_proyecto = ? ${tareasTareasWhere}
      ) pt ON pt.id_usuario = u.id_usuario
      WHERE ep.id_proyecto = ? AND uep.activo = 1
      GROUP BY u.id_usuario, u.nombre, u.email, r.nombre_rol
      ORDER BY u.nombre ASC`,
-    usuarioParams,
+    usarSprint
+      ? [projectId, sprintId, sprintId, projectId]
+      : [projectId, projectId],
   );
 
   return construirMetricasProyectoDto({
@@ -365,145 +372,31 @@ async function calcularMetricasProyecto(projectId, sprintId = null) {
   });
 }
 
-export function convertirMetricasACsv(metricas = {}) {
-  const rows = [
-    ["metric_key", "value"],
-    ["total_tareas", metricas.total_tareas ?? ""],
-    ["por_hacer", metricas.por_hacer ?? ""],
-    ["en_progreso", metricas.en_progreso ?? ""],
-    ["terminado", metricas.terminado ?? ""],
-    ["bloqueado", metricas.bloqueado ?? ""],
-    ["progreso", metricas.progreso ?? ""],
-    ["total_epicas", metricas.epicas?.total ?? ""],
-    ["epicas_completadas", metricas.epicas?.completadas ?? ""],
-    ["epicas_pendientes", metricas.epicas?.pendientes ?? ""],
-    ["total_historias", metricas.historias?.total ?? ""],
-  ];
-
-  return rows
-    .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-}
-
-async function obtenerMetadataProyectoSprint(projectId, sprintId = null) {
-  const proyectoId = Number(projectId);
-  const sprintKey = Number(sprintId);
-  const hasSprint = Number.isFinite(sprintKey) && sprintKey > 0;
-
-  const [proyectoRows] = await pool.query("SELECT id_proyecto, nombre FROM proyecto WHERE id_proyecto = ?", [proyectoId]);
-  const proyecto = proyectoRows[0] || {};
-
-  let sprint = null;
-  if (hasSprint) {
-    const [sprintRows] = await pool.query("SELECT id_sprint, nombre FROM sprint WHERE id_sprint = ? AND id_proyecto = ?", [sprintKey, proyectoId]);
-    sprint = sprintRows[0] || null;
-  }
-
-  return {
-    nombre_proyecto: proyecto.nombre || `Proyecto ${proyectoId}`,
-    proyecto_nombre: proyecto.nombre || `Proyecto ${proyectoId}`,
-    nombre_sprint: sprint?.nombre || (hasSprint ? `Sprint ${sprintKey}` : null),
-    sprint_nombre: sprint?.nombre || (hasSprint ? `Sprint ${sprintKey}` : null),
-  };
-}
-
-async function obtenerHistoriasDetalle(projectId, sprintId = null) {
-  const proyectoId = Number(projectId);
-  const hasSprint = Number.isFinite(Number(sprintId)) && Number(sprintId) > 0;
-  const filterClause = hasSprint
-    ? `AND (
-        h.id_sprint = ?
-        OR EXISTS (SELECT 1 FROM sprint_historia sh WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?)
-      )`
-    : "";
-
-  const params = hasSprint ? [proyectoId, Number(sprintId), Number(sprintId)] : [proyectoId];
-  const [rows] = await pool.query(
-    `SELECT h.id_historia, h.nombre, h.estado, h.prioridad, e.nombre AS epica_nombre
-     FROM historia_usuario h
-     INNER JOIN epica e ON e.id_epica = h.id_epica
-     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado'${filterClause}
-     ORDER BY h.id_historia DESC`,
-    params,
-  );
-
-  return rows;
-}
-
-async function obtenerEpicasDetalle(projectId, sprintId = null) {
-  const proyectoId = Number(projectId);
-  const hasSprint = Number.isFinite(Number(sprintId)) && Number(sprintId) > 0;
-  const filterClause = hasSprint ? `AND EXISTS (SELECT 1 FROM sprint_epica se WHERE se.id_epica = e.id_epica AND se.id_sprint = ?)` : "";
-  const params = hasSprint ? [proyectoId, Number(sprintId)] : [proyectoId];
-
-  const [rows] = await pool.query(
-    `SELECT e.id_epica, e.nombre, e.estado
-     FROM epica e
-     WHERE e.id_proyecto = ?${filterClause}
-     ORDER BY e.id_epica DESC`,
-    params,
-  );
-
-  return rows;
-}
-
-async function obtenerTareasDetalle(projectId, sprintId = null) {
-  const proyectoId = Number(projectId);
-  const hasSprint = Number.isFinite(Number(sprintId)) && Number(sprintId) > 0;
-  const filterClause = hasSprint
-    ? `AND (
-        h.id_sprint = ?
-        OR EXISTS (SELECT 1 FROM sprint_historia sh WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?)
-      )`
-    : "";
-
-  const params = hasSprint ? [proyectoId, Number(sprintId), Number(sprintId)] : [proyectoId];
-  const [rows] = await pool.query(
-    `SELECT t.id_tarea, t.titulo, t.estado, t.prioridad, h.nombre AS historia_nombre, e.nombre AS epica_nombre
-     FROM tarea t
-     INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
-     INNER JOIN epica e ON e.id_epica = h.id_epica
-     WHERE e.id_proyecto = ?${filterClause}
-     ORDER BY t.id_tarea DESC`,
-    params,
-  );
-
-  return rows;
-}
-
 export async function obtenerMetricasProyecto(idProyecto, idSprint = null) {
   const projectId = Number(idProyecto);
-  const sprintId = Number(idSprint);
-  const cacheKey = Number.isFinite(projectId) && projectId > 0
-    ? `${projectId}:${Number.isFinite(sprintId) && sprintId > 0 ? sprintId : 0}`
-    : "default";
-
-  console.log("[metricas][service] Proyecto seleccionado:", idProyecto, "Sprint:", idSprint);
+  console.log("[metricas][service] Proyecto seleccionado:", idProyecto);
+  console.log("[metricas][service] ID recibido:", idProyecto);
+  console.log("[metricas][service] Sprint recibido:", idSprint);
 
   if (!Number.isFinite(projectId) || projectId <= 0) {
     return construirMetricasProyectoDto();
   }
 
-  if (metricasCache.has(cacheKey)) {
-    return cloneMetricas(metricasCache.get(cacheKey));
+  const sprintId = idSprint ? Number(idSprint) : null;
+  const usarSprint = Number.isFinite(sprintId) && sprintId > 0;
+
+  // Si se proporciona un sprint, no usamos cache
+  if (usarSprint) {
+    const metricas = await calcularMetricasProyecto(projectId, sprintId);
+    return metricas;
   }
 
-  const metricas = await calcularMetricasProyecto(projectId, sprintId);
-  const metadata = await obtenerMetadataProyectoSprint(projectId, sprintId);
-  const historiasDetalle = await obtenerHistoriasDetalle(projectId, sprintId);
-  const epicasDetalle = await obtenerEpicasDetalle(projectId, sprintId);
-  const tareasDetalle = await obtenerTareasDetalle(projectId, sprintId);
+  // Sin sprint, usamos cache como antes
+  if (metricasCache.has(projectId)) {
+    return cloneMetricas(metricasCache.get(projectId));
+  }
 
-  const enrichedMetricas = {
-    ...metricas,
-    ...metadata,
-    proyecto: projectId,
-    sprint: Number.isFinite(sprintId) && sprintId > 0 ? sprintId : null,
-    historias_detalle: historiasDetalle,
-    epicas_detalle: epicasDetalle,
-    tareas_detalle: tareasDetalle,
-  };
-
-  metricasCache.set(cacheKey, cloneMetricas(enrichedMetricas));
-  return enrichedMetricas;
+  const metricas = await calcularMetricasProyecto(projectId);
+  metricasCache.set(projectId, cloneMetricas(metricas));
+  return metricas;
 }
