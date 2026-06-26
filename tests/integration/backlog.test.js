@@ -58,6 +58,14 @@ beforeAll(async () => {
     },
   }));
 
+  vi.doMock('../../src/services/metricas.service.js', () => ({
+    invalidarMetricasPorEpica: vi.fn().mockResolvedValue(undefined),
+    invalidarMetricasProyecto: vi.fn().mockResolvedValue(undefined),
+    invalidarMetricasPorHistoria: vi.fn().mockResolvedValue(undefined),
+    invalidarMetricasPorTarea: vi.fn().mockResolvedValue(undefined),
+    obtenerMetricasProyecto: vi.fn().mockResolvedValue({}),
+  }));
+
   const { default: appModule } = await import('../../src/app.js');
   app = appModule;
 });

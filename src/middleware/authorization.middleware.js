@@ -70,7 +70,7 @@ export const requireRole = (allowedRoles) => {
         [projectId, userId]
       );
 
-      const projectRoles = Array.isArray(_prResult) ? (Array.isArray(_prResult[0]) ? _prResult[0] : _prResult) : [];
+      let projectRoles = Array.isArray(_prResult) ? (Array.isArray(_prResult[0]) ? _prResult[0] : _prResult) : [];
 
 
       if (projectRoles.length === 0) {
@@ -358,7 +358,7 @@ export const checkPermission = (permission) => {
          WHERE ep.id_proyecto = ? AND uep.id_usuario = ? AND uep.activo = 1`;
 
       const _prRes = await pool.query(query, [projectId, userId]);
-      const projectRoles = Array.isArray(_prRes) ? (Array.isArray(_prRes[0]) ? _prRes[0] : _prRes) : [];
+      let projectRoles = Array.isArray(_prRes) ? (Array.isArray(_prRes[0]) ? _prRes[0] : _prRes) : [];
 
 
       if (projectRoles.length === 0) {

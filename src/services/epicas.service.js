@@ -1,4 +1,5 @@
 import pool from "../utils/database.js";
+import { invalidarMetricasPorEpica, invalidarMetricasProyecto } from "./metricas.service.js";
 
 function notFoundError(entity = "Épica") {
   return {
@@ -70,6 +71,8 @@ export const crearEpica = async (data) => {
     [epicIdentifier, epicaId]
   );
 
+  await invalidarMetricasPorEpica(epicaId);
+
   return await obtenerEpica(epicaId);
 };
 
@@ -118,16 +121,25 @@ export const actualizarEpica = async (id, data) => {
     ],
   );
 
+  await invalidarMetricasPorEpica(id);
+
   return await obtenerEpica(id);
 };
 
 export const eliminarEpica = async (id) => {
+  const actual = await obtenerEpica(id).catch(() => null);
+  if (!actual) {
+    throw notFoundError();
+  }
+
   const [result] = await pool.query("DELETE FROM epica WHERE id_epica = ?", [
     Number(id),
   ]);
   if (result.affectedRows === 0) {
     throw notFoundError();
   }
+
+  await invalidarMetricasProyecto(Number(actual.proyectoId));
 
   return {
     id: Number(id),

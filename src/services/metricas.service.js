@@ -1,0 +1,402 @@
+import pool from "../utils/database.js";
+
+const COLORS = ["#7C4DFF", "#2F80ED", "#39A900", "#FF8A26", "#E54861", "#00A3A3"];
+const metricasCache = new Map();
+
+const numberOrZero = (value) => Number(value) || 0;
+const percent = (value, total) => (total > 0 ? Math.round((value / total) * 100) : 0);
+
+function cloneMetricas(metricas) {
+  return JSON.parse(JSON.stringify(metricas));
+}
+
+function getInitials(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) return "NA";
+  return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
+function buildTrend(productividad) {
+  const start = Math.max(0, productividad - 18);
+  return [
+    { w: "S1", v: start },
+    { w: "S2", v: Math.min(100, start + 5) },
+    { w: "S3", v: Math.min(100, start + 9) },
+    { w: "S4", v: Math.min(100, start + 13) },
+    { w: "S5", v: Math.min(100, start + 16) },
+    { w: "S6", v: productividad },
+  ];
+}
+
+export function limpiarCacheMetricas() {
+  metricasCache.clear();
+}
+
+export function invalidarMetricasProyecto(idProyecto) {
+  const projectId = Number(idProyecto);
+  if (Number.isFinite(projectId)) {
+    metricasCache.delete(projectId);
+  }
+}
+
+export async function invalidarMetricasPorEpica(idEpica) {
+  const [rows] = await pool.query(
+    "SELECT id_proyecto FROM epica WHERE id_epica = ?",
+    [Number(idEpica)],
+  );
+
+  if (rows[0]?.id_proyecto) {
+    invalidarMetricasProyecto(rows[0].id_proyecto);
+  }
+}
+
+export async function invalidarMetricasPorHistoria(idHistoria) {
+  const [rows] = await pool.query(
+    `SELECT e.id_proyecto
+     FROM historia_usuario h
+     INNER JOIN epica e ON e.id_epica = h.id_epica
+     WHERE h.id_historia = ?`,
+    [Number(idHistoria)],
+  );
+
+  if (rows[0]?.id_proyecto) {
+    invalidarMetricasProyecto(rows[0].id_proyecto);
+  }
+}
+
+export async function invalidarMetricasPorTarea(idTarea) {
+  const [rows] = await pool.query(
+    `SELECT e.id_proyecto
+     FROM tarea t
+     INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
+     INNER JOIN epica e ON e.id_epica = h.id_epica
+     WHERE t.id_tarea = ?`,
+    [Number(idTarea)],
+  );
+
+  if (rows[0]?.id_proyecto) {
+    invalidarMetricasProyecto(rows[0].id_proyecto);
+  }
+}
+
+export function construirMetricasProyectoDto({
+  tareasRow = {},
+  epicasRow = {},
+  historiasRow = {},
+  epicasDetalleRows = [],
+  usuariosRows = [],
+} = {}) {
+  const totalTareas = numberOrZero(tareasRow.total_tareas);
+  const tareasPorHacer = numberOrZero(tareasRow.por_hacer);
+  const tareasEnProgreso = numberOrZero(tareasRow.en_progreso);
+  const tareasTerminadas = numberOrZero(tareasRow.terminado);
+  const tareasBloqueadas = numberOrZero(tareasRow.bloqueado);
+  const tareasPendientes = Math.max(totalTareas - tareasTerminadas, 0);
+  const progresoTareas = percent(tareasTerminadas, totalTareas);
+
+  const totalEpicas = numberOrZero(epicasRow.total_epicas);
+  const epicasCompletadas = numberOrZero(epicasRow.completadas);
+  const epicasActivas = numberOrZero(epicasRow.activas);
+  const epicasPendientes = Math.max(totalEpicas - epicasCompletadas, 0);
+  const progresoEpicas = percent(epicasCompletadas, totalEpicas);
+
+  const totalHistorias = numberOrZero(historiasRow.total_historias);
+  const historiasPorHacer = numberOrZero(historiasRow.por_hacer);
+  const historiasEnProgreso = numberOrZero(historiasRow.en_progreso);
+  const historiasCompletadas = numberOrZero(historiasRow.terminado);
+
+  const teamMembers = usuariosRows.map((usuario, index) => {
+    const tareasAsignadas = numberOrZero(usuario.tareasAsignadas);
+    const tareasCompletadas = numberOrZero(usuario.tareasCompletadas);
+    const tareasEnProgresoUsuario = numberOrZero(usuario.tareasEnProgreso);
+    const tareasPorHacerUsuario = numberOrZero(usuario.tareasPorHacer);
+    const productividad = percent(tareasCompletadas, tareasAsignadas);
+    const nombre = usuario.nombre || usuario.usuario || usuario.email || "Sin nombre";
+
+    return {
+      id_usuario: numberOrZero(usuario.id_usuario),
+      usuario: nombre,
+      nombre,
+      email: usuario.email || "",
+      rol: usuario.rol || "Integrante",
+      tareasAsignadas,
+      tareasCompletadas,
+      tareasEnProgreso: tareasEnProgresoUsuario,
+      tareasPorHacer: tareasPorHacerUsuario,
+      productividad,
+      stories: numberOrZero(usuario.historiasAsignadas),
+      tasks: tareasAsignadas,
+      completed: tareasCompletadas,
+      inProgress: tareasEnProgresoUsuario,
+      pending: Math.max(tareasAsignadas - tareasCompletadas - tareasEnProgresoUsuario, 0),
+      compliance: productividad,
+      initials: getInitials(nombre),
+      bg: COLORS[index % COLORS.length],
+      trend: buildTrend(productividad),
+    };
+  });
+
+  const epics = epicasDetalleRows.map((epica) => ({
+    id_epica: numberOrZero(epica.id_epica),
+    name: epica.nombre || `Epica ${epica.id_epica || ""}`,
+    nombre: epica.nombre || "",
+    done: epica.estado === "completada",
+    estado: epica.estado || "por_hacer",
+  }));
+
+  const dto = {
+    kpis: {
+      backlogProgress: progresoTareas,
+      totalBacklog: totalTareas,
+      completedBacklog: tareasTerminadas,
+      completedEpics: epicasCompletadas,
+      pendingEpics: epicasPendientes,
+      totalEpics: totalEpicas,
+      completedEpicsPercent: progresoEpicas,
+      pendingEpicsPercent: percent(epicasPendientes, totalEpicas),
+      totalStories: totalHistorias,
+      completedStories: historiasCompletadas,
+      inProgressStories: historiasEnProgreso,
+      completedTasks: tareasTerminadas,
+      pendingTasks: tareasPendientes,
+      todoTasks: tareasPorHacer,
+      inProgressTasks: tareasEnProgreso,
+    },
+    projectProgress: {
+      percent: progresoTareas,
+      completed: tareasTerminadas,
+      pending: tareasPendientes,
+      total: totalTareas,
+      data: [
+        { value: tareasTerminadas },
+        { value: Math.max(tareasPendientes, totalTareas ? 0 : 1) },
+      ],
+    },
+    taskStatus: {
+      total: totalTareas,
+      data: [
+        { name: "Por hacer", value: tareasPorHacer, percent: percent(tareasPorHacer, totalTareas), color: "#2F80ED" },
+        { name: "En progreso", value: tareasEnProgreso, percent: percent(tareasEnProgreso, totalTareas), color: "#FF8A26" },
+        { name: "Terminadas", value: tareasTerminadas, percent: percent(tareasTerminadas, totalTareas), color: "#39A900" },
+        { name: "Bloqueadas", value: tareasBloqueadas, percent: percent(tareasBloqueadas, totalTareas), color: "#E54861" },
+      ],
+    },
+    epicStatus: {
+      total: totalEpicas,
+      active: epicasActivas,
+      completed: epicasCompletadas,
+      pending: epicasPendientes,
+      percent: progresoEpicas,
+      data: [
+        { name: "Completadas", value: epicasCompletadas, color: "#7C4DFF" },
+        { name: "Pendientes", value: epicasPendientes, color: "#FF8A26" },
+      ],
+      epics,
+    },
+    backlogStatus: {
+      total: totalTareas,
+      completed: tareasTerminadas,
+      pending: tareasPendientes,
+      percent: progresoTareas,
+      donutData: [
+        { value: tareasTerminadas, color: "#39A900" },
+        { value: Math.max(tareasPendientes, totalTareas ? 0 : 1), color: "#EAF7E1" },
+      ],
+    },
+    teamMembers,
+  };
+
+  return {
+    ...dto,
+    tareas: {
+      total: totalTareas,
+      por_hacer: tareasPorHacer,
+      en_progreso: tareasEnProgreso,
+      terminado: tareasTerminadas,
+      bloqueado: tareasBloqueadas,
+      pendientes: tareasPendientes,
+      progreso: progresoTareas,
+    },
+    epicas: {
+      total: totalEpicas,
+      activas: epicasActivas,
+      completadas: epicasCompletadas,
+      pendientes: epicasPendientes,
+      progreso: progresoEpicas,
+      items: epics,
+    },
+    historias: {
+      total: totalHistorias,
+      por_hacer: historiasPorHacer,
+      en_progreso: historiasEnProgreso,
+      terminado: historiasCompletadas,
+    },
+    backlog: {
+      total: totalTareas,
+      completado: tareasTerminadas,
+      pendiente: tareasPendientes,
+      progreso: progresoTareas,
+    },
+    usuarios: teamMembers,
+    total_tareas: totalTareas,
+    por_hacer: tareasPorHacer,
+    en_progreso: tareasEnProgreso,
+    terminado: tareasTerminadas,
+    bloqueado: tareasBloqueadas,
+    progreso: progresoTareas,
+  };
+}
+
+async function calcularMetricasProyecto(projectId, idSprint = null) {
+  console.log("[metricas][service] ID usado en SQL:", projectId);
+  console.log("[metricas][service] Sprint usado en SQL:", idSprint);
+
+  const sprintId = idSprint ? Number(idSprint) : null;
+  const usarSprint = Number.isFinite(sprintId) && sprintId > 0;
+
+  // Condición WHERE para sprint
+  const sprintWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
+
+  const [tareasRows] = await pool.query(
+    `SELECT
+       COUNT(DISTINCT t.id_tarea) AS total_tareas,
+       COUNT(DISTINCT CASE WHEN t.estado = 'por_hacer' THEN t.id_tarea END) AS por_hacer,
+       COUNT(DISTINCT CASE WHEN t.estado = 'en_progreso' THEN t.id_tarea END) AS en_progreso,
+       COUNT(DISTINCT CASE WHEN t.estado = 'terminado' THEN t.id_tarea END) AS terminado,
+       COUNT(DISTINCT CASE WHEN t.estado = 'bloqueado' THEN t.id_tarea END) AS bloqueado
+     FROM tarea t
+     INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
+     INNER JOIN epica e ON e.id_epica = h.id_epica
+     INNER JOIN proyecto p ON p.id_proyecto = e.id_proyecto
+     WHERE p.id_proyecto = ? ${sprintWhere}`,
+    usarSprint ? [projectId, sprintId, sprintId] : [projectId],
+  );
+
+  const epicasWhere = usarSprint
+    ? `AND EXISTS (
+         SELECT 1 FROM sprint_epica se 
+         WHERE se.id_epica = e.id_epica AND se.id_sprint = ?
+       )`
+    : "";
+
+  const [epicasRows] = await pool.query(
+    `SELECT
+       COUNT(DISTINCT e.id_epica) AS total_epicas,
+       COUNT(DISTINCT CASE WHEN e.estado = 'completada' THEN e.id_epica END) AS completadas,
+       COUNT(DISTINCT CASE WHEN e.estado IN ('por_hacer', 'en_progreso') THEN e.id_epica END) AS activas
+     FROM epica e
+     WHERE e.id_proyecto = ? ${epicasWhere}`,
+    usarSprint ? [projectId, sprintId] : [projectId],
+  );
+
+  const [epicasDetalleRows] = await pool.query(
+    `SELECT e.id_epica, e.nombre, e.estado
+     FROM epica e
+     WHERE e.id_proyecto = ? ${epicasWhere}
+     ORDER BY e.id_epica DESC`,
+    usarSprint ? [projectId, sprintId] : [projectId],
+  );
+
+  const historiasWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
+
+  const [historiasRows] = await pool.query(
+    `SELECT
+       COUNT(DISTINCT h.id_historia) AS total_historias,
+       COUNT(DISTINCT CASE WHEN h.estado = 'por_hacer' THEN h.id_historia END) AS por_hacer,
+       COUNT(DISTINCT CASE WHEN h.estado = 'en_progreso' THEN h.id_historia END) AS en_progreso,
+       COUNT(DISTINCT CASE WHEN h.estado = 'terminado' THEN h.id_historia END) AS terminado
+     FROM historia_usuario h
+     INNER JOIN epica e ON e.id_epica = h.id_epica
+     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado' ${historiasWhere}`,
+    usarSprint ? [projectId, sprintId, sprintId] : [projectId],
+  );
+
+  const tareasTareasWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
+
+  const [usuariosRows] = await pool.query(
+    `SELECT
+       u.id_usuario,
+       u.nombre,
+       u.email,
+       r.nombre_rol AS rol,
+       COUNT(DISTINCT CASE WHEN pt.id_tarea IS NOT NULL THEN pt.id_tarea END) AS tareasAsignadas,
+       COUNT(DISTINCT CASE WHEN pt.id_tarea IS NOT NULL AND pt.estado = 'terminado' THEN pt.id_tarea END) AS tareasCompletadas,
+       COUNT(DISTINCT CASE WHEN pt.id_tarea IS NOT NULL AND pt.estado = 'en_progreso' THEN pt.id_tarea END) AS tareasEnProgreso,
+       COUNT(DISTINCT CASE WHEN pt.id_tarea IS NOT NULL AND pt.estado = 'por_hacer' THEN pt.id_tarea END) AS tareasPorHacer,
+       COUNT(DISTINCT CASE WHEN pt.id_historia IS NOT NULL THEN pt.id_historia END) AS historiasAsignadas
+     FROM usuario u
+     INNER JOIN usuario_equipo_proyecto uep ON uep.id_usuario = u.id_usuario
+     INNER JOIN equipo_proyecto ep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto
+     LEFT JOIN rol r ON r.id_rol = uep.id_rol
+     LEFT JOIN (
+       SELECT tu.id_usuario, t.id_tarea, t.estado, h.id_historia
+       FROM tarea_usuario tu
+       INNER JOIN tarea t ON t.id_tarea = tu.id_tarea
+       INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
+       INNER JOIN epica e ON e.id_epica = h.id_epica
+       WHERE e.id_proyecto = ? ${tareasTareasWhere}
+     ) pt ON pt.id_usuario = u.id_usuario
+     WHERE ep.id_proyecto = ? AND uep.activo = 1
+     GROUP BY u.id_usuario, u.nombre, u.email, r.nombre_rol
+     ORDER BY u.nombre ASC`,
+    usarSprint
+      ? [projectId, sprintId, sprintId, projectId]
+      : [projectId, projectId],
+  );
+
+  return construirMetricasProyectoDto({
+    tareasRow: tareasRows[0],
+    epicasRow: epicasRows[0],
+    historiasRow: historiasRows[0],
+    epicasDetalleRows,
+    usuariosRows,
+  });
+}
+
+export async function obtenerMetricasProyecto(idProyecto, idSprint = null) {
+  const projectId = Number(idProyecto);
+  console.log("[metricas][service] Proyecto seleccionado:", idProyecto);
+  console.log("[metricas][service] ID recibido:", idProyecto);
+  console.log("[metricas][service] Sprint recibido:", idSprint);
+
+  if (!Number.isFinite(projectId) || projectId <= 0) {
+    return construirMetricasProyectoDto();
+  }
+
+  const sprintId = idSprint ? Number(idSprint) : null;
+  const usarSprint = Number.isFinite(sprintId) && sprintId > 0;
+
+  // Si se proporciona un sprint, no usamos cache
+  if (usarSprint) {
+    const metricas = await calcularMetricasProyecto(projectId, sprintId);
+    return metricas;
+  }
+
+  // Sin sprint, usamos cache como antes
+  if (metricasCache.has(projectId)) {
+    return cloneMetricas(metricasCache.get(projectId));
+  }
+
+  const metricas = await calcularMetricasProyecto(projectId);
+  metricasCache.set(projectId, cloneMetricas(metricas));
+  return metricas;
+}
