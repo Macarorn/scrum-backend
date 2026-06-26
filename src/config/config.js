@@ -50,7 +50,7 @@ export default {
   },
   rateLimit: {
     window: parseInt(process.env.RATE_LIMIT_WINDOW) || 15,
-    max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+    max: parseInt(process.env.RATE_LIMIT_MAX) || 10000,
   },
   r2: {
     accountId: process.env.R2_ACCOUNT_ID,

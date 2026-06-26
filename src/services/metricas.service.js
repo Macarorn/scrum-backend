@@ -251,8 +251,20 @@ export function construirMetricasProyectoDto({
   };
 }
 
-async function calcularMetricasProyecto(projectId) {
+async function calcularMetricasProyecto(projectId, idSprint = null) {
   console.log("[metricas][service] ID usado en SQL:", projectId);
+  console.log("[metricas][service] Sprint usado en SQL:", idSprint);
+
+  const sprintId = idSprint ? Number(idSprint) : null;
+  const usarSprint = Number.isFinite(sprintId) && sprintId > 0;
+
+  // Condición WHERE para sprint
+  const sprintWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
 
   const [tareasRows] = await pool.query(
     `SELECT
@@ -265,27 +277,41 @@ async function calcularMetricasProyecto(projectId) {
      INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
      INNER JOIN epica e ON e.id_epica = h.id_epica
      INNER JOIN proyecto p ON p.id_proyecto = e.id_proyecto
-     WHERE p.id_proyecto = ?`,
-    [projectId],
+     WHERE p.id_proyecto = ? ${sprintWhere}`,
+    usarSprint ? [projectId, sprintId, sprintId] : [projectId],
   );
+
+  const epicasWhere = usarSprint
+    ? `AND EXISTS (
+         SELECT 1 FROM sprint_epica se 
+         WHERE se.id_epica = e.id_epica AND se.id_sprint = ?
+       )`
+    : "";
 
   const [epicasRows] = await pool.query(
     `SELECT
        COUNT(DISTINCT e.id_epica) AS total_epicas,
        COUNT(DISTINCT CASE WHEN e.estado = 'completada' THEN e.id_epica END) AS completadas,
-       COUNT(DISTINCT CASE WHEN e.estado <> 'completada' THEN e.id_epica END) AS activas
+       COUNT(DISTINCT CASE WHEN e.estado IN ('por_hacer', 'en_progreso') THEN e.id_epica END) AS activas
      FROM epica e
-     WHERE e.id_proyecto = ?`,
-    [projectId],
+     WHERE e.id_proyecto = ? ${epicasWhere}`,
+    usarSprint ? [projectId, sprintId] : [projectId],
   );
 
   const [epicasDetalleRows] = await pool.query(
     `SELECT e.id_epica, e.nombre, e.estado
      FROM epica e
-     WHERE e.id_proyecto = ?
+     WHERE e.id_proyecto = ? ${epicasWhere}
      ORDER BY e.id_epica DESC`,
-    [projectId],
+    usarSprint ? [projectId, sprintId] : [projectId],
   );
+
+  const historiasWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
 
   const [historiasRows] = await pool.query(
     `SELECT
@@ -295,9 +321,16 @@ async function calcularMetricasProyecto(projectId) {
        COUNT(DISTINCT CASE WHEN h.estado = 'terminado' THEN h.id_historia END) AS terminado
      FROM historia_usuario h
      INNER JOIN epica e ON e.id_epica = h.id_epica
-     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado'`,
-    [projectId],
+     WHERE e.id_proyecto = ? AND h.estado <> 'eliminado' ${historiasWhere}`,
+    usarSprint ? [projectId, sprintId, sprintId] : [projectId],
   );
+
+  const tareasTareasWhere = usarSprint
+    ? `AND (h.id_sprint = ? OR EXISTS (
+         SELECT 1 FROM sprint_historia sh 
+         WHERE sh.id_historia = h.id_historia AND sh.id_sprint = ?
+       ))`
+    : "";
 
   const [usuariosRows] = await pool.query(
     `SELECT
@@ -320,12 +353,14 @@ async function calcularMetricasProyecto(projectId) {
        INNER JOIN tarea t ON t.id_tarea = tu.id_tarea
        INNER JOIN historia_usuario h ON h.id_historia = t.id_historia
        INNER JOIN epica e ON e.id_epica = h.id_epica
-       WHERE e.id_proyecto = ?
+       WHERE e.id_proyecto = ? ${tareasTareasWhere}
      ) pt ON pt.id_usuario = u.id_usuario
      WHERE ep.id_proyecto = ? AND uep.activo = 1
      GROUP BY u.id_usuario, u.nombre, u.email, r.nombre_rol
      ORDER BY u.nombre ASC`,
-    [projectId, projectId],
+    usarSprint
+      ? [projectId, sprintId, sprintId, projectId]
+      : [projectId, projectId],
   );
 
   return construirMetricasProyectoDto({
@@ -337,15 +372,26 @@ async function calcularMetricasProyecto(projectId) {
   });
 }
 
-export async function obtenerMetricasProyecto(idProyecto) {
+export async function obtenerMetricasProyecto(idProyecto, idSprint = null) {
   const projectId = Number(idProyecto);
   console.log("[metricas][service] Proyecto seleccionado:", idProyecto);
   console.log("[metricas][service] ID recibido:", idProyecto);
+  console.log("[metricas][service] Sprint recibido:", idSprint);
 
   if (!Number.isFinite(projectId) || projectId <= 0) {
     return construirMetricasProyectoDto();
   }
 
+  const sprintId = idSprint ? Number(idSprint) : null;
+  const usarSprint = Number.isFinite(sprintId) && sprintId > 0;
+
+  // Si se proporciona un sprint, no usamos cache
+  if (usarSprint) {
+    const metricas = await calcularMetricasProyecto(projectId, sprintId);
+    return metricas;
+  }
+
+  // Sin sprint, usamos cache como antes
   if (metricasCache.has(projectId)) {
     return cloneMetricas(metricasCache.get(projectId));
   }
