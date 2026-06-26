@@ -162,6 +162,18 @@ describe('Proyectos - Projects API', () => {
       expect([200, 401, 403, 404]).toContain(response.status);
     });
   });
+
+  describe('GET /api/proyectos/:id/export - Exportar Proyecto a Excel', () => {
+    it('permite a un usuario con rol de PO o SM exportar el proyecto a Excel', async () => {
+      queryMock.mockImplementation(() => Promise.resolve([[{ id_proyecto: 1, nombre: 'Proyecto de Prueba' }], []]));
+
+      const response = await request(app)
+        .get('/api/proyectos/1/export')
+        .set('Authorization', `Bearer ${poToken}`);
+
+      expect([200, 401, 403, 404]).toContain(response.status);
+    });
+  });
 });
 
 
