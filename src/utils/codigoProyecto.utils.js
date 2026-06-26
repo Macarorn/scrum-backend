@@ -25,7 +25,7 @@ function generarCodigoProyecto() {
  */
 async function verificarCodigoExistente(codigo, connection) {
   try {
-    const [rows] = await connection.execute(
+    const [rows] = await connection.query(
       'SELECT id_proyecto FROM proyecto WHERE codigo_proyecto = ?',
       [codigo]
     );

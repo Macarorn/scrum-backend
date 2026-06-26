@@ -4,6 +4,7 @@ module.exports = (sequelize, DataTypes) => {
     id_solicitud: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     id_usuario: { type: DataTypes.INTEGER, allowNull: false },
     id_proyecto: { type: DataTypes.INTEGER, allowNull: false },
+    id_usuario_creador: { type: DataTypes.INTEGER },
     estado: { type: DataTypes.ENUM('Pendiente', 'Aprobada', 'Rechazada', 'Cancelada'), allowNull: false, defaultValue: 'Pendiente' },
     motivo: { type: DataTypes.STRING },
     mensaje_opcional: { type: DataTypes.STRING },

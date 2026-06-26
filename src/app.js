@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
-import legalRoutes from "./routes/legal.routes.js";
 
 // Cargar configuración primero
 import config from "./config/config.js";
@@ -19,24 +18,27 @@ import criteriosRoutes from "./routes/criterios.routes.js";
 import epicasRoutes from "./routes/epicas.routes.js";
 import etiquetasRoutes from "./routes/etiquetas.routes.js";
 import historiasRoutes from "./routes/historias.routes.js";
+import legalRoutes from "./routes/legal.routes.js";
+import meetingsRoutes from "./routes/meetings.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import proyectosRoutes from "./routes/proyectos.routes.js";
+import solicitudRoutes from "./routes/solicitud.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
 import tareaRoutes from "./routes/tarea.routes.js";
 import usersRoutes from "./routes/users.routes.js";
-import solicitudRoutes from "./routes/solicitud.routes.js";
-import notificacionesRoutes from "./routes/notificaciones.routes.js";
-import meetingsRoutes from "./routes/meetings.routes.js";
 import metricasRoutes from "./routes/metricas.routes.js";
 import { bootstrapStore } from "./utils/user.store.js";
 import { initializeLegalStore } from "./utils/legal.store.js";
 import { iniciarSchedulerSprint } from "./utils/sprint-scheduler.utils.js";
+import documentosRoutes from "./routes/documentos.routes.js";
+import pool from "./utils/database.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = config.server.port;
 
-const devOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const devOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5175", "http://127.0.0.1:5175"];
 const allowedOrigins =
   config.server.nodeEnv === "development"
     ? Array.from(new Set([...config.cors.origin, ...devOrigins]))
@@ -116,6 +118,7 @@ app.use("/api/tareas", tareaRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/legal", legalRoutes);
+app.use("/api/proyectos/:id_proyecto/documentos", documentosRoutes);
 
 // Iniciar scheduler de notificaciones de sprint
 iniciarSchedulerSprint();
@@ -123,10 +126,76 @@ iniciarSchedulerSprint();
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+let server;
+
 if (config.server.nodeEnv !== "test") {
-  app.listen(PORT, () => {
+  server = app.listen(PORT, async () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Ambiente: ${config.server.nodeEnv}`);
+
+    try {
+      // documento_proyecto
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS documento_proyecto (
+            id_documento INT AUTO_INCREMENT PRIMARY KEY,
+            id_proyecto INT NOT NULL,
+            nombre VARCHAR(255) NOT NULL,
+            tipo_archivo VARCHAR(10) NOT NULL,
+            estado ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+            version_actual INT NOT NULL DEFAULT 1,
+            id_usuario_creador INT NOT NULL,
+            fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            id_usuario_modificacion INT NULL,
+            fecha_modificacion DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_proyecto) REFERENCES proyecto(id_proyecto) ON DELETE CASCADE,
+            FOREIGN KEY (id_usuario_creador) REFERENCES usuario(id_usuario) ON DELETE RESTRICT,
+            FOREIGN KEY (id_usuario_modificacion) REFERENCES usuario(id_usuario) ON DELETE SET NULL
+        )
+      `);
+      try { await pool.query(`CREATE INDEX idx_doc_proyecto ON documento_proyecto(id_proyecto)`); } catch (e) {}
+      try { await pool.query(`CREATE INDEX idx_doc_estado ON documento_proyecto(estado)`); } catch (e) {}
+
+      // documento_version
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS documento_version (
+            id_version INT AUTO_INCREMENT PRIMARY KEY,
+            id_documento INT NOT NULL,
+            numero_version INT NOT NULL,
+            nombre_archivo VARCHAR(255) NOT NULL,
+            r2_key VARCHAR(500) NOT NULL,
+            mime_type VARCHAR(100) NOT NULL,
+            tamano_bytes BIGINT NOT NULL,
+            comentario TEXT NOT NULL,
+            id_usuario INT NOT NULL,
+            fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_documento) REFERENCES documento_proyecto(id_documento) ON DELETE CASCADE,
+            FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE RESTRICT
+        )
+      `);
+      try { await pool.query(`CREATE INDEX idx_docver_documento ON documento_version(id_documento)`); } catch (e) {}
+      try { await pool.query(`ALTER TABLE documento_version ADD UNIQUE KEY uk_doc_version (id_documento, numero_version)`); } catch (e) {}
+      console.log('Automigrations for documents checked/completed.');
+    } catch (e) {
+      console.error('Automigration for documents failed:', e);
+    }
   });
+
+  // Manejo graceful shutdown para evitar que el puerto quede ocupado
+  const gracefulShutdown = (signal) => {
+    console.log(`\nRecibida señal ${signal}. Cerrando servidor...`);
+    server.close(() => {
+      console.log('Servidor cerrado correctamente');
+      process.exit(0);
+    });
+
+    // Forzar cierre después de 10 segundos si no se cierra
+    setTimeout(() => {
+      console.error('Forzando cierre del servidor...');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 }
 export default app;

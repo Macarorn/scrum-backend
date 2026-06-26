@@ -15,11 +15,11 @@ const notificacionesService = {
   },
 
   // Crear notificación para un usuario
-  async crearNotificacion({ id_usuario, tipo, titulo, mensaje, id_solicitud = null }) {
+  async crearNotificacion({ id_usuario, tipo, titulo, mensaje, id_solicitud = null, id_meeting = null, id_proyecto = null, accion = null, id_tarea = null, id_sprint = null }) {
     const [result] = await pool.query(
-      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id_usuario, tipo, titulo, mensaje, id_solicitud]
+      `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, id_solicitud, id_meeting, id_proyecto, accion, id_tarea, id_sprint)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id_usuario, tipo, titulo, mensaje, id_solicitud, id_meeting, id_proyecto, accion, id_tarea, id_sprint]
     );
     return result.insertId;
   },
@@ -28,7 +28,7 @@ const notificacionesService = {
   async notificarMiembrosProyecto(id_proyecto, tipo, titulo, mensaje, excluir_usuario = null) {
     const miembros = await this.obtenerMiembrosProyecto(id_proyecto);
     const resultados = [];
-    
+
     for (const miembro of miembros) {
       // Excluir al usuario que originó la acción si se especifica
       if (excluir_usuario && miembro.id_usuario === excluir_usuario) {
@@ -89,10 +89,11 @@ const notificacionesService = {
 
   async listarNotificaciones({ id_usuario }) {
     const [rows] = await pool.query(
-      `SELECT n.*, 
-              u.nombre AS nombre_usuario_solicitante, 
-              p.nombre AS nombre_proyecto, 
-              s.estado AS estado_solicitud,
+       `SELECT n.*, 
+               u.nombre AS nombre_usuario_solicitante, 
+               COALESCE(p.nombre, pn.nombre) AS nombre_proyecto, 
+               s.id_proyecto AS id_proyecto_solicitud,
+               s.estado AS estado_solicitud,
               CASE
                 WHEN s.mensaje_opcional LIKE 'Solicitante:%' THEN TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(s.mensaje_opcional, ';', 1), ':', -1))
                 ELSE NULL
@@ -105,6 +106,7 @@ const notificacionesService = {
        LEFT JOIN solicitud s ON n.id_solicitud = s.id_solicitud
        LEFT JOIN usuario u ON s.id_usuario = u.id_usuario
        LEFT JOIN proyecto p ON s.id_proyecto = p.id_proyecto
+       LEFT JOIN proyecto pn ON n.id_proyecto = pn.id_proyecto
        WHERE n.id_usuario = ?
        ORDER BY n.fecha_creacion DESC`,
       [id_usuario],

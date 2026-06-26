@@ -19,22 +19,21 @@ const withCalendarDateAliases = (project) => ({
 export const listarProyectos = async (userId) => {
   const [rows] = await pool.query(
     `
-    SELECT DISTINCT p.* FROM proyecto p
+    SELECT DISTINCT p.*, r.nombre_rol as user_role FROM proyecto p
+    LEFT JOIN equipo_proyecto ep ON p.id_proyecto = ep.id_proyecto
+    LEFT JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto AND uep.id_usuario = ?
+    LEFT JOIN rol r ON uep.id_rol = r.id_rol
     WHERE p.creado_por = ?
-    OR EXISTS (
-      SELECT 1 FROM usuario_equipo_proyecto uep
-      JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-      WHERE ep.id_proyecto = p.id_proyecto AND uep.id_usuario = ?
-    )
+    OR uep.id_usuario = ?
   `,
-    [userId, userId],
+    [userId, userId, userId],
   );
   return rows.map(withCalendarDateAliases);
 };
 
 export const listarTodosProyectos = async (userId) => {
   const [rows] = await pool.query(
-    `SELECT p.*,
+    `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email,
       EXISTS (
         SELECT 1 FROM equipo_proyecto ep
         JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto
@@ -42,13 +41,25 @@ export const listarTodosProyectos = async (userId) => {
           AND uep.id_usuario = ?
           AND uep.activo = 1
       ) AS es_miembro
-    FROM proyecto p`,
+    FROM proyecto p
+    JOIN usuario u ON p.creado_por = u.id_usuario`,
     [userId],
   );
   return rows.map(withCalendarDateAliases);
 };
 
-export const unirseAProyecto = async (userId, proyectoId) => {
+export const listarProyectosPorFicha = async (ficha) => {
+  const [rows] = await pool.query(
+    `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email
+     FROM proyecto p
+     JOIN usuario u ON p.creado_por = u.id_usuario
+     WHERE p.numero_ficha = ?`,
+    [ficha],
+  );
+  return rows.map(withCalendarDateAliases);
+};
+
+export const unirseAProyecto = async (userId, proyectoId, idRol = 3) => {
   const [proyectoRows] = await pool.query(
     "SELECT * FROM proyecto WHERE id_proyecto = ?",
     [proyectoId],
@@ -88,19 +99,30 @@ export const unirseAProyecto = async (userId, proyectoId) => {
 
   await pool.query(
     "INSERT INTO usuario_equipo_proyecto (id_usuario, id_equipo_proyecto, id_rol) VALUES (?, ?, ?)",
-    [userId, idEquipoProyecto, 3],
+    [userId, idEquipoProyecto, idRol],
   );
 
   return withCalendarDateAliases(proyectoRows[0]);
 };
 
-export const crearProyecto = async (data) => {
+export const crearProyecto = async (data, usuarioActual = null) => {
+  // Si el creador es Instructor Líder, numero_ficha es obligatorio
+  const esInstructorLider = usuarioActual?.rol_plataforma === "instructor_lider"
+    || data.rol_plataforma_creador === "instructor_lider";
+
+  if (esInstructorLider && !data.numero_ficha) {
+    const error = new Error("El número de ficha es obligatorio para proyectos creados por un Instructor Líder");
+    error.statusCode = 400;
+    error.error = "FICHA_REQUIRED";
+    throw error;
+  }
+
   // Generar código único para el proyecto
   const codigoProyecto = await generarCodigoUnicoProyecto(pool);
 
   const [result] = await pool.query(
-    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, creado_por)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO proyecto (nombre, descripcion, tipo, estado, fecha_inicio, fecha_fin_est, codigo_proyecto, creado_por, numero_ficha)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.nombre,
       data.descripcion || null,
@@ -109,7 +131,8 @@ export const crearProyecto = async (data) => {
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
       codigoProyecto,
-      data.creado_por || 1, // Asumir usuario 1 si no se pasa
+      data.creado_por || 1,
+      data.numero_ficha || null,
     ],
   );
   const proyectoId = result.insertId;
@@ -156,7 +179,11 @@ const getEquipoProyectoId = async (id_proyecto) => {
 
 export const obtenerProyecto = async (id) => {
   const [rows] = await pool.query(
-    "SELECT * FROM proyecto WHERE id_proyecto = ?",
+    `SELECT p.*, u.nombre AS creador_nombre, u.email AS creador_email,
+            (SELECT COUNT(*) FROM usuario_equipo_proyecto uep JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto WHERE ep.id_proyecto = p.id_proyecto AND uep.activo = TRUE) AS miembros_count
+     FROM proyecto p
+     JOIN usuario u ON p.creado_por = u.id_usuario
+     WHERE p.id_proyecto = ?`,
     [id],
   );
   if (rows.length === 0) {
@@ -175,17 +202,106 @@ export const listarMiembrosProyecto = async (proyectoId) => {
     `SELECT u.id_usuario,
             u.nombre,
             u.email,
+            r.id_rol,
             r.nombre_rol AS rol,
+            r.descripcion AS roleDescription,
+            r.id_proyecto,
             uep.fecha_ingreso,
             uep.activo
      FROM usuario u
      JOIN usuario_equipo_proyecto uep ON u.id_usuario = uep.id_usuario
      JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE ep.id_proyecto = ?`,
     [proyectoId],
   );
   return rows;
+};
+
+export const listarRolesProyecto = async (proyectoId) => {
+  await obtenerProyecto(proyectoId);
+
+  const [rows] = await pool.query(
+    `SELECT id_rol, nombre_rol, descripcion, id_proyecto
+     FROM rol
+     WHERE id_proyecto IS NULL OR id_proyecto = ?
+     ORDER BY id_proyecto IS NULL DESC, nombre_rol`,
+    [proyectoId],
+  );
+
+  return rows;
+};
+
+export const crearRolProyecto = async (
+  proyectoId,
+  nombre_rol,
+  descripcion,
+  usuarioActual,
+) => {
+  await obtenerProyecto(proyectoId);
+
+  const [requesterRows] = await pool.query(
+    `SELECT r.nombre_rol
+     FROM usuario_equipo_proyecto uep
+     JOIN equipo_proyecto ep ON uep.id_equipo_proyecto = ep.id_equipo_proyecto
+     JOIN rol r ON uep.id_rol = r.id_rol
+     WHERE ep.id_proyecto = ?
+       AND uep.id_usuario = ?
+       AND uep.activo = 1`,
+    [proyectoId, usuarioActual.id_usuario],
+  );
+
+  const requesterRole = requesterRows.length > 0 ? requesterRows[0].nombre_rol : null;
+  const allowedRoles = ["Product Owner", "Scrum Master"];
+
+  if (!allowedRoles.includes(requesterRole)) {
+    const error = new Error("No tienes permiso para crear roles del proyecto");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const cleanedName = String(nombre_rol || "").trim();
+  if (!cleanedName) {
+    const error = new Error("El nombre del rol es requerido");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const cleanedDescription = String(descripcion || "").trim();
+  if (!cleanedDescription) {
+    const error = new Error("La descripción del rol es requerida");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const [existing] = await pool.query(
+    `SELECT id_rol
+     FROM rol
+     WHERE LOWER(nombre_rol) = LOWER(?)
+       AND (id_proyecto IS NULL OR id_proyecto = ?)`,
+    [cleanedName, proyectoId],
+  );
+
+  if (existing.length > 0) {
+    const error = new Error("Ya existe un rol con ese nombre en este proyecto o a nivel global");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const [result] = await pool.query(
+    `INSERT INTO rol (nombre_rol, descripcion, id_proyecto)
+     VALUES (?, ?, ?)`,
+    [cleanedName, cleanedDescription, proyectoId],
+  );
+
+  const [rows] = await pool.query(
+    `SELECT id_rol, nombre_rol, descripcion, id_proyecto
+     FROM rol
+     WHERE id_rol = ?`,
+    [result.insertId],
+  );
+
+  return rows[0] || null;
 };
 
 export const obtenerMiRolEnProyecto = async (proyectoId, userId) => {
@@ -315,12 +431,14 @@ export const actualizarEstadoMiembroProyecto = async (
     `SELECT u.id_usuario,
             u.nombre,
             u.email,
+            r.id_rol,
             r.nombre_rol AS rol,
+            r.id_proyecto,
             uep.fecha_ingreso,
             uep.activo
      FROM usuario_equipo_proyecto uep
      JOIN usuario u ON uep.id_usuario = u.id_usuario
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE uep.id_equipo_proyecto = ?
        AND uep.id_usuario = ?`,
     [idEquipoProyecto, usuarioId],
@@ -485,12 +603,14 @@ export const actualizarRolMiembroProyecto = async (
     `SELECT u.id_usuario,
             u.nombre,
             u.email,
+            r.id_rol,
             r.nombre_rol AS rol,
+            r.id_proyecto,
             uep.fecha_ingreso,
             uep.activo
      FROM usuario_equipo_proyecto uep
      JOIN usuario u ON uep.id_usuario = u.id_usuario
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE uep.id_equipo_proyecto = ?
        AND uep.id_usuario = ?`,
     [idEquipoProyecto, usuarioId],
@@ -523,7 +643,7 @@ export const eliminarMiembroProyecto = async (proyectoId, usuarioId) => {
 
 export const actualizarProyecto = async (id, data) => {
   const [result] = await pool.query(
-    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, fecha_actualizacion = NOW()
+    `UPDATE proyecto SET nombre = ?, descripcion = ?, tipo = ?, estado = ?, fecha_inicio = ?, fecha_fin_est = ?, numero_ficha = ?, fecha_actualizacion = NOW()
      WHERE id_proyecto = ?`,
     [
       data.nombre || null,
@@ -532,6 +652,7 @@ export const actualizarProyecto = async (id, data) => {
       data.estado || null,
       data.fecha_inicio || null,
       data.fecha_fin_est || null,
+      data.numero_ficha || null,
       id,
     ],
   );
@@ -613,9 +734,9 @@ export const transferirProductOwner = async (
 
   // Verificar que el nuevo Product Owner es miembro del proyecto
   const [newPORows] = await pool.query(
-    `SELECT uep.id_usuario, uep.activo, r.nombre_rol
+    `SELECT uep.id_usuario, uep.activo, r.id_rol, r.nombre_rol, r.id_proyecto
      FROM usuario_equipo_proyecto uep
-     LEFT JOIN rol r ON uep.id_rol = r.id_rol
+     INNER JOIN rol r ON uep.id_rol = r.id_rol
      WHERE uep.id_equipo_proyecto = ?
        AND uep.id_usuario = ?`,
     [idEquipoProyecto, nuevoProductOwnerId],
@@ -701,7 +822,7 @@ export const transferirProductOwner = async (
               uep.activo
        FROM usuario_equipo_proyecto uep
        JOIN usuario u ON uep.id_usuario = u.id_usuario
-       LEFT JOIN rol r ON uep.id_rol = r.id_rol
+       INNER JOIN rol r ON uep.id_rol = r.id_rol
        WHERE uep.id_equipo_proyecto = ?
          AND uep.id_usuario = ?`,
       [idEquipoProyecto, nuevoProductOwnerId],
@@ -711,12 +832,14 @@ export const transferirProductOwner = async (
       `SELECT u.id_usuario,
               u.nombre,
               u.email,
+              r.id_rol,
               r.nombre_rol AS rol,
+              r.id_proyecto,
               uep.fecha_ingreso,
               uep.activo
        FROM usuario_equipo_proyecto uep
        JOIN usuario u ON uep.id_usuario = u.id_usuario
-       LEFT JOIN rol r ON uep.id_rol = r.id_rol
+       INNER JOIN rol r ON uep.id_rol = r.id_rol
        WHERE uep.id_equipo_proyecto = ?
          AND uep.id_usuario = ?`,
       [idEquipoProyecto, usuarioActual.id_usuario],

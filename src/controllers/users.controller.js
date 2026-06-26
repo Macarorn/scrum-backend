@@ -8,6 +8,7 @@ import {
   listUsers,
   setUserRole,
   updateUser,
+  createRole as createRoleStore,
 } from "../utils/user.store.js";
 import { getLatestUserConsent } from "../utils/legal.store.js";
 import { validateProfileUpdate } from "../validations/auth.validations.js";
@@ -115,6 +116,16 @@ export const getPermisos = async (req, res, next) => {
   try {
     const permisos = await listPermissions();
     return sendSuccess(res, permisos, "Permisos listados correctamente");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createRole = async (req, res, next) => {
+  try {
+    const { nombre_rol, descripcion } = req.body;
+    const role = await createRoleStore({ nombre_rol, descripcion });
+    return sendSuccess(res, role, "Rol creado correctamente", 201);
   } catch (error) {
     next(error);
   }

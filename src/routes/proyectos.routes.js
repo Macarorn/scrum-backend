@@ -1,5 +1,6 @@
 import express from "express";
 import * as proyectosController from "../controllers/proyectos.controller.js";
+import * as ganttController from "../controllers/gantt.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizationMiddleware } from "../middleware/authorization.middleware.js";
 
@@ -10,6 +11,9 @@ router.get("/", authMiddleware, proyectosController.listarProyectos);
 
 // GET /api/proyectos/todos - Listar todos los proyectos
 router.get("/todos", authMiddleware, proyectosController.listarTodosProyectos);
+
+// GET /api/proyectos/ficha/:ficha - Filtrar proyectos por número de ficha
+router.get("/ficha/:ficha", authMiddleware, proyectosController.listarProyectosPorFicha);
 
 // POST /api/proyectos - Crear proyecto
 router.post(
@@ -29,6 +33,17 @@ router.get("/:id/miembros", authMiddleware, proyectosController.listarMiembrosPr
 
 // GET /api/proyectos/:id/mi-rol - Obtener el rol del usuario autenticado en un proyecto
 router.get("/:id/mi-rol", authMiddleware, proyectosController.obtenerMiRolEnProyecto);
+
+// GET /api/proyectos/:id/roles - Listar roles disponibles para el proyecto
+router.get("/:id/roles", authMiddleware, proyectosController.listarRolesProyecto);
+
+// POST /api/proyectos/:id/roles - Crear un rol nuevo en el proyecto (PO/SM)
+router.post(
+  "/:id/roles",
+  authMiddleware,
+  authorizationMiddleware(["Product Owner", "Scrum Master"]),
+  proyectosController.crearRolProyecto,
+);
 
 // DELETE /api/proyectos/:id/miembros/:id_usuario - Eliminar miembro de un proyecto
 router.delete("/:id/miembros/:id_usuario", authMiddleware, proyectosController.eliminarMiembroProyecto);
@@ -56,6 +71,9 @@ router.post(
   proyectosController.transferirProductOwner,
 );
 
+// GET /api/proyectos/:id/gantt - Obtener datos para diagrama de Gantt
+router.get("/:id/gantt", authMiddleware, ganttController.getGanttData);
+
 // GET /api/proyectos/:id - Obtener proyecto
 router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
 
@@ -63,6 +81,7 @@ router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
 router.put(
   "/:id",
   authMiddleware,
+  authorizationMiddleware(["admin", "Product Owner", "Scrum Master"]),
   proyectosController.actualizarProyecto,
 );
 

@@ -26,10 +26,24 @@ export const listarTodosProyectos = async (req, res, next) => {
   }
 };
 
+export const listarProyectosPorFicha = async (req, res, next) => {
+  try {
+    const { ficha } = req.params;
+    const data = await proyectosService.listarProyectosPorFicha(ficha);
+    res.status(200).json({ success: true, data, message: "Proyectos filtrados por ficha" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const unirseAProyecto = async (req, res, next) => {
   try {
     const userId = req.user.id_usuario;
-    const data = await proyectosService.unirseAProyecto(userId, req.params.id);
+    // Instructor Líder puede unirse con cualquier rol
+    const idRol = req.user?.rol_plataforma === "instructor_lider" && req.body.id_rol
+      ? req.body.id_rol
+      : undefined;
+    const data = await proyectosService.unirseAProyecto(userId, req.params.id, idRol);
 
     // Notificar a los demás miembros del proyecto sobre el nuevo miembro
     const usuarioActual = req.user;
@@ -61,6 +75,51 @@ export const obtenerMiRolEnProyecto = async (req, res, next) => {
     const projectId = req.params.id;
     const data = await proyectosService.obtenerMiRolEnProyecto(projectId, userId);
     res.status(200).json({ success: true, data, message: "Rol en proyecto obtenido" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listarRolesProyecto = async (req, res, next) => {
+  try {
+    const data = await proyectosService.listarRolesProyecto(req.params.id);
+    res.status(200).json({ success: true, data, message: "Roles del proyecto listados" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const crearRolProyecto = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { nombre_rol, descripcion } = req.body;
+
+    if (!nombre_rol || !String(nombre_rol).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "El nombre del rol es requerido",
+        details: { nombre_rol: "nombre_rol es requerido" },
+      });
+    }
+
+    if (!descripcion || !String(descripcion).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message: "La descripción del rol es requerida",
+        details: { descripcion: "descripcion es requerida" },
+      });
+    }
+
+    const data = await proyectosService.crearRolProyecto(
+      id,
+      nombre_rol,
+      descripcion,
+      req.user,
+    );
+
+    res.status(201).json({ success: true, data, message: "Rol creado en el proyecto" });
   } catch (error) {
     next(error);
   }
@@ -188,9 +247,10 @@ export const crearProyecto = async (req, res, next) => {
     const payload = {
       ...req.body,
       creado_por: req.user.id_usuario,
+      rol_plataforma_creador: req.user.rol_plataforma,
     };
 
-    const data = await proyectosService.crearProyecto(payload);
+    const data = await proyectosService.crearProyecto(payload, req.user);
     res.status(201).json({ success: true, data, message: "Proyecto creado" });
   } catch (error) {
     next(error);
