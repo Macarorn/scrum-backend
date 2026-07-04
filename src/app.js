@@ -65,7 +65,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: true,
     credentials: true,
   }),
 );
