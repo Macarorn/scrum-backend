@@ -49,12 +49,148 @@ export const exportarProyectoExcel = async (req, res) => {
     workbook.creator = 'Scrum App';
     workbook.created = new Date();
 
-    // Estilos generales
+    // Estilos generales (Verde SENA: #39A900)
     const headerStyle = {
       font: { bold: true, color: { argb: 'FFFFFFFF' } },
-      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF007BFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF39A900' } },
       alignment: { vertical: 'middle', horizontal: 'center' }
     };
+
+    // ==========================================
+    // Hoja Principal: Backlog del Producto (Plantilla SENA)
+    // ==========================================
+    const sheetBacklog = workbook.addWorksheet('Backlog del Producto');
+    
+    // Título Principal
+    sheetBacklog.mergeCells('B2:H2');
+    sheetBacklog.getCell('B2').value = 'Backlog del Producto';
+    sheetBacklog.getCell('B2').font = { size: 16, bold: true, color: { argb: 'FF000000' } };
+    sheetBacklog.getCell('B2').alignment = { vertical: 'middle', horizontal: 'left' };
+
+    // Detalles del Proyecto
+    sheetBacklog.getCell('B4').value = 'Nombre del Proyecto:';
+    sheetBacklog.getCell('B4').font = { bold: true };
+    sheetBacklog.mergeCells('D4:H4');
+    sheetBacklog.getCell('D4').value = proyecto.nombre;
+    sheetBacklog.getCell('D4').border = {
+      top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+    };
+    sheetBacklog.getCell('D4').alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Dueño del Producto
+    const dueño = miembros.find(m => m.nombre_rol && m.nombre_rol.toLowerCase().includes('dueño')) || miembros.find(m => m.nombre_rol && m.nombre_rol.toLowerCase().includes('administrador')) || miembros[0] || { nombre: '' };
+    sheetBacklog.getCell('B5').value = 'Dueño del Producto:';
+    sheetBacklog.getCell('B5').font = { bold: true };
+    sheetBacklog.mergeCells('D5:H5');
+    sheetBacklog.getCell('D5').value = dueño.nombre;
+    sheetBacklog.getCell('D5').border = {
+      top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'}
+    };
+    sheetBacklog.getCell('D5').alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Estilos para la tabla del backlog
+    const tableHeaderStyle = {
+      font: { bold: true, color: { argb: 'FFFFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF39A900' } },
+      alignment: { vertical: 'middle', horizontal: 'center', wrapText: true },
+      border: {
+        top: {style:'thin', color: {argb:'FF000000'}},
+        left: {style:'thin', color: {argb:'FF000000'}},
+        bottom: {style:'thin', color: {argb:'FF000000'}},
+        right: {style:'thin', color: {argb:'FF000000'}}
+      }
+    };
+
+    const tableCellStyle = {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      border: {
+        top: {style:'thin', color: {argb:'FFCCCCCC'}},
+        left: {style:'thin', color: {argb:'FFCCCCCC'}},
+        bottom: {style:'thin', color: {argb:'FFCCCCCC'}},
+        right: {style:'thin', color: {argb:'FFCCCCCC'}}
+      }
+    };
+
+    // Encabezados de Tabla
+    sheetBacklog.getCell('B7').value = 'ÉPICA';
+    sheetBacklog.getCell('C7').value = 'HISTORIA DE USUARIO';
+    sheetBacklog.getCell('D7').value = 'PUNTOS DE HISTORIA';
+    sheetBacklog.getCell('E7').value = 'PRIORIDAD';
+    sheetBacklog.getCell('F7').value = 'ESTADO';
+    sheetBacklog.getCell('G7').value = 'RESPONSABLE';
+    sheetBacklog.getCell('H7').value = 'SPRINT ASIGNADO';
+
+    ['B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(col => {
+      Object.assign(sheetBacklog.getCell(`${col}7`), tableHeaderStyle);
+    });
+
+    // Anchos de columna
+    sheetBacklog.getColumn('B').width = 25; // Epica
+    sheetBacklog.getColumn('C').width = 45; // Historia
+    sheetBacklog.getColumn('D').width = 20; // Puntos
+    sheetBacklog.getColumn('E').width = 15; // Prioridad
+    sheetBacklog.getColumn('F').width = 15; // Estado
+    sheetBacklog.getColumn('G').width = 25; // Responsable
+    sheetBacklog.getColumn('H').width = 20; // Sprint
+
+    let currentRow = 8;
+
+    epicas.forEach(epica => {
+      const historiasDeEpica = historias.filter(h => h.id_epica === epica.id_epica);
+      
+      if (historiasDeEpica.length === 0) {
+        // Epica sin historias
+        sheetBacklog.getCell(`B${currentRow}`).value = epica.nombre;
+        sheetBacklog.getCell(`C${currentRow}`).value = '(Sin historias de usuario)';
+        sheetBacklog.getCell(`F${currentRow}`).value = epica.estado;
+        
+        ['B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(c => {
+          Object.assign(sheetBacklog.getCell(`${c}${currentRow}`), tableCellStyle);
+        });
+        
+        currentRow++;
+      } else {
+        // Epica con historias
+        let startRow = currentRow;
+        historiasDeEpica.forEach((historia) => {
+          sheetBacklog.getCell(`C${currentRow}`).value = historia.nombre;
+          sheetBacklog.getCell(`D${currentRow}`).value = historia.story_points || '';
+          sheetBacklog.getCell(`E${currentRow}`).value = historia.prioridad || '';
+          sheetBacklog.getCell(`F${currentRow}`).value = historia.estado || '';
+          
+          // Buscar tareas de esta historia para obtener el responsable principal (si hay uno mayoritario o el primero)
+          const tareasHistoria = tareas.filter(t => t.id_historia === historia.id_historia);
+          let responsable = '';
+          if (tareasHistoria.length > 0 && tareasHistoria[0].responsable) {
+             responsable = tareasHistoria[0].responsable;
+          }
+          sheetBacklog.getCell(`G${currentRow}`).value = responsable;
+          
+          // Encontrar sprint si tiene uno activo o asignado (esto requiere info de `historia_sprint` o tareas, por simplicidad usamos el último sprint si la historia está en él)
+          let sprintName = '';
+          const sprint = sprints.find(s => new Date(s.fecha_inicio) <= new Date() && new Date(s.fecha_fin) >= new Date() && s.estado === 'activo');
+          if (sprint && historia.estado === 'en_progreso') sprintName = sprint.nombre; // Aproximación
+          
+          sheetBacklog.getCell(`H${currentRow}`).value = sprintName;
+
+          ['B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(c => {
+            Object.assign(sheetBacklog.getCell(`${c}${currentRow}`), tableCellStyle);
+            if(c === 'D' || c === 'E' || c === 'F' || c === 'H') {
+               sheetBacklog.getCell(`${c}${currentRow}`).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            }
+          });
+          
+          currentRow++;
+        });
+
+        // Combinar celdas de Épica
+        if (currentRow - 1 > startRow) {
+          sheetBacklog.mergeCells(`B${startRow}:B${currentRow - 1}`);
+        }
+        sheetBacklog.getCell(`B${startRow}`).value = epica.nombre;
+      }
+    });
+
 
     // Hoja: Proyecto
     const sheetProyecto = workbook.addWorksheet('Proyecto');
