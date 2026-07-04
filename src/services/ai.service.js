@@ -154,16 +154,6 @@ RECORDATORIO FINAL: Presenta los datos SIEMPRE en forma de listas de texto. BAJO
     // 6. Configurar proveedores de IA (Soporte nativo para Gemini, OpenRouter y Pollinations)
     const providers = [];
 
-    // 1. Pollinations AI: 100% Gratis, sin llaves, sin límites estrictos
-    providers.push({
-      name: "Pollinations AI (Gratis/Ilimitado)",
-      url: "https://text.pollinations.ai/openai/chat/completions",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      models: ["openai", "mistral", "llama"]
-    });
-
     // 2. Gemini (Si hay llave)
     if (process.env.GEMINI_API_KEY) {
       providers.push({
@@ -195,6 +185,16 @@ RECORDATORIO FINAL: Presenta los datos SIEMPRE en forma de listas de texto. BAJO
         ]
       });
     }
+
+    // Backup Final: Pollinations AI (100% Gratis, sin llaves)
+    providers.push({
+      name: "Pollinations AI (Gratis/Ilimitado)",
+      url: "https://text.pollinations.ai/openai/chat/completions",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      models: ["openai", "mistral", "llama"]
+    });
 
     if (providers.length === 0) {
       throw new Error("No hay API KEY configurada para la IA.");
@@ -238,8 +238,9 @@ RECORDATORIO FINAL: Presenta los datos SIEMPRE en forma de listas de texto. BAJO
           });
 
           if (!response.ok) {
-            if (response.status === 429) {
-              lastError = new Error(`Has excedido el límite de cuota diaria en el servidor de ${provider.name}.`);
+            // 429 = Rate Limit (Gemini/OpenRouter), 402 = Payment Required (OpenRouter sin créditos)
+            if (response.status === 429 || response.status === 402) {
+              lastError = new Error(`El servidor de ${provider.name} está saturado o sin créditos (Error ${response.status}). Cambiando de proveedor...`);
               providerRateLimited = true;
               throw lastError;
             }
