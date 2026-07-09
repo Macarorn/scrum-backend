@@ -1,4 +1,4 @@
-# 📋 Documentación de Despliegue en AWS — ScrumTrack
+#  Documentación de Despliegue en AWS — ScrumTrack
 
 **Proyecto:** ScrumTrack — Herramienta de Gestión de Proyectos Ágiles  
 **Fecha de despliegue:** 9 de julio de 2026  
@@ -8,7 +8,7 @@
 
 ---
 
-## 📑 Tabla de Contenidos
+##  Tabla de Contenidos
 
 1. [Resumen Ejecutivo](#1-resumen-ejecutivo)
 2. [Arquitectura de la Solución](#2-arquitectura-de-la-solución)
@@ -35,7 +35,7 @@ El proyecto **ScrumTrack** fue migrado exitosamente desde un entorno de desarrol
 Proveer un entorno de producción escalable, seguro y accesible públicamente desde cualquier navegador web, permitiendo a los usuarios gestionar proyectos, sprints, historias de usuario, métricas y documentos en tiempo real.
 
 ### Resultado
-✅ Aplicación completamente funcional y accesible en la nube de AWS.
+ Aplicación completamente funcional y accesible en la nube de AWS.
 
 ---
 
@@ -45,28 +45,28 @@ Proveer un entorno de producción escalable, seguro y accesible públicamente de
 
 ```mermaid
 graph TB
-    subgraph USUARIOS["🌐 Usuarios / Navegadores Web"]
-        U[("👤 Usuarios")]
+    subgraph USUARIOS[" Usuarios / Navegadores Web"]
+        U[(" Usuarios")]
     end
 
-    subgraph AWS["☁️ Amazon Web Services (us-east-1)"]
-        subgraph S3["📦 Amazon S3"]
+    subgraph AWS[" Amazon Web Services (us-east-1)"]
+        subgraph S3[" Amazon S3"]
             FE["Frontend React/Vite<br/>Static Website Hosting<br/>Bucket: scrum-frontend-2856"]
         end
 
-        subgraph EC2["🖥️ Amazon EC2"]
+        subgraph EC2[" Amazon EC2"]
             BE["Backend Node.js/Express<br/>Instancia: t3.micro<br/>PM2 Process Manager<br/>IP: 98.84.51.156"]
         end
 
-        subgraph RDS["🗄️ Amazon RDS"]
+        subgraph RDS[" Amazon RDS"]
             DB["MySQL 8.x<br/>Instancia: db.t3.micro<br/>Host: scrum-db.cg12kgkigsvp<br/>.us-east-1.rds.amazonaws.com"]
         end
     end
 
-    subgraph EXTERNAL["🔧 Servicios Externos"]
-        SMTP["📧 Gmail SMTP<br/>Envío de correos"]
-        R2["☁️ Cloudflare R2<br/>Almacenamiento de documentos"]
-        AI["🤖 Google AI Studio<br/>Asistente IA integrado"]
+    subgraph EXTERNAL[" Servicios Externos"]
+        SMTP[" Gmail SMTP<br/>Envío de correos"]
+        R2[" Cloudflare R2<br/>Almacenamiento de documentos"]
+        AI[" Google AI Studio<br/>Asistente IA integrado"]
     end
 
     U -->|"HTTP Request"| FE
@@ -240,7 +240,7 @@ VITE_API_URL=http://98.84.51.156:3000/api
 #### Variables de entorno del Backend (estructura)
 ```env
 # .env (Backend) — Estructura de configuración
-# ⚠️ Las contraseñas reales NO se incluyen en este documento por seguridad
+#  
 
 # Base de Datos MySQL (Amazon RDS)
 DB_HOST=scrum-db.cg12kgkigsvp.us-east-1.rds.amazonaws.com
@@ -288,9 +288,9 @@ OPENROUTER_API_KEY=********
 
 ```mermaid
 graph LR
-    A["📝 Código fuente<br/>React + Vite"] --> B["🔨 npm run build<br/>Genera /dist"]
-    B --> C["📦 aws s3 sync<br/>dist/ → S3 Bucket"]
-    C --> D["🌐 Sitio web<br/>en línea"]
+    A[" Código fuente<br/>React + Vite"] --> B[" npm run build<br/>Genera /dist"]
+    B --> C[" aws s3 sync<br/>dist/ → S3 Bucket"]
+    C --> D[" Sitio web<br/>en línea"]
 ```
 
 **Comandos ejecutados:**
@@ -311,10 +311,10 @@ El flag `--delete` elimina del bucket los archivos que ya no existen localmente,
 
 ```mermaid
 graph LR
-    A["📝 Código fuente<br/>Node.js + Express"] --> B["📦 Empaquetar<br/>código fuente"]
-    B --> C["🔑 SCP con clave PEM<br/>Transferir a EC2"]
-    C --> D["📥 Instalar dependencias<br/>npm install"]
-    D --> E["🔄 PM2 restart<br/>Servidor activo"]
+    A[" Código fuente<br/>Node.js + Express"] --> B[" Empaquetar<br/>código fuente"]
+    B --> C[" SCP con clave PEM<br/>Transferir a EC2"]
+    C --> D[" Instalar dependencias<br/>npm install"]
+    D --> E[" PM2 restart<br/>Servidor activo"]
 ```
 
 **Comandos ejecutados:**
@@ -370,20 +370,20 @@ pm2 restart scrum-backend --update-env
 
 ```mermaid
 graph TB
-    subgraph REGION["📍 Región: us-east-1 (N. Virginia)"]
-        subgraph COMPUTE["💻 Cómputo"]
+    subgraph REGION[" Región: us-east-1 (N. Virginia)"]
+        subgraph COMPUTE[" Cómputo"]
             EC2_I["EC2 Instance<br/>t3.micro<br/>2 vCPUs | 1 GiB RAM<br/>ID: i-068ca39ae2b7901e0"]
         end
 
-        subgraph STORAGE["💾 Almacenamiento"]
+        subgraph STORAGE[" Almacenamiento"]
             S3_B["S3 Bucket<br/>scrum-frontend-2856<br/>63 archivos | 8.0 MiB<br/>Static Website Hosting"]
         end
 
-        subgraph DATABASE["🗄️ Base de Datos"]
+        subgraph DATABASE[" Base de Datos"]
             RDS_I["RDS MySQL 8.x<br/>db.t3.micro<br/>scrum-db<br/>Almacenamiento: gp2 SSD"]
         end
 
-        subgraph NETWORK["🔒 Red y Seguridad"]
+        subgraph NETWORK[" Red y Seguridad"]
             SG["Security Group<br/>sg-0f823161e27215fff<br/>Puertos: 22, 80, 443, 3000"]
             IAM_U["IAM User<br/>scrum-deployer<br/>Permisos: S3, EC2"]
         end
@@ -409,22 +409,22 @@ graph TB
 
 | # | Prueba | Resultado | Detalles |
 |---|--------|-----------|----------|
-| 1 | ✅ Acceso al Frontend desde navegador | **Exitoso** | La página carga correctamente en `http://scrum-frontend-2856.s3-website-us-east-1.amazonaws.com` |
-| 2 | ✅ Inicio de sesión (Login) | **Exitoso** | Los usuarios pueden autenticarse con credenciales válidas. Respuesta HTTP 200 en ~115ms. |
-| 3 | ✅ Registro de nuevos usuarios | **Exitoso** | El formulario de registro crea nuevos usuarios en la base de datos. Respuesta HTTP 201 en ~249ms. |
-| 4 | ✅ Envío de correo de verificación | **Exitoso** | Al registrarse, se envía un correo de verificación desde `jsuei8801@gmail.com` vía Gmail SMTP. |
-| 5 | ✅ Verificación de correo electrónico | **Exitoso** | El enlace de verificación funciona y activa la cuenta del usuario. |
-| 6 | ✅ Conexión Backend → RDS | **Exitoso** | El backend se conecta correctamente a la base de datos RDS MySQL. Logs: `Servidor corriendo en http://localhost:3000` |
-| 7 | ✅ CRUD de proyectos | **Exitoso** | Se pueden crear, leer, actualizar y eliminar proyectos. |
-| 8 | ✅ Navegación SPA | **Exitoso** | Todas las rutas del frontend (Perfil, Backlog, Sprints, Métricas) funcionan correctamente. |
-| 9 | ✅ Asistente IA | **Exitoso** | Las consultas al asistente de IA integrado se procesan correctamente. Respuesta HTTP 200 en ~2850ms. |
-| 10 | ✅ PM2 - Persistencia del servicio | **Exitoso** | PM2 mantiene el backend activo 24/7 y lo reinicia automáticamente si falla. |
+| 1 |  Acceso al Frontend desde navegador | **Exitoso** | La página carga correctamente en `http://scrum-frontend-2856.s3-website-us-east-1.amazonaws.com` |
+| 2 |  Inicio de sesión (Login) | **Exitoso** | Los usuarios pueden autenticarse con credenciales válidas. Respuesta HTTP 200 en ~115ms. |
+| 3 |  Registro de nuevos usuarios | **Exitoso** | El formulario de registro crea nuevos usuarios en la base de datos. Respuesta HTTP 201 en ~249ms. |
+| 4 |  Envío de correo de verificación | **Exitoso** | Al registrarse, se envía un correo de verificación desde `jsuei8801@gmail.com` vía Gmail SMTP. |
+| 5 |  Verificación de correo electrónico | **Exitoso** | El enlace de verificación funciona y activa la cuenta del usuario. |
+| 6 |  Conexión Backend → RDS | **Exitoso** | El backend se conecta correctamente a la base de datos RDS MySQL. Logs: `Servidor corriendo en http://localhost:3000` |
+| 7 |  CRUD de proyectos | **Exitoso** | Se pueden crear, leer, actualizar y eliminar proyectos. |
+| 8 |  Navegación SPA | **Exitoso** | Todas las rutas del frontend (Perfil, Backlog, Sprints, Métricas) funcionan correctamente. |
+| 9 |  Asistente IA | **Exitoso** | Las consultas al asistente de IA integrado se procesan correctamente. Respuesta HTTP 200 en ~2850ms. |
+| 10 |  PM2 - Persistencia del servicio | **Exitoso** | PM2 mantiene el backend activo 24/7 y lo reinicia automáticamente si falla. |
 
 ### 9.2 Logs del Servidor (Evidencia de funcionamiento)
 
 ```log
 # Inicio exitoso del servidor
-📅 Scheduler de notificaciones de sprint iniciado
+ Scheduler de notificaciones de sprint iniciado
 Servidor corriendo en http://localhost:3000
 Ambiente: development
 Cypress test data cleaned up.
@@ -442,7 +442,7 @@ GET  /api/sprints?id_proyecto=1 - 200 - 3ms - user:1
 
 ### 9.3 Capturas de Pantalla de Prueba
 
-> **📌 NOTA:** Agregue aquí capturas de pantalla del navegador mostrando:
+> ** NOTA:** Agregue aquí capturas de pantalla del navegador mostrando:
 > 1. La página de inicio/login cargando desde la URL de S3
 > 2. El dashboard del usuario después de iniciar sesión
 > 3. La consola de AWS mostrando la instancia EC2 corriendo
@@ -456,9 +456,9 @@ GET  /api/sprints?id_proyecto=1 - 200 - 3ms - user:1
 
 | Componente | URL | Estado |
 |------------|-----|--------|
-| **Frontend (Aplicación Web)** | [http://scrum-frontend-2856.s3-website-us-east-1.amazonaws.com](http://scrum-frontend-2856.s3-website-us-east-1.amazonaws.com) | 🟢 Activo |
-| **Backend (API REST)** | `http://98.84.51.156:3000/api` | 🟢 Activo |
-| **Base de Datos (RDS)** | `scrum-db.cg12kgkigsvp.us-east-1.rds.amazonaws.com:3306` | 🟢 Activo |
+| **Frontend (Aplicación Web)** | [http://scrum-frontend-2856.s3-website-us-east-1.amazonaws.com](http://scrum-frontend-2856.s3-website-us-east-1.amazonaws.com) |  Activo |
+| **Backend (API REST)** | `http://98.84.51.156:3000/api` |  Activo |
+| **Base de Datos (RDS)** | `scrum-db.cg12kgkigsvp.us-east-1.rds.amazonaws.com:3306` |  Activo |
 | **Repositorio Frontend** | [github.com/Macarorn/scrum-frontend](https://github.com/Macarorn/scrum-frontend) | Rama: `feature/deployment-AWS` |
 | **Repositorio Backend** | [github.com/Macarorn/scrum-backend](https://github.com/Macarorn/scrum-backend) | Rama: `feature/deployment-AWS` |
 
@@ -576,7 +576,7 @@ scrum-backend/
 
 ## 14. Conclusiones
 
-### ✅ Logros del Despliegue
+###  Logros del Despliegue
 
 1. **Migración exitosa** del entorno local a la infraestructura de AWS con tres servicios principales (S3, EC2, RDS).
 2. **Separación de responsabilidades**: Frontend estático en S3, Backend dinámico en EC2, Datos en RDS.
@@ -585,7 +585,7 @@ scrum-backend/
 5. **Escalabilidad**: La arquitectura permite escalar cada componente de forma independiente.
 6. **Economía**: Todo el despliegue opera dentro de la Capa Gratuita de AWS.
 
-### 🔮 Mejoras Futuras Recomendadas
+###  Mejoras Futuras Recomendadas
 
 | Mejora | Beneficio |
 |--------|-----------|
