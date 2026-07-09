@@ -205,6 +205,12 @@ if (config.server.nodeEnv !== "test") {
         )
       `);
 
+      // Clean up Cypress test garbage data that was in the DB dump
+      try {
+        await pool.query(`DELETE FROM meeting WHERE title LIKE '%Cypress%' OR description LIKE '%Cypress%'`);
+        console.log('Cypress test data cleaned up.');
+      } catch (e) {}
+
       console.log('Automigrations checked/completed.');
     } catch (e) {
       console.error('Automigration for documents failed:', e);
