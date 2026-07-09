@@ -1,4 +1,5 @@
 import pool from "../utils/database.js";
+import { invalidarMetricasPorEpica, invalidarMetricasProyecto } from "./metricas.service.js";
 
 function notFoundError(entity = "Épica") {
   return {
@@ -22,8 +23,9 @@ export const listarEpicas = async (proyectoId) => {
          FROM epica e ORDER BY e.id_epica DESC`;
   const params = proyectoId !== undefined ? [Number(proyectoId)] : [];
   const [rows] = await pool.query(query, params);
+  const epicas = Array.isArray(rows) ? rows : Array.from(rows ?? []);
 
-  return rows.map((row) => ({
+  return epicas.map((row) => ({
     id: row.id_epica,
     id_epica: row.id_epica,
     proyectoId: row.id_proyecto,
@@ -42,11 +44,11 @@ export const listarEpicas = async (proyectoId) => {
 
 export const crearEpica = async (data) => {
   // Get the count of epics in this project to generate a per-project identifier
-  const [countResult] = await pool.query(
+  const [countRows] = await pool.query(
     `SELECT COUNT(*) as count FROM epica WHERE id_proyecto = ?`,
     [Number(data.proyectoId)]
   );
-  const epicCount = countResult[0].count;
+  const epicCount = countRows[0]?.count ?? 0;
   const epicIdentifier = epicCount + 1;
 
   const [result] = await pool.query(
@@ -68,6 +70,8 @@ export const crearEpica = async (data) => {
     `UPDATE epica SET nombre = CONCAT('E', ?, ' - ', nombre) WHERE id_epica = ?`,
     [epicIdentifier, epicaId]
   );
+
+  await invalidarMetricasPorEpica(epicaId);
 
   return await obtenerEpica(epicaId);
 };
@@ -117,16 +121,25 @@ export const actualizarEpica = async (id, data) => {
     ],
   );
 
+  await invalidarMetricasPorEpica(id);
+
   return await obtenerEpica(id);
 };
 
 export const eliminarEpica = async (id) => {
+  const actual = await obtenerEpica(id).catch(() => null);
+  if (!actual) {
+    throw notFoundError();
+  }
+
   const [result] = await pool.query("DELETE FROM epica WHERE id_epica = ?", [
     Number(id),
   ]);
   if (result.affectedRows === 0) {
     throw notFoundError();
   }
+
+  await invalidarMetricasProyecto(Number(actual.proyectoId));
 
   return {
     id: Number(id),

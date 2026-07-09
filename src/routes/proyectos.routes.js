@@ -13,6 +13,9 @@ router.get("/", authMiddleware, proyectosController.listarProyectos);
 // GET /api/proyectos/todos - Listar todos los proyectos
 router.get("/todos", authMiddleware, proyectosController.listarTodosProyectos);
 
+// GET /api/proyectos/ficha/:ficha - Filtrar proyectos por número de ficha
+router.get("/ficha/:ficha", authMiddleware, proyectosController.listarProyectosPorFicha);
+
 // POST /api/proyectos - Crear proyecto
 router.post(
   "/",
@@ -87,6 +90,7 @@ router.get("/:id", authMiddleware, proyectosController.obtenerProyecto);
 router.put(
   "/:id",
   authMiddleware,
+  authorizationMiddleware(["admin", "Product Owner", "Scrum Master"]),
   proyectosController.actualizarProyecto,
 );
 

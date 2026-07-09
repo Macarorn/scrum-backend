@@ -96,7 +96,7 @@ export function validarActualizarTarea(data) {
   }
 
   const responsableId = obtenerResponsableId(data);
-  if (responsableId !== undefined && !esEnteroPositivo(responsableId)) {
+  if (responsableId != null && !esEnteroPositivo(responsableId)) {
     errores.push("id_usuario_responsable debe ser entero positivo");
   }
 

@@ -124,11 +124,17 @@ const solicitudService = {
       [id_usuario, id_proyecto, id_usuario, mensaje_opcional || null],
     );
 
-    // Obtener info del proyecto y el Product Owner actual para la notificación
+    // Obtener info del proyecto, del solicitante y el Product Owner actual para la notificación
     const [proy] = await pool.query(
       "SELECT nombre FROM proyecto WHERE id_proyecto = ?",
       [id_proyecto],
     );
+
+    const [solicitante] = await pool.query(
+      "SELECT nombre FROM usuario WHERE id_usuario = ?",
+      [id_usuario],
+    );
+    const nombreSolicitante = solicitante.length ? solicitante[0].nombre : "Un usuario";
 
     // Obtener el Product Owner actual del proyecto (rol id_rol = 1)
     const [poUsers] = await pool.query(
@@ -150,7 +156,7 @@ const solicitudService = {
          VALUES (?, 'prioritaria', 'Nueva solicitud de ingreso', ?, ?)`,
         [
           poId,
-          `Un usuario ha solicitado unirse al proyecto "${proy[0].nombre}"`,
+          `${nombreSolicitante} ha solicitado unirse al proyecto "${proy[0].nombre}"`,
           result.insertId,
         ],
       );
