@@ -179,7 +179,33 @@ if (config.server.nodeEnv !== "test") {
       `);
       try { await pool.query(`CREATE INDEX idx_docver_documento ON documento_version(id_documento)`); } catch (e) {}
       try { await pool.query(`ALTER TABLE documento_version ADD UNIQUE KEY uk_doc_version (id_documento, numero_version)`); } catch (e) {}
-      console.log('Automigrations for documents checked/completed.');
+      try { await pool.query(`ALTER TABLE usuario ADD COLUMN is_verified TINYINT(1) DEFAULT 0`); } catch (e) {}
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS email_verification_token (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          id_usuario INT NOT NULL,
+          token VARCHAR(255) NOT NULL,
+          usado TINYINT(1) DEFAULT 0,
+          creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+          expira_en DATETIME NOT NULL,
+          FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_token (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          id_usuario INT NOT NULL,
+          token VARCHAR(255) NOT NULL,
+          usado TINYINT(1) DEFAULT 0,
+          creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+          expira_en DATETIME NOT NULL,
+          FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+        )
+      `);
+
+      console.log('Automigrations checked/completed.');
     } catch (e) {
       console.error('Automigration for documents failed:', e);
     }
