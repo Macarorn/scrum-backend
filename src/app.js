@@ -71,6 +71,9 @@ app.use(
   }),
 );
 
+// Trust the first proxy (e.g. DigitalOcean App Platform) for rate limiting
+app.set("trust proxy", 1);
+
 const limiter = rateLimit({
   windowMs: config.rateLimit.window * 60 * 1000,
   max: config.rateLimit.max,
