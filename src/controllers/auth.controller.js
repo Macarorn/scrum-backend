@@ -332,11 +332,13 @@ export const forgotPassword = async (req, res, next) => {
 
     const user = await findUserWithSecretByEmail(email.trim());
 
-    // Always return success to avoid email enumeration
     if (!user) {
-      return sendSuccess(res, {
-        message: "Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.",
-      }, "Solicitud procesada");
+      return next(
+        buildError("El correo electrónico no está registrado en el sistema.", {
+          statusCode: 404,
+          error: "USER_NOT_FOUND",
+        }),
+      );
     }
 
     // Invalidate any existing tokens for this user
@@ -361,7 +363,7 @@ export const forgotPassword = async (req, res, next) => {
     }
 
     return sendSuccess(res, {
-      message: "Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.",
+      message: "Hemos enviado las instrucciones de recuperación a tu correo electrónico.",
     }, "Solicitud procesada");
   } catch (error) {
     next(error);
