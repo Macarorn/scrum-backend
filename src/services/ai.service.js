@@ -163,7 +163,7 @@ RECORDATORIO FINAL: Presenta los datos SIEMPRE en forma de listas de texto. BAJO
           "Authorization": `Bearer ${process.env.GEMINI_API_KEY}`,
           "Content-Type": "application/json"
         },
-        models: ["gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro"]
+        models: ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]
       });
     }
 
