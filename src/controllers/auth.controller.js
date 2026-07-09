@@ -444,10 +444,10 @@ export const resetPassword = async (req, res, next) => {
       );
     }
 
-    // Hash new password and update user
+    // Hash new password and update user (also mark email as verified since they proved ownership)
     const newPasswordHash = await hashPassword(password);
     await pool.query(
-      "UPDATE usuario SET password = ?, fecha_actualizacion = NOW() WHERE id_usuario = ?",
+      "UPDATE usuario SET password = ?, is_verified = 1, fecha_actualizacion = NOW() WHERE id_usuario = ?",
       [newPasswordHash, resetToken.id_usuario],
     );
 
