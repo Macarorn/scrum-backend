@@ -8,6 +8,7 @@ const router = express.Router();
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 50,
+  skip: (req) => process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test",
   message: {
     success: false,
     error: "TOO_MANY_REQUESTS",
@@ -20,6 +21,9 @@ router.post("/register", authController.register);
 router.post("/login", loginLimiter, authController.login);
 router.post("/logout", authMiddleware, authController.logout);
 router.post("/refresh-token", authController.refreshToken);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
+router.get("/verify-email", authController.verifyEmail);
 
 // Nuevos endpoints para términos y consentimiento
 router.get("/legal/terms", authController.getTerms);

@@ -410,12 +410,26 @@ export const getMeetings = async (req, res) => {
   try {
     await ensureMeetingTable();
     const { sprint, from, to, q, id_proyecto } = req.query;
+    const userId = req.user?.id_usuario;
     const conditions = [];
     const values = [];
 
     if (id_proyecto) {
       conditions.push("id_proyecto = ?");
       values.push(id_proyecto);
+    } else if (userId) {
+      // Security fix: Only show meetings for projects the user is part of, or global meetings (id_proyecto IS NULL)
+      conditions.push(`(
+        id_proyecto IS NULL OR 
+        id_proyecto IN (
+          SELECT id_proyecto FROM proyecto WHERE creado_por = ?
+          UNION
+          SELECT ep.id_proyecto FROM equipo_proyecto ep 
+          JOIN usuario_equipo_proyecto uep ON ep.id_equipo_proyecto = uep.id_equipo_proyecto 
+          WHERE uep.id_usuario = ?
+        )
+      )`);
+      values.push(userId, userId);
     }
 
     if (sprint) {

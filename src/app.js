@@ -21,6 +21,7 @@ import historiasRoutes from "./routes/historias.routes.js";
 import legalRoutes from "./routes/legal.routes.js";
 import meetingsRoutes from "./routes/meetings.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 import proyectosRoutes from "./routes/proyectos.routes.js";
 import solicitudRoutes from "./routes/solicitud.routes.js";
 import sprintRoutes from "./routes/sprint.routes.js";
@@ -65,16 +66,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: true,
     credentials: true,
   }),
 );
+
+// Trust the first proxy (e.g. DigitalOcean App Platform) for rate limiting
+app.set("trust proxy", 1);
 
 const limiter = rateLimit({
   windowMs: config.rateLimit.window * 60 * 1000,
   max: config.rateLimit.max,
   message: "Demasiadas solicitudes, intenta más tarde",
-  skip: (req) => req.originalUrl?.startsWith("/api/legal"),
+  skip: (req) => 
+    process.env.NODE_ENV === "development" || 
+    process.env.NODE_ENV === "test" || 
+    req.originalUrl?.startsWith("/api/legal"),
 });
 app.use("/api/", limiter);
 
@@ -108,6 +115,7 @@ app.use("/api", usersRoutes);
 app.use("/api/meetings", meetingsRoutes);
 app.use("/api/metricas", metricasRoutes);
 app.use("/api/v1/metricas", metricasRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/proyectos", proyectosRoutes);
 app.use("/api/epicas", epicasRoutes);
 app.use("/api/historias", historiasRoutes);
@@ -174,7 +182,39 @@ if (config.server.nodeEnv !== "test") {
       `);
       try { await pool.query(`CREATE INDEX idx_docver_documento ON documento_version(id_documento)`); } catch (e) {}
       try { await pool.query(`ALTER TABLE documento_version ADD UNIQUE KEY uk_doc_version (id_documento, numero_version)`); } catch (e) {}
-      console.log('Automigrations for documents checked/completed.');
+      try { await pool.query(`ALTER TABLE usuario ADD COLUMN is_verified TINYINT(1) DEFAULT 0`); } catch (e) {}
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS email_verification_token (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          id_usuario INT NOT NULL,
+          token VARCHAR(255) NOT NULL,
+          usado TINYINT(1) DEFAULT 0,
+          creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+          expira_en DATETIME NOT NULL,
+          FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_token (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          id_usuario INT NOT NULL,
+          token VARCHAR(255) NOT NULL,
+          usado TINYINT(1) DEFAULT 0,
+          creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+          expira_en DATETIME NOT NULL,
+          FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+        )
+      `);
+
+      // Clean up Cypress test garbage data that was in the DB dump
+      try {
+        await pool.query(`DELETE FROM meeting WHERE title LIKE '%Cypress%' OR description LIKE '%Cypress%'`);
+        console.log('Cypress test data cleaned up.');
+      } catch (e) {}
+
+      console.log('Automigrations checked/completed.');
     } catch (e) {
       console.error('Automigration for documents failed:', e);
     }
