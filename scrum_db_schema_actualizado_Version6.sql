@@ -503,8 +503,8 @@ INSERT INTO usuario (email, password, nombre, telefono, ciudad) VALUES
 -- NUEVOS USUARIOS: Instructor Líder y Coordinador
 -- Misma contraseña hasheada para ambos: "Password123*"
 INSERT INTO usuario (email, password, nombre, telefono, ciudad, rol_plataforma) VALUES
-('instructor@gmail.com', '$2a$10$yjfo5UpFTvrsUaZbpn23aOmWdTRDjhmw/4e81HXpZ1BbR744c23gK', 'Instructor Líder',  '3109876543', 'Bogotá', 'instructor_lider'),
-('coordinador@gmail.com','$2a$10$yjfo5UpFTvrsUaZbpn23aOmWdTRDjhmw/4e81HXpZ1BbR744c23gK', 'Coordinador General','3156789012', 'Bogotá', 'coordinador');
+('instructor@gmail.com', '$2a$10$bQPYrJbNYDeppXkCefvWNekunUAGXGwUX2oYQqoKQNl2CbWc40o1u', 'Instructor Líder',  '3109876543', 'Bogotá', 'instructor_lider'),
+('coordinador@gmail.com','$2a$10$bQPYrJbNYDeppXkCefvWNekunUAGXGwUX2oYQqoKQNl2CbWc40o1u', 'Coordinador General','3156789012', 'Bogotá', 'coordinador');
 
 -- ============================================================
 -- ROLES A USUARIOS (ROLES GLOBALES)

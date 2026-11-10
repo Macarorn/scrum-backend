@@ -109,6 +109,7 @@ Gestión y administración de los espacios de trabajo Scrum.
 `GET  /api/proyectos/:id`- Obtiene la informacion detallada de un proyecto por su ID - Usuario Autenticado 
 `PUT  /api/proyectos/:id`- Actualizar los datos generales de un proyecto - Product Owner, Scrum Master, Usuario 
 `DELETE /api/proyectos/:id`- Eliminar un proyecto de forma permanente - Product Owner, Scrum Master, Usuario 
+`GET /api/proyectos/:id/export`- Exportar datos de un proyecto a Excel de forma ordenada - Product Owner, Scrum Master
 
 
 ### Épicas

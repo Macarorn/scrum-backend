@@ -1,0 +1,77 @@
+{
+  "userIdSequence": 4,
+  "users": [
+    {
+      "id_usuario": 1,
+      "nombre": "Admin",
+      "email": "admin@scrum.local",
+      "passwordHash": "$2a$10$VRPjn3OEuc.OsCy4jiyqs.i1vTuUsrTpEkspgWmJUUTXsHZtxrmGG",
+      "telefono": null,
+      "ciudad": null,
+      "activo": true,
+      "fecha_registro": "2026-06-18T20:36:39.738Z",
+      "fecha_actualizacion": "2026-06-18T20:36:39.738Z",
+      "roles": [
+        {
+          "id_rol": 1,
+          "nombre_rol": "Product Owner",
+          "descripcion": "Define y prioriza el backlog"
+        }
+      ],
+      "permisos": [
+        {
+          "id_permiso": 5,
+          "nombre": "perfil:update",
+          "descripcion": "Actualizar perfil propio"
+        }
+      ],
+      "rol_principal": "Product Owner"
+    },
+    {
+      "id_usuario": 2,
+      "nombre": "Sofia Product Owner",
+      "email": "sofia@scrum.local",
+      "passwordHash": "$2a$10$McVuy3dJxzJ5smgY7ehKT.gkfwOSWKFbGjLT30nrNf6/3gRbZPPai",
+      "telefono": null,
+      "ciudad": null,
+      "activo": true,
+      "fecha_registro": "2026-06-18T20:36:39.832Z",
+      "fecha_actualizacion": "2026-06-18T20:36:39.832Z",
+      "roles": [
+        {
+          "id_rol": 3,
+          "nombre_rol": "Developer",
+          "descripcion": "Desarrolla las tareas del sprint"
+        }
+      ],
+      "permisos": [
+        {
+          "id_permiso": 5,
+          "nombre": "perfil:update",
+          "descripcion": "Actualizar perfil propio"
+        }
+      ],
+      "rol_principal": "Developer"
+    },
+    {
+      "id_usuario": 3,
+      "nombre": "Mariana Scrum Master",
+      "email": "mariana@scrum.local",
+      "passwordHash": "$2a$10$csw8.W/cdTVrui9tzajU3eyuiWxYN2M0rqZSVRBkMhyLX6K4SqAYa",
+      "telefono": null,
+      "ciudad": null,
+      "activo": true,
+      "fecha_registro": "2026-06-18T20:36:39.914Z",
+      "fecha_actualizacion": "2026-06-18T20:36:39.914Z",
+      "roles": [
+        {
+          "id_rol": 4,
+          "nombre_rol": "Designer",
+          "descripcion": "Diseña interfaces y experiencia de usuario"
+        }
+      ],
+      "permisos": [],
+      "rol_principal": "Designer"
+    }
+  ]
+}

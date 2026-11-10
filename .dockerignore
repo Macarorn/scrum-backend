@@ -1,0 +1,35 @@
+# Dependencias (se instalan dentro del contenedor)
+node_modules
+
+# Git
+.git
+.gitignore
+
+# Archivos de entorno (se pasan por variables de entorno o docker-compose)
+.env
+.env.local
+.env.example
+
+# Documentación y tests
+docs
+tests
+README.md
+*.md
+
+# IDE y OS
+.idea
+.vscode
+.DS_Store
+*.log
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# SQL schema (se usa por separado para inicializar la BD)
+*.sql
+
+# Misc
+npm-debug.log*
+lighthouse-report.json

@@ -1,23 +1,2 @@
 node_modules/
 .env
-.env.local
-.DS_Store
-*.log
-npm-debug.log*
-.idea/
-.vscode/
-dist/
-build/
-data/users.json
-
-# Test output and debugging artifacts
-auth_test_errors.txt
-auth_test_output.txt
-full_test_output.txt
-test_errors.txt
-test-output.txt
-test-results.txt
-test-results.md
-TESTS_SUMMARY.md
-tmp_*.py
-temp_*.js
